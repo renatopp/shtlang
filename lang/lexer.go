@@ -10,7 +10,7 @@ func CreateLexer(input []byte) *Lexer {
 	return &Lexer{
 		input:      input,
 		tokenQueue: []*Token{},
-		partQueue:  []*lexerPart{},
+		partQueue:  []*char{},
 		errors:     []string{},
 		line:       1,
 		column:     1,
@@ -34,27 +34,31 @@ func Tokenize(input []byte) ([]*Token, error) {
 	return r, nil
 }
 
-type lexerPart struct {
-	Char   rune
+type char struct {
+	Rune   rune
 	Size   int
 	Line   int
 	Column int
 }
 
-func (p *lexerPart) Is(r rune) bool {
-	return p.Char == r
+func (p *char) Is(r rune) bool {
+	return p.Rune == r
 }
 
 type Lexer struct {
 	input      []byte
 	tokenQueue []*Token
-	partQueue  []*lexerPart
+	partQueue  []*char
 	errors     []string
 	line       int
 	column     int
 	cursor     int
 	eof        *Token
 }
+
+// CreateTokenizer(Options {
+//
+// })
 
 func (l *Lexer) Next() *Token {
 	token := l.Peek()
@@ -74,50 +78,50 @@ func (l *Lexer) PeekN(i int) *Token {
 	return l.tokenQueue[i]
 }
 
-func (l *Lexer) nextPart() *lexerPart {
-	part := l.peekPart()
+func (l *Lexer) NextChar() *char {
+	part := l.PeekChar()
 	l.partQueue = l.partQueue[1:]
 	return part
 }
 
-func (l *Lexer) peekPart() *lexerPart {
-	return l.peekPartN(0)
+func (l *Lexer) PeekChar() *char {
+	return l.PeekCharN(0)
 }
 
-func (l *Lexer) peekPartN(n int) *lexerPart {
+func (l *Lexer) PeekCharN(n int) *char {
 	if len(l.partQueue) <= n {
-		l.partQueue = append(l.partQueue, l.parseNextPart())
+		l.partQueue = append(l.partQueue, l.parseNextChar())
 	}
 
 	return l.partQueue[n]
 }
 
-func (l *Lexer) isWhitespace(r rune) bool {
+func (l *Lexer) IsWhitespace(r rune) bool {
 	return r == '\n' || r == '\r' || r == '\t' || r == ' '
 }
 
-func (l *Lexer) isLetter(r rune) bool {
+func (l *Lexer) IsLetter(r rune) bool {
 	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == '_' || r == '$'
 }
 
-func (l *Lexer) isDigit(r rune) bool {
+func (l *Lexer) IsDigit(r rune) bool {
 	return r >= '0' && r <= '9'
 }
 
-func (l *Lexer) isEOF(r rune) bool {
+func (l *Lexer) IsEOF(r rune) bool {
 	return r == 0
 }
 
-func (l *Lexer) registerError(e string, part *lexerPart) {
+func (l *Lexer) RegisterError(e string, part *char) {
 	l.errors = append(l.errors, fmt.Sprintf("%s at %d:%d", e, part.Line, part.Column))
 }
 
 // Parse the next character given the cursor position
-func (l *Lexer) parseNextPart() *lexerPart {
+func (l *Lexer) parseNextChar() *char {
 	for l.cursor < len(l.input) {
 		r, size := utf8.DecodeRune(l.input[l.cursor:])
-		part := &lexerPart{
-			Char:   r,
+		part := &char{
+			Rune:   r,
 			Size:   size,
 			Line:   l.line,
 			Column: l.column,
@@ -140,8 +144,8 @@ func (l *Lexer) parseNextPart() *lexerPart {
 		return part
 	}
 
-	return &lexerPart{
-		Char:   0,
+	return &char{
+		Rune:   0,
 		Size:   0,
 		Line:   l.line,
 		Column: l.column,
@@ -154,8 +158,8 @@ func (l *Lexer) parseNextToken() *Token {
 		return l.eof
 	}
 
-	part := l.peekPart()
-	if part.Char == 0 {
+	part := l.PeekChar()
+	if part.Rune == 0 {
 		l.eof = CreateToken(tokens.Eof, "", part.Line, part.Column)
 		return l.eof
 	}
@@ -164,7 +168,7 @@ func (l *Lexer) parseNextToken() *Token {
 	switch {
 	case part.Is('!'):
 		token = CreateToken(tokens.Bang, "!", part.Line, part.Column)
-		l.nextPart()
+		l.NextChar()
 	}
 	// CREATE TOKENS HERE
 
