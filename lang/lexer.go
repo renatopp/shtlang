@@ -25,6 +25,16 @@ var keywords = []string{
 	"data",
 	"raise",
 	"on",
+	"and",
+	"or",
+	"xor",
+	"nand",
+	"nor",
+	"nxor",
+	"module",
+	"use",
+	"async",
+	"await",
 }
 
 func CreateLexer(input []byte) *Lexer {
@@ -208,134 +218,6 @@ func (l *Lexer) parseNextChar() *char {
 	}
 }
 
-// Parse the next token given the parts queue
-func (l *Lexer) parseNextToken() *Token {
-	if l.eof != nil {
-		return l.eof
-	}
-
-	var token *Token
-
-	for {
-		if l.TooManyErrors() {
-			l.eof = CreateToken(tokens.Eof, "", l.line, l.column)
-			return l.eof
-		}
-
-		c := l.PeekChar()
-		if c.Rune == 0 {
-			l.eof = CreateToken(tokens.Eof, "", c.Line, c.Column)
-			return l.eof
-		}
-
-		switch {
-		case c.Is(';'):
-			token = CreateToken(tokens.Semicolon, ";", c.Line, c.Column)
-			l.EatChar()
-		case c.Is(','):
-			token = CreateToken(tokens.Comma, ",", c.Line, c.Column)
-			l.EatChar()
-		case c.Is(':'):
-			token = CreateToken(tokens.Colon, ":", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('!'):
-			token = CreateToken(tokens.Bang, "!", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('?'):
-			token = CreateToken(tokens.Question, "?", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('.') && !l.isDigit(l.PeekCharN(1).Rune):
-			token = CreateToken(tokens.Dot, ".", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('\\'):
-			token = CreateToken(tokens.Backslash, "\\", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('@'):
-			token = CreateToken(tokens.At, "@", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('%'):
-			token = CreateToken(tokens.Percent, "%", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('^'):
-			token = CreateToken(tokens.Caret, "^", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('&'):
-			token = CreateToken(tokens.Ampersand, "&", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('|'):
-			token = CreateToken(tokens.Pipe, "|", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('+'):
-			token = CreateToken(tokens.Plus, "+", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('-'):
-			token = CreateToken(tokens.Minus, "-", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('*'):
-			token = CreateToken(tokens.Asterisk, "*", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('/'):
-			token = CreateToken(tokens.Slash, "/", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('>'):
-			token = CreateToken(tokens.Greater, ">", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('<'):
-			token = CreateToken(tokens.Less, "<", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('='):
-			token = CreateToken(tokens.Equal, "=", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('~'):
-			token = CreateToken(tokens.Tilde, "~", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('{'):
-			token = CreateToken(tokens.Lbrace, "{", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('}'):
-			token = CreateToken(tokens.Rbrace, "}", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('('):
-			token = CreateToken(tokens.Lparen, "(", c.Line, c.Column)
-			l.EatChar()
-		case c.Is(')'):
-			token = CreateToken(tokens.Rparen, ")", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('['):
-			token = CreateToken(tokens.Lbracket, "[", c.Line, c.Column)
-			l.EatChar()
-		case c.Is(']'):
-			token = CreateToken(tokens.Rbracket, "]", c.Line, c.Column)
-			l.EatChar()
-
-		case c.Is('#'):
-			l.parseComment()
-			continue
-
-		case l.isWhitespace(c.Rune):
-			token = l.parseWhitespaces()
-
-		case l.isLetter(c.Rune):
-			token = l.parseIdentifier()
-
-		case l.isDigit(c.Rune) || c.Is('.') && l.isDigit(l.PeekCharN(1).Rune):
-			token = l.parseNumber()
-
-		case c.Is('\''):
-			token = l.parseString()
-
-		default:
-			l.RegisterError(fmt.Sprintf("invalid character '%c'", c.Rune), c)
-			l.EatChar()
-			continue
-		}
-
-		break
-	}
-
-	return token
-}
-
 func (l *Lexer) parseComment() {
 	l.EatChar()
 
@@ -473,4 +355,132 @@ func (l *Lexer) parseString() *Token {
 
 	l.EatChar()
 	return CreateToken(tokens.String, l.builder.String(), first.Line, first.Column)
+}
+
+// Parse the next token given the parts queue
+func (l *Lexer) parseNextToken() *Token {
+	if l.eof != nil {
+		return l.eof
+	}
+
+	var token *Token
+
+	for {
+		if l.TooManyErrors() {
+			l.eof = CreateToken(tokens.Eof, "", l.line, l.column)
+			return l.eof
+		}
+
+		c := l.PeekChar()
+		if c.Rune == 0 {
+			l.eof = CreateToken(tokens.Eof, "", c.Line, c.Column)
+			return l.eof
+		}
+
+		switch {
+		case c.Is(';'):
+			token = CreateToken(tokens.Semicolon, ";", c.Line, c.Column)
+			l.EatChar()
+		case c.Is(','):
+			token = CreateToken(tokens.Comma, ",", c.Line, c.Column)
+			l.EatChar()
+		case c.Is(':'):
+			token = CreateToken(tokens.Colon, ":", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('!'):
+			token = CreateToken(tokens.Bang, "!", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('?'):
+			token = CreateToken(tokens.Question, "?", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('.') && !l.isDigit(l.PeekCharN(1).Rune):
+			token = CreateToken(tokens.Dot, ".", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('\\'):
+			token = CreateToken(tokens.Backslash, "\\", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('@'):
+			token = CreateToken(tokens.At, "@", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('%'):
+			token = CreateToken(tokens.Percent, "%", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('^'):
+			token = CreateToken(tokens.Caret, "^", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('&'):
+			token = CreateToken(tokens.Ampersand, "&", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('|'):
+			token = CreateToken(tokens.Pipe, "|", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('+'):
+			token = CreateToken(tokens.Plus, "+", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('-'):
+			token = CreateToken(tokens.Minus, "-", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('*'):
+			token = CreateToken(tokens.Asterisk, "*", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('/'):
+			token = CreateToken(tokens.Slash, "/", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('>'):
+			token = CreateToken(tokens.Greater, ">", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('<'):
+			token = CreateToken(tokens.Less, "<", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('='):
+			token = CreateToken(tokens.Equal, "=", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('~'):
+			token = CreateToken(tokens.Tilde, "~", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('{'):
+			token = CreateToken(tokens.Lbrace, "{", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('}'):
+			token = CreateToken(tokens.Rbrace, "}", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('('):
+			token = CreateToken(tokens.Lparen, "(", c.Line, c.Column)
+			l.EatChar()
+		case c.Is(')'):
+			token = CreateToken(tokens.Rparen, ")", c.Line, c.Column)
+			l.EatChar()
+		case c.Is('['):
+			token = CreateToken(tokens.Lbracket, "[", c.Line, c.Column)
+			l.EatChar()
+		case c.Is(']'):
+			token = CreateToken(tokens.Rbracket, "]", c.Line, c.Column)
+			l.EatChar()
+
+		case c.Is('#'):
+			l.parseComment()
+			continue
+
+		case l.isWhitespace(c.Rune):
+			token = l.parseWhitespaces()
+
+		case l.isLetter(c.Rune):
+			token = l.parseIdentifier()
+
+		case l.isDigit(c.Rune) || c.Is('.') && l.isDigit(l.PeekCharN(1).Rune):
+			token = l.parseNumber()
+
+		case c.Is('\''):
+			token = l.parseString()
+
+		default:
+			l.RegisterError(fmt.Sprintf("invalid character '%c'", c.Rune), c)
+			l.EatChar()
+			continue
+		}
+
+		break
+	}
+
+	return token
 }
