@@ -160,3 +160,15 @@ func TestTokenizeComments(t *testing.T) {
 		assert.Equal(t, token.Literal, result[i].Literal)
 	}
 }
+
+func TestInvalidToken(t *testing.T) {
+	input := `�������`
+	_, err := Tokenize([]byte(input))
+	assert.NotEqual(t, err, nil)
+}
+
+func TestInvalidCharacter(t *testing.T) {
+	input := `☂`
+	_, err := Tokenize([]byte(input))
+	assert.NotEqual(t, err, nil)
+}

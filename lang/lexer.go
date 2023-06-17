@@ -46,7 +46,6 @@ func Tokenize(input []byte) ([]*Token, error) {
 	r := []*Token{}
 	for {
 		token := lexer.EatToken()
-		fmt.Println(">", token)
 		r = append(r, token)
 
 		if token.Is(tokens.Eof) {
@@ -54,7 +53,7 @@ func Tokenize(input []byte) ([]*Token, error) {
 		}
 	}
 
-	return r, nil
+	return r, lexer.GetError()
 }
 
 type char struct {
@@ -116,6 +115,22 @@ func (l *Lexer) PeekCharN(n int) *char {
 	return l.charQueue[n]
 }
 
+func (l *Lexer) TooManyErrors() bool {
+	return len(l.errors) >= 10
+}
+
+func (l *Lexer) HasError() bool {
+	return len(l.errors) > 0
+}
+
+func (l *Lexer) GetError() error {
+	if l.HasError() {
+		return fmt.Errorf("Tokenizer errors: \n- %s", strings.Join(l.errors, "\n- "))
+	}
+
+	return nil
+}
+
 func (l *Lexer) isWhitespace(r rune) bool {
 	return r == '\n' || r == '\r' || r == '\t' || r == ' '
 }
@@ -137,14 +152,31 @@ func (l *Lexer) isKeyword(lit string) bool {
 }
 
 func (l *Lexer) RegisterError(e string, c *char) {
+	if l.TooManyErrors() {
+		return
+	}
+
 	l.errors = append(l.errors, fmt.Sprintf("%s at %d:%d", e, c.Line, c.Column))
+
+	if l.TooManyErrors() {
+		l.errors = append(l.errors, "too many errors, aborting")
+	}
 }
 
 // Parse the next character given the cursor position
 func (l *Lexer) parseNextChar() *char {
 	for l.cursor < len(l.input) {
+		if l.TooManyErrors() {
+			return &char{
+				Rune:   0,
+				Size:   0,
+				Line:   l.line,
+				Column: l.column,
+			}
+		}
+
 		r, size := utf8.DecodeRune(l.input[l.cursor:])
-		part := &char{
+		c := &char{
 			Rune:   r,
 			Size:   size,
 			Line:   l.line,
@@ -154,7 +186,7 @@ func (l *Lexer) parseNextChar() *char {
 		l.column++
 
 		if r == utf8.RuneError {
-			l.RegisterError("invalid UTF-8 character", part)
+			l.RegisterError("invalid UTF-8 character", c)
 			l.cursor++
 			continue
 		}
@@ -165,7 +197,7 @@ func (l *Lexer) parseNextChar() *char {
 		}
 
 		l.cursor += size
-		return part
+		return c
 	}
 
 	return &char{
@@ -185,6 +217,11 @@ func (l *Lexer) parseNextToken() *Token {
 	var token *Token
 
 	for {
+		if l.TooManyErrors() {
+			l.eof = CreateToken(tokens.Eof, "", l.line, l.column)
+			return l.eof
+		}
+
 		c := l.PeekChar()
 		if c.Rune == 0 {
 			l.eof = CreateToken(tokens.Eof, "", c.Line, c.Column)
