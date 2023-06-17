@@ -15,7 +15,7 @@ func _createToken(t tokens.Type, l string) *Token {
 }
 
 func TestTokenizeSymbols(t *testing.T) {
-	input := `;,:!?.\@%^&|+-*/><=~{}()[]`
+	input := `; , : ! ? . @ { } ( ) [ ] => ...`
 
 	expected := []*Token{
 		_createToken(tokens.Semicolon, ";"),
@@ -24,26 +24,67 @@ func TestTokenizeSymbols(t *testing.T) {
 		_createToken(tokens.Bang, "!"),
 		_createToken(tokens.Question, "?"),
 		_createToken(tokens.Dot, "."),
-		_createToken(tokens.Backslash, "\\"),
 		_createToken(tokens.At, "@"),
-		_createToken(tokens.Percent, "%"),
-		_createToken(tokens.Caret, "^"),
-		_createToken(tokens.Ampersand, "&"),
-		_createToken(tokens.Pipe, "|"),
-		_createToken(tokens.Plus, "+"),
-		_createToken(tokens.Minus, "-"),
-		_createToken(tokens.Asterisk, "*"),
-		_createToken(tokens.Slash, "/"),
-		_createToken(tokens.Greater, ">"),
-		_createToken(tokens.Less, "<"),
-		_createToken(tokens.Equal, "="),
-		_createToken(tokens.Tilde, "~"),
 		_createToken(tokens.Lbrace, "{"),
 		_createToken(tokens.Rbrace, "}"),
 		_createToken(tokens.Lparen, "("),
 		_createToken(tokens.Rparen, ")"),
 		_createToken(tokens.Lbracket, "["),
 		_createToken(tokens.Rbracket, "]"),
+		_createToken(tokens.Arrow, "=>"),
+		_createToken(tokens.Spread, "..."),
+	}
+
+	result, err := Tokenize([]byte(input))
+
+	assert.Equal(t, err, nil)
+	for i, token := range expected {
+		assert.Equal(t, token.Type, result[i].Type)
+		assert.Equal(t, token.Literal, result[i].Literal)
+	}
+}
+
+func TestTokenizeOperators(t *testing.T) {
+	input := `+ - * / // % ** ++ -- < <= > >= == != ..`
+
+	expected := []*Token{
+		_createToken(tokens.Operator, "+"),
+		_createToken(tokens.Operator, "-"),
+		_createToken(tokens.Operator, "*"),
+		_createToken(tokens.Operator, "/"),
+		_createToken(tokens.Operator, "//"),
+		_createToken(tokens.Operator, "%"),
+		_createToken(tokens.Operator, "**"),
+		_createToken(tokens.Operator, "++"),
+		_createToken(tokens.Operator, "--"),
+		_createToken(tokens.Operator, "<"),
+		_createToken(tokens.Operator, "<="),
+		_createToken(tokens.Operator, ">"),
+		_createToken(tokens.Operator, ">="),
+		_createToken(tokens.Operator, "=="),
+		_createToken(tokens.Operator, "!="),
+	}
+
+	result, err := Tokenize([]byte(input))
+
+	assert.Equal(t, err, nil)
+	for i, token := range expected {
+		assert.Equal(t, token.Type, result[i].Type)
+		assert.Equal(t, token.Literal, result[i].Literal)
+	}
+}
+
+func TestTokenizeAssignment(t *testing.T) {
+	input := `= += -= *= /= //= ..=`
+
+	expected := []*Token{
+		_createToken(tokens.Assignment, "="),
+		_createToken(tokens.Assignment, "+="),
+		_createToken(tokens.Assignment, "-="),
+		_createToken(tokens.Assignment, "*="),
+		_createToken(tokens.Assignment, "/="),
+		_createToken(tokens.Assignment, "//="),
+		_createToken(tokens.Assignment, "..="),
 	}
 
 	result, err := Tokenize([]byte(input))
@@ -56,15 +97,17 @@ func TestTokenizeSymbols(t *testing.T) {
 }
 
 func TestTokenizeSpaces(t *testing.T) {
-	input := `.    . 
-	
-	
-	. 
+	input := `. \
+	 .           .
+
+
+
+	.
 	`
 
 	expected := []*Token{
 		_createToken(tokens.Dot, "."),
-		_createToken(tokens.Space, " "),
+		_createToken(tokens.Dot, "."),
 		_createToken(tokens.Dot, "."),
 		_createToken(tokens.Newline, "\n"),
 		_createToken(tokens.Dot, "."),
@@ -85,13 +128,9 @@ func TestTokenizeIdentifier(t *testing.T) {
 
 	expected := []*Token{
 		_createToken(tokens.Identifier, "valid"),
-		_createToken(tokens.Space, " "),
 		_createToken(tokens.Identifier, "st$ing"),
-		_createToken(tokens.Space, " "),
 		_createToken(tokens.Identifier, "$Here"),
-		_createToken(tokens.Space, " "),
 		_createToken(tokens.Keyword, "on"),
-		_createToken(tokens.Space, " "),
 		_createToken(tokens.Keyword, "raise"),
 	}
 
@@ -125,12 +164,9 @@ func TestTokenizeNumbers(t *testing.T) {
 
 	expected := []*Token{
 		_createToken(tokens.Number, "123"),
-		_createToken(tokens.Space, " "),
 		_createToken(tokens.Number, "1e321"),
-		_createToken(tokens.Space, " "),
 		_createToken(tokens.Number, ".12"),
-		_createToken(tokens.Space, " "),
-		_createToken(tokens.Minus, "-"),
+		_createToken(tokens.Operator, "-"),
 		_createToken(tokens.Number, "21e-123"),
 	}
 
@@ -148,7 +184,6 @@ func TestTokenizeComments(t *testing.T) {
 
 	expected := []*Token{
 		_createToken(tokens.Bang, "!"),
-		_createToken(tokens.Space, " "),
 		_createToken(tokens.Eof, ""),
 	}
 

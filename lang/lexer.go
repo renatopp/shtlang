@@ -35,6 +35,8 @@ var keywords = []string{
 	"use",
 	"async",
 	"await",
+	"is",
+	"in",
 }
 
 func CreateLexer(input []byte) *Lexer {
@@ -161,6 +163,50 @@ func (l *Lexer) isKeyword(lit string) bool {
 	return slices.Contains(keywords, lit)
 }
 
+func (l *Lexer) isDoubleOperator(a rune, b rune) bool {
+	switch {
+	case a == '+' && b == '+',
+		a == '-' && b == '-',
+		a == '*' && b == '*',
+		a == '/' && b == '/',
+		a == '<' && b == '=',
+		a == '>' && b == '=',
+		a == '=' && b == '=',
+		a == '!' && b == '=',
+		a == '.' && b == '.':
+		return true
+	default:
+		return false
+	}
+}
+
+func (l *Lexer) isOperator(r rune) bool {
+	switch {
+	case r == '+',
+		r == '-',
+		r == '*',
+		r == '/',
+		r == '%',
+		r == '<',
+		r == '>':
+		return true
+	default:
+		return false
+	}
+}
+
+func (l *Lexer) isCompositeAssignment(a rune, b rune) bool {
+	switch {
+	case a == '+' && b == '=',
+		a == '-' && b == '=',
+		a == '*' && b == '=',
+		a == '/' && b == '=':
+		return true
+	default:
+		return false
+	}
+}
+
 func (l *Lexer) RegisterError(e string, c *char) {
 	if l.TooManyErrors() {
 		return
@@ -253,7 +299,8 @@ func (l *Lexer) parseWhitespaces() *Token {
 	if nl {
 		return CreateToken(tokens.Newline, "\n", first.Line, first.Column)
 	}
-	return CreateToken(tokens.Space, " ", first.Line, first.Column)
+
+	return nil
 }
 
 func (l *Lexer) parseIdentifier() *Token {
@@ -357,6 +404,29 @@ func (l *Lexer) parseString() *Token {
 	return CreateToken(tokens.String, l.builder.String(), first.Line, first.Column)
 }
 
+func (l *Lexer) parseBacklash() {
+	nl := false
+
+	l.EatChar()
+	for {
+		c := l.PeekChar()
+
+		if !l.isWhitespace(c.Rune) {
+			break
+		}
+
+		if c.Is('\n') {
+			if nl {
+				break
+			}
+
+			nl = true
+		}
+
+		l.EatChar()
+	}
+}
+
 // Parse the next token given the parts queue
 func (l *Lexer) parseNextToken() *Token {
 	if l.eof != nil {
@@ -377,7 +447,58 @@ func (l *Lexer) parseNextToken() *Token {
 			return l.eof
 		}
 
+		cr := l.PeekCharN(0).Rune
+		nr := l.PeekCharN(1).Rune
+		nnr := l.PeekCharN(2).Rune
+
 		switch {
+		case c.Is('#'):
+			l.parseComment()
+			continue
+
+		case c.Is('\\'):
+			l.parseBacklash()
+			continue
+
+		case cr == '.' && nr == '.' && nnr == '.':
+			token = CreateToken(tokens.Spread, "...", c.Line, c.Column)
+			l.EatChar()
+			l.EatChar()
+			l.EatChar()
+
+		case c.Is('=') && nr == '>':
+			token = CreateToken(tokens.Arrow, "=>", c.Line, c.Column)
+			l.EatChar()
+			l.EatChar()
+
+		case cr == '/' && nr == '/' && nnr == '=',
+			cr == '.' && nr == '.' && nnr == '=':
+			token = CreateToken(tokens.Assignment, string(cr)+string(nr)+string(nnr), c.Line, c.Column)
+			l.EatChar()
+			l.EatChar()
+			l.EatChar()
+
+		case l.isCompositeAssignment(cr, nr):
+			token = CreateToken(tokens.Assignment, string(cr)+string(nr), c.Line, c.Column)
+			l.EatChar()
+			l.EatChar()
+
+		case l.isDoubleOperator(cr, nr):
+			token = CreateToken(tokens.Operator, string(cr)+string(nr), c.Line, c.Column)
+			l.EatChar()
+			l.EatChar()
+
+		case l.isOperator(cr):
+			token = CreateToken(tokens.Operator, string(cr), c.Line, c.Column)
+			l.EatChar()
+
+		case c.Is('='):
+			token = CreateToken(tokens.Assignment, "=", c.Line, c.Column)
+			l.EatChar()
+
+		case c.Is('!'):
+			token = CreateToken(tokens.Bang, "!", c.Line, c.Column)
+			l.EatChar()
 		case c.Is(';'):
 			token = CreateToken(tokens.Semicolon, ";", c.Line, c.Column)
 			l.EatChar()
@@ -387,56 +508,14 @@ func (l *Lexer) parseNextToken() *Token {
 		case c.Is(':'):
 			token = CreateToken(tokens.Colon, ":", c.Line, c.Column)
 			l.EatChar()
-		case c.Is('!'):
-			token = CreateToken(tokens.Bang, "!", c.Line, c.Column)
-			l.EatChar()
 		case c.Is('?'):
 			token = CreateToken(tokens.Question, "?", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('.') && !l.isDigit(l.PeekCharN(1).Rune):
-			token = CreateToken(tokens.Dot, ".", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('\\'):
-			token = CreateToken(tokens.Backslash, "\\", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('@'):
 			token = CreateToken(tokens.At, "@", c.Line, c.Column)
 			l.EatChar()
-		case c.Is('%'):
-			token = CreateToken(tokens.Percent, "%", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('^'):
-			token = CreateToken(tokens.Caret, "^", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('&'):
-			token = CreateToken(tokens.Ampersand, "&", c.Line, c.Column)
-			l.EatChar()
 		case c.Is('|'):
 			token = CreateToken(tokens.Pipe, "|", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('+'):
-			token = CreateToken(tokens.Plus, "+", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('-'):
-			token = CreateToken(tokens.Minus, "-", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('*'):
-			token = CreateToken(tokens.Asterisk, "*", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('/'):
-			token = CreateToken(tokens.Slash, "/", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('>'):
-			token = CreateToken(tokens.Greater, ">", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('<'):
-			token = CreateToken(tokens.Less, "<", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('='):
-			token = CreateToken(tokens.Equal, "=", c.Line, c.Column)
-			l.EatChar()
-		case c.Is('~'):
-			token = CreateToken(tokens.Tilde, "~", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('{'):
 			token = CreateToken(tokens.Lbrace, "{", c.Line, c.Column)
@@ -457,12 +536,15 @@ func (l *Lexer) parseNextToken() *Token {
 			token = CreateToken(tokens.Rbracket, "]", c.Line, c.Column)
 			l.EatChar()
 
-		case c.Is('#'):
-			l.parseComment()
-			continue
-
 		case l.isWhitespace(c.Rune):
 			token = l.parseWhitespaces()
+			if token == nil {
+				continue
+			}
+
+		case c.Is('.') && !l.isDigit(nr):
+			token = CreateToken(tokens.Dot, ".", c.Line, c.Column)
+			l.EatChar()
 
 		case l.isLetter(c.Rune):
 			token = l.parseIdentifier()
