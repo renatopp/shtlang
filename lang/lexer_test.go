@@ -15,38 +15,35 @@ func _createToken(t tokens.Type, l string) *Token {
 }
 
 func TestTokenizeSymbols(t *testing.T) {
-	// input := `;,:!?.\@#%^&|+-*/><=~{}()[]`
-	input := `!`
+	input := `;,:!?.\@%^&|+-*/><=~{}()[]`
 
 	expected := []*Token{
+		_createToken(tokens.Semicolon, ";"),
+		_createToken(tokens.Comma, ","),
+		_createToken(tokens.Colon, ":"),
 		_createToken(tokens.Bang, "!"),
-		// _createToken(tokens.Semicolon, ";"),
-		// _createToken(tokens.Comma, ","),
-		// _createToken(tokens.Colon, ":"),
-		// _createToken(tokens.Bang, "!"),
-		// _createToken(tokens.Question, "?"),
-		// _createToken(tokens.Dot, "."),
-		// _createToken(tokens.Backslash, "\\"),
-		// _createToken(tokens.At, "@"),
-		// _createToken(tokens.Hash, "#"),
-		// _createToken(tokens.Percent, "%"),
-		// _createToken(tokens.Caret, "^"),
-		// _createToken(tokens.Ampersand, "&"),
-		// _createToken(tokens.Pipe, "|"),
-		// _createToken(tokens.Plus, "+"),
-		// _createToken(tokens.Minus, "-"),
-		// _createToken(tokens.Asterisk, "*"),
-		// _createToken(tokens.Slash, "/"),
-		// _createToken(tokens.Greater, ">"),
-		// _createToken(tokens.Less, "<"),
-		// _createToken(tokens.Equal, "="),
-		// _createToken(tokens.Tilde, "~"),
-		// _createToken(tokens.Lbrace, "{"),
-		// _createToken(tokens.Rbrace, "}"),
-		// _createToken(tokens.Lparen, "("),
-		// _createToken(tokens.Rparen, ")"),
-		// _createToken(tokens.Lbracket, "["),
-		// _createToken(tokens.Rbracket, "]"),
+		_createToken(tokens.Question, "?"),
+		_createToken(tokens.Dot, "."),
+		_createToken(tokens.Backslash, "\\"),
+		_createToken(tokens.At, "@"),
+		_createToken(tokens.Percent, "%"),
+		_createToken(tokens.Caret, "^"),
+		_createToken(tokens.Ampersand, "&"),
+		_createToken(tokens.Pipe, "|"),
+		_createToken(tokens.Plus, "+"),
+		_createToken(tokens.Minus, "-"),
+		_createToken(tokens.Asterisk, "*"),
+		_createToken(tokens.Slash, "/"),
+		_createToken(tokens.Greater, ">"),
+		_createToken(tokens.Less, "<"),
+		_createToken(tokens.Equal, "="),
+		_createToken(tokens.Tilde, "~"),
+		_createToken(tokens.Lbrace, "{"),
+		_createToken(tokens.Rbrace, "}"),
+		_createToken(tokens.Lparen, "("),
+		_createToken(tokens.Rparen, ")"),
+		_createToken(tokens.Lbracket, "["),
+		_createToken(tokens.Rbracket, "]"),
 	}
 
 	result, err := Tokenize([]byte(input))
@@ -84,7 +81,7 @@ func TestTokenizeSpaces(t *testing.T) {
 }
 
 func TestTokenizeIdentifier(t *testing.T) {
-	input := `valid st$ing $Here`
+	input := `valid st$ing $Here on raise`
 
 	expected := []*Token{
 		_createToken(tokens.Identifier, "valid"),
@@ -92,6 +89,10 @@ func TestTokenizeIdentifier(t *testing.T) {
 		_createToken(tokens.Identifier, "st$ing"),
 		_createToken(tokens.Space, " "),
 		_createToken(tokens.Identifier, "$Here"),
+		_createToken(tokens.Space, " "),
+		_createToken(tokens.Keyword, "on"),
+		_createToken(tokens.Space, " "),
+		_createToken(tokens.Keyword, "raise"),
 	}
 
 	result, err := Tokenize([]byte(input))
@@ -104,10 +105,10 @@ func TestTokenizeIdentifier(t *testing.T) {
 }
 
 func TestTokenizeStrings(t *testing.T) {
-	input := `'A string with <\'123123 ☀ ☃ ☂ ☁> characters'`
+	input := "'A string with <\\'123123 ☀ ☃ ☂ ☁> \n characters'"
 
 	expected := []*Token{
-		_createToken(tokens.Semicolon, ";"),
+		_createToken(tokens.String, "A string with <'123123 ☀ ☃ ☂ ☁> \n characters"),
 	}
 
 	result, err := Tokenize([]byte(input))
@@ -123,7 +124,14 @@ func TestTokenizeNumbers(t *testing.T) {
 	input := `123 1e321 .12 -21e-123`
 
 	expected := []*Token{
-		_createToken(tokens.Semicolon, ";"),
+		_createToken(tokens.Number, "123"),
+		_createToken(tokens.Space, " "),
+		_createToken(tokens.Number, "1e321"),
+		_createToken(tokens.Space, " "),
+		_createToken(tokens.Number, ".12"),
+		_createToken(tokens.Space, " "),
+		_createToken(tokens.Minus, "-"),
+		_createToken(tokens.Number, "21e-123"),
 	}
 
 	result, err := Tokenize([]byte(input))
@@ -136,10 +144,12 @@ func TestTokenizeNumbers(t *testing.T) {
 }
 
 func TestTokenizeComments(t *testing.T) {
-	input := `this # is a comment!`
+	input := `! # is a comment!`
 
 	expected := []*Token{
-		_createToken(tokens.Semicolon, ";"),
+		_createToken(tokens.Bang, "!"),
+		_createToken(tokens.Space, " "),
+		_createToken(tokens.Eof, ""),
 	}
 
 	result, err := Tokenize([]byte(input))

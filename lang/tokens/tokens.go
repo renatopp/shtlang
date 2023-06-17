@@ -11,6 +11,7 @@ const (
 	Space   = "space"   // " \t"
 
 	// Variable-related
+	Keyword    = "keyword"
 	Identifier = "identifier" // [a-zA-Z_$][a-zA-Z0-9_$]*
 	Number     = "number"     // 123, 123.456, 123e456, -.2
 	String     = "string"     // '.*'
@@ -24,7 +25,6 @@ const (
 	Dot       = "dot"       // "."
 	Backslash = "backslash" // "\"
 	At        = "at"        // "@"
-	Hash      = "hash"      // "#"
 	Percent   = "percent"   // "%"
 	Caret     = "caret"     // "^"
 	Ampersand = "ampersand" // "&"
