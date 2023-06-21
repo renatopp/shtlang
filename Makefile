@@ -1,8 +1,8 @@
 default:
-	go run main.go
+	@go run main.go
 
 build:
-	go build -o bin/$(BINARY_NAME) cmd/sht.go
+	@go build -o bin/$(BINARY_NAME) cmd/sht.go
 
 test:
-	go test ./...
+	@go test ./...
