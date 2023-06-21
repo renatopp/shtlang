@@ -41,3 +41,11 @@ const (
 	Lbracket = "lbracket" // "["
 	Rbracket = "rbracket" // "]"
 )
+
+func JoinTypes(types ...Type) string {
+	str := ""
+	for _, t := range types {
+		str += string(t) + ", "
+	}
+	return str[:len(str)-2]
+}

@@ -25,18 +25,21 @@ var keywords = []string{
 	"data",
 	"raise",
 	"on",
-	"and",
-	"or",
-	"xor",
-	"nand",
-	"nor",
-	"nxor",
 	"module",
 	"use",
 	"async",
 	"await",
 	"is",
 	"in",
+}
+
+var operators = []string{
+	"and",
+	"or",
+	"xor",
+	"nand",
+	"nor",
+	"nxor",
 }
 
 type char struct {
@@ -143,6 +146,18 @@ func (l *Lexer) GetError() error {
 	return nil
 }
 
+func (l *Lexer) RegisterError(e string, c *char) {
+	if l.TooManyErrors() {
+		return
+	}
+
+	l.errors = append(l.errors, fmt.Sprintf("%s at %d:%d", e, c.Line, c.Column))
+
+	if l.TooManyErrors() {
+		l.errors = append(l.errors, "too many errors, aborting")
+	}
+}
+
 func (l *Lexer) isWhitespace(r rune) bool {
 	return r == '\n' || r == '\r' || r == '\t' || r == ' '
 }
@@ -161,6 +176,10 @@ func (l *Lexer) isEOF(r rune) bool {
 
 func (l *Lexer) isKeyword(lit string) bool {
 	return slices.Contains(keywords, lit)
+}
+
+func (l *Lexer) isOperatorKeyword(lit string) bool {
+	return slices.Contains(operators, lit)
 }
 
 func (l *Lexer) isDoubleOperator(a rune, b rune) bool {
@@ -204,18 +223,6 @@ func (l *Lexer) isCompositeAssignment(a rune, b rune) bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func (l *Lexer) RegisterError(e string, c *char) {
-	if l.TooManyErrors() {
-		return
-	}
-
-	l.errors = append(l.errors, fmt.Sprintf("%s at %d:%d", e, c.Line, c.Column))
-
-	if l.TooManyErrors() {
-		l.errors = append(l.errors, "too many errors, aborting")
 	}
 }
 
@@ -321,11 +328,13 @@ func (l *Lexer) parseIdentifier() *Token {
 	}
 
 	literal := l.builder.String()
-	if l.isKeyword(literal) {
-		return CreateToken(tokens.Keyword, literal, first.Line, first.Column)
-	} else {
-		return CreateToken(tokens.Identifier, literal, first.Line, first.Column)
+	tp := tokens.Identifier
+	if l.isOperatorKeyword(literal) {
+		tp = tokens.Operator
+	} else if l.isKeyword(literal) {
+		tp = tokens.Keyword
 	}
+	return CreateToken(tokens.Type(tp), literal, first.Line, first.Column)
 }
 
 func (l *Lexer) parseNumber() *Token {

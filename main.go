@@ -7,7 +7,11 @@ import (
 	"strings"
 )
 
-var sample1 = `a = 1`
+var sample1 = `{
+		
+	a = 1
+	
+	}`
 
 func main() {
 	input := []byte(sample1)
