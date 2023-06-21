@@ -39,6 +39,29 @@ var keywords = []string{
 	"in",
 }
 
+type char struct {
+	Rune   rune
+	Size   int
+	Line   int
+	Column int
+}
+
+func (p *char) Is(r rune) bool {
+	return p.Rune == r
+}
+
+type Lexer struct {
+	input      []byte
+	tokenQueue []*Token
+	charQueue  []*char
+	errors     []string
+	line       int
+	column     int
+	cursor     int
+	eof        *Token
+	builder    *strings.Builder
+}
+
 func CreateLexer(input []byte) *Lexer {
 	return &Lexer{
 		input:      input,
@@ -66,29 +89,6 @@ func Tokenize(input []byte) ([]*Token, error) {
 	}
 
 	return r, lexer.GetError()
-}
-
-type char struct {
-	Rune   rune
-	Size   int
-	Line   int
-	Column int
-}
-
-func (p *char) Is(r rune) bool {
-	return p.Rune == r
-}
-
-type Lexer struct {
-	input      []byte
-	tokenQueue []*Token
-	charQueue  []*char
-	errors     []string
-	line       int
-	column     int
-	cursor     int
-	eof        *Token
-	builder    *strings.Builder
 }
 
 func (l *Lexer) EatToken() *Token {

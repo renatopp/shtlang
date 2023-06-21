@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"sht/lang"
+	"sht/lang/ast"
+	"strings"
 )
 
 var sample1 = `a = 1`
@@ -19,7 +21,9 @@ func main() {
 	fmt.Println("")
 	fmt.Println("-----------------------------------")
 	fmt.Println("")
-	// testParser
+	testParser(input)
+	fmt.Println("")
+	fmt.Println("-----------------------------------")
 }
 
 func testTokens(input []byte) {
@@ -32,4 +36,16 @@ func testTokens(input []byte) {
 	for _, token := range tokens {
 		fmt.Println(token.Pretty())
 	}
+}
+
+func testParser(input []byte) {
+	tree, err := lang.Parse(input)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	tree.Traverse(0, func(level int, node ast.Node) {
+		fmt.Println(strings.Repeat("  ", level) + node.String())
+	})
 }
