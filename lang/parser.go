@@ -163,8 +163,11 @@ func (p *Parser) parseBlock() ast.Node {
 	}
 
 	cur := p.lexer.PeekToken()
-	for !(cur.Is(tokens.Rbrace) || cur.Is(tokens.Eof)) {
-		p.lexer.EatToken()
+	for !isEndOfBlock(cur) && !p.TooManyErrors() {
+		s := p.parseStatement()
+		if s != nil {
+			block.Statements = append(block.Statements, s)
+		}
 		cur = p.lexer.PeekToken()
 	}
 
@@ -174,4 +177,13 @@ func (p *Parser) parseBlock() ast.Node {
 	}
 
 	return block
+}
+
+func (p *Parser) parseStatement() ast.Node {
+	p.lexer.EatToken()
+	return nil
+}
+
+func isEndOfBlock(t *Token) bool {
+	return t.Is(tokens.Rbrace) || t.Is(tokens.Eof)
 }
