@@ -101,11 +101,13 @@ func CreateParser() *Parser {
 
 	p.prefixFns[tokens.Keyword] = p.parsePrefixKeyword
 	p.prefixFns[tokens.Number] = p.parsePrefixNumber
+	p.prefixFns[tokens.Bang] = p.parsePrefixOperator
 	p.prefixFns[tokens.Operator] = p.parsePrefixOperator
 	p.prefixFns[tokens.Lparen] = p.parsePrefixParenthesis
 
 	p.infixFns[tokens.Operator] = p.parseInfixOperator
 	p.infixFns[tokens.Operator] = p.parseInfixOperator
+	p.infixFns[tokens.Keyword] = p.parseInfixKeyword
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -316,6 +318,9 @@ func (p *Parser) parsePrefixKeyword() ast.Node {
 	case "true", "false":
 		return p.parseBoolean()
 
+	case "!":
+		return p.parsePrefixOperator()
+
 	default:
 		p.RegisterError(fmt.Sprintf("invalid keyword '%s'", cur.Literal), cur)
 		return nil
@@ -366,6 +371,19 @@ func (p *Parser) parsePrefixParenthesis() ast.Node {
 // ----------------------------------------------------------------
 
 func (p *Parser) parseInfixOperator(left ast.Node) ast.Node {
+	cur := p.lexer.PeekToken()
+	priority := priorityOf(cur)
+
+	p.lexer.EatToken()
+	return &ast.BinaryOperator{
+		Token:    cur,
+		Operator: cur.Literal,
+		Left:     left,
+		Right:    p.parseExpression(priority),
+	}
+}
+
+func (p *Parser) parseInfixKeyword(left ast.Node) ast.Node {
 	cur := p.lexer.PeekToken()
 	priority := priorityOf(cur)
 

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var sample1 = `1! + 2 * 3-- + ((1//2)%2 + 1**3 / 1e10)++`
+var sample1 = `!(false or true)`
 
 func main() {
 	input := []byte(sample1)
