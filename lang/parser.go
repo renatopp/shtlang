@@ -106,7 +106,6 @@ func CreateParser() *Parser {
 	p.prefixFns[tokens.Lparen] = p.parsePrefixParenthesis
 
 	p.infixFns[tokens.Operator] = p.parseInfixOperator
-	p.infixFns[tokens.Operator] = p.parseInfixOperator
 	p.infixFns[tokens.Keyword] = p.parseInfixKeyword
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
