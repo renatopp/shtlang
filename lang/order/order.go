@@ -8,6 +8,7 @@ const (
 	Arrow          = 10
 	Assign         = 20
 	Conditional    = 30
+	Postfix        = 0
 	Or             = 40
 	And            = 50
 	Not            = 60

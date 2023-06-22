@@ -55,20 +55,20 @@ func (p *char) Is(r rune) bool {
 
 type Lexer struct {
 	input      []byte
-	tokenQueue []*Token
+	tokenQueue []*tokens.Token
 	charQueue  []*char
 	errors     []string
 	line       int
 	column     int
 	cursor     int
-	eof        *Token
+	eof        *tokens.Token
 	builder    *strings.Builder
 }
 
 func CreateLexer(input []byte) *Lexer {
 	return &Lexer{
 		input:      input,
-		tokenQueue: []*Token{},
+		tokenQueue: []*tokens.Token{},
 		charQueue:  []*char{},
 		errors:     []string{},
 		line:       1,
@@ -78,10 +78,10 @@ func CreateLexer(input []byte) *Lexer {
 	}
 }
 
-func Tokenize(input []byte) ([]*Token, error) {
+func Tokenize(input []byte) ([]*tokens.Token, error) {
 	lexer := CreateLexer(input)
 
-	r := []*Token{}
+	r := []*tokens.Token{}
 	for {
 		token := lexer.EatToken()
 		r = append(r, token)
@@ -94,17 +94,17 @@ func Tokenize(input []byte) ([]*Token, error) {
 	return r, lexer.GetError()
 }
 
-func (l *Lexer) EatToken() *Token {
+func (l *Lexer) EatToken() *tokens.Token {
 	token := l.PeekToken()
 	l.tokenQueue = l.tokenQueue[1:]
 	return token
 }
 
-func (l *Lexer) PeekToken() *Token {
+func (l *Lexer) PeekToken() *tokens.Token {
 	return l.PeekTokenN(0)
 }
 
-func (l *Lexer) PeekTokenN(i int) *Token {
+func (l *Lexer) PeekTokenN(i int) *tokens.Token {
 	if len(l.tokenQueue) <= i {
 		l.tokenQueue = append(l.tokenQueue, l.parseNextToken())
 	}
@@ -285,7 +285,7 @@ func (l *Lexer) parseComment() {
 	}
 }
 
-func (l *Lexer) parseWhitespaces() *Token {
+func (l *Lexer) parseWhitespaces() *tokens.Token {
 	nl := false
 
 	first := l.PeekChar()
@@ -304,13 +304,13 @@ func (l *Lexer) parseWhitespaces() *Token {
 	}
 
 	if nl {
-		return CreateToken(tokens.Newline, "\n", first.Line, first.Column)
+		return tokens.CreateToken(tokens.Newline, "\n", first.Line, first.Column)
 	}
 
 	return nil
 }
 
-func (l *Lexer) parseIdentifier() *Token {
+func (l *Lexer) parseIdentifier() *tokens.Token {
 	l.builder.Reset()
 
 	first := l.EatChar()
@@ -334,10 +334,10 @@ func (l *Lexer) parseIdentifier() *Token {
 	} else if l.isKeyword(literal) {
 		tp = tokens.Keyword
 	}
-	return CreateToken(tokens.Type(tp), literal, first.Line, first.Column)
+	return tokens.CreateToken(tokens.Type(tp), literal, first.Line, first.Column)
 }
 
-func (l *Lexer) parseNumber() *Token {
+func (l *Lexer) parseNumber() *tokens.Token {
 	l.builder.Reset()
 	dot := false
 	exp := false
@@ -382,10 +382,10 @@ func (l *Lexer) parseNumber() *Token {
 
 	literal := l.builder.String()
 
-	return CreateToken(tokens.Number, literal, first.Line, first.Column)
+	return tokens.CreateToken(tokens.Number, literal, first.Line, first.Column)
 }
 
-func (l *Lexer) parseString() *Token {
+func (l *Lexer) parseString() *tokens.Token {
 	l.builder.Reset()
 	esc := false
 
@@ -410,7 +410,7 @@ func (l *Lexer) parseString() *Token {
 	}
 
 	l.EatChar()
-	return CreateToken(tokens.String, l.builder.String(), first.Line, first.Column)
+	return tokens.CreateToken(tokens.String, l.builder.String(), first.Line, first.Column)
 }
 
 func (l *Lexer) parseBacklash() {
@@ -437,22 +437,22 @@ func (l *Lexer) parseBacklash() {
 }
 
 // Parse the next token given the parts queue
-func (l *Lexer) parseNextToken() *Token {
+func (l *Lexer) parseNextToken() *tokens.Token {
 	if l.eof != nil {
 		return l.eof
 	}
 
-	var token *Token
+	var token *tokens.Token
 
 	for {
 		if l.TooManyErrors() {
-			l.eof = CreateToken(tokens.Eof, "", l.line, l.column)
+			l.eof = tokens.CreateToken(tokens.Eof, "", l.line, l.column)
 			return l.eof
 		}
 
 		c := l.PeekChar()
 		if c.Rune == 0 {
-			l.eof = CreateToken(tokens.Eof, "", c.Line, c.Column)
+			l.eof = tokens.CreateToken(tokens.Eof, "", c.Line, c.Column)
 			return l.eof
 		}
 
@@ -470,79 +470,79 @@ func (l *Lexer) parseNextToken() *Token {
 			continue
 
 		case cr == '.' && nr == '.' && nnr == '.':
-			token = CreateToken(tokens.Spread, "...", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Spread, "...", c.Line, c.Column)
 			l.EatChar()
 			l.EatChar()
 			l.EatChar()
 
 		case c.Is('=') && nr == '>':
-			token = CreateToken(tokens.Arrow, "=>", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Arrow, "=>", c.Line, c.Column)
 			l.EatChar()
 			l.EatChar()
 
 		case cr == '/' && nr == '/' && nnr == '=',
 			cr == '.' && nr == '.' && nnr == '=':
-			token = CreateToken(tokens.Assignment, string(cr)+string(nr)+string(nnr), c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Assignment, string(cr)+string(nr)+string(nnr), c.Line, c.Column)
 			l.EatChar()
 			l.EatChar()
 			l.EatChar()
 
 		case l.isCompositeAssignment(cr, nr):
-			token = CreateToken(tokens.Assignment, string(cr)+string(nr), c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Assignment, string(cr)+string(nr), c.Line, c.Column)
 			l.EatChar()
 			l.EatChar()
 
 		case l.isDoubleOperator(cr, nr):
-			token = CreateToken(tokens.Operator, string(cr)+string(nr), c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Operator, string(cr)+string(nr), c.Line, c.Column)
 			l.EatChar()
 			l.EatChar()
 
 		case l.isOperator(cr):
-			token = CreateToken(tokens.Operator, string(cr), c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Operator, string(cr), c.Line, c.Column)
 			l.EatChar()
 
 		case c.Is('='):
-			token = CreateToken(tokens.Assignment, "=", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Assignment, "=", c.Line, c.Column)
 			l.EatChar()
 
 		case c.Is('!'):
-			token = CreateToken(tokens.Bang, "!", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Bang, "!", c.Line, c.Column)
 			l.EatChar()
 		case c.Is(';'):
-			token = CreateToken(tokens.Semicolon, ";", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Semicolon, ";", c.Line, c.Column)
 			l.EatChar()
 		case c.Is(','):
-			token = CreateToken(tokens.Comma, ",", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Comma, ",", c.Line, c.Column)
 			l.EatChar()
 		case c.Is(':'):
-			token = CreateToken(tokens.Colon, ":", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Colon, ":", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('?'):
-			token = CreateToken(tokens.Question, "?", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Question, "?", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('@'):
-			token = CreateToken(tokens.At, "@", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.At, "@", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('|'):
-			token = CreateToken(tokens.Pipe, "|", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Pipe, "|", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('{'):
-			token = CreateToken(tokens.Lbrace, "{", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Lbrace, "{", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('}'):
-			token = CreateToken(tokens.Rbrace, "}", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Rbrace, "}", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('('):
-			token = CreateToken(tokens.Lparen, "(", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Lparen, "(", c.Line, c.Column)
 			l.EatChar()
 		case c.Is(')'):
-			token = CreateToken(tokens.Rparen, ")", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Rparen, ")", c.Line, c.Column)
 			l.EatChar()
 		case c.Is('['):
-			token = CreateToken(tokens.Lbracket, "[", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Lbracket, "[", c.Line, c.Column)
 			l.EatChar()
 		case c.Is(']'):
-			token = CreateToken(tokens.Rbracket, "]", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Rbracket, "]", c.Line, c.Column)
 			l.EatChar()
 
 		case l.isWhitespace(c.Rune):
@@ -552,7 +552,7 @@ func (l *Lexer) parseNextToken() *Token {
 			}
 
 		case c.Is('.') && !l.isDigit(nr):
-			token = CreateToken(tokens.Dot, ".", c.Line, c.Column)
+			token = tokens.CreateToken(tokens.Dot, ".", c.Line, c.Column)
 			l.EatChar()
 
 		case l.isLetter(c.Rune):

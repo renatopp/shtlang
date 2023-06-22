@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func _createToken(t tokens.Type, l string) *Token {
-	return &Token{
+func _createToken(t tokens.Type, l string) *tokens.Token {
+	return &tokens.Token{
 		Type:    t,
 		Literal: l,
 	}
@@ -17,7 +17,7 @@ func _createToken(t tokens.Type, l string) *Token {
 func TestTokenizeSymbols(t *testing.T) {
 	input := `; , : ! ? . @ { } ( ) [ ] => ...`
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.Semicolon, ";"),
 		_createToken(tokens.Comma, ","),
 		_createToken(tokens.Colon, ":"),
@@ -47,7 +47,7 @@ func TestTokenizeSymbols(t *testing.T) {
 func TestTokenizeOperators(t *testing.T) {
 	input := `+ - * / // % ** ++ -- < <= > >= == != ..`
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.Operator, "+"),
 		_createToken(tokens.Operator, "-"),
 		_createToken(tokens.Operator, "*"),
@@ -77,7 +77,7 @@ func TestTokenizeOperators(t *testing.T) {
 func TestTokenizeAssignment(t *testing.T) {
 	input := `= += -= *= /= //= ..=`
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.Assignment, "="),
 		_createToken(tokens.Assignment, "+="),
 		_createToken(tokens.Assignment, "-="),
@@ -105,7 +105,7 @@ func TestTokenizeSpaces(t *testing.T) {
 	.
 	`
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.Dot, "."),
 		_createToken(tokens.Dot, "."),
 		_createToken(tokens.Dot, "."),
@@ -126,7 +126,7 @@ func TestTokenizeSpaces(t *testing.T) {
 func TestTokenizeIdentifier(t *testing.T) {
 	input := `valid st$ing $Here on raise`
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.Identifier, "valid"),
 		_createToken(tokens.Identifier, "st$ing"),
 		_createToken(tokens.Identifier, "$Here"),
@@ -146,7 +146,7 @@ func TestTokenizeIdentifier(t *testing.T) {
 func TestTokenizeStrings(t *testing.T) {
 	input := "'A string with <\\'123123 ☀ ☃ ☂ ☁> \n characters'"
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.String, "A string with <'123123 ☀ ☃ ☂ ☁> \n characters"),
 	}
 
@@ -162,7 +162,7 @@ func TestTokenizeStrings(t *testing.T) {
 func TestTokenizeNumbers(t *testing.T) {
 	input := `123 1e321 .12 -21e-123`
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.Number, "123"),
 		_createToken(tokens.Number, "1e321"),
 		_createToken(tokens.Number, ".12"),
@@ -182,7 +182,7 @@ func TestTokenizeNumbers(t *testing.T) {
 func TestTokenizeComments(t *testing.T) {
 	input := `! # is a comment!`
 
-	expected := []*Token{
+	expected := []*tokens.Token{
 		_createToken(tokens.Bang, "!"),
 		_createToken(tokens.Eof, ""),
 	}

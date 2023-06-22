@@ -1,19 +1,18 @@
-package lang
+package tokens
 
 import (
 	"encoding/json"
 	"fmt"
-	"sht/lang/tokens"
 )
 
 type Token struct {
-	Type    tokens.Type
+	Type    Type
 	Literal string
 	Line    int
 	Column  int
 }
 
-func CreateToken(t tokens.Type, l string, line, column int) *Token {
+func CreateToken(t Type, l string, line, column int) *Token {
 	return &Token{
 		Type:    t,
 		Literal: l,
@@ -31,6 +30,6 @@ func (t *Token) Pretty() string {
 	return fmt.Sprintf("<%s@%d,%d:%s>", t.Type, t.Line, t.Column, json)
 }
 
-func (t *Token) Is(tp tokens.Type) bool {
+func (t *Token) Is(tp Type) bool {
 	return t.Type == tp
 }

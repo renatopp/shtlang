@@ -13,9 +13,9 @@ func (p *Block) Children() []Node {
 }
 
 func (p *Block) Traverse(level int, fn tfunc) {
-	fn(0, p)
+	fn(level, p)
 
 	for _, s := range p.Children() {
-		s.Traverse(level, fn)
+		s.Traverse(level+1, fn)
 	}
 }

@@ -7,11 +7,7 @@ import (
 	"strings"
 )
 
-var sample1 = `{
-		
-	a = 1
-	
-	}`
+var sample1 = `1! + 2 * 3-- + ((1//2)%2 + 1**3 / 1e10)++`
 
 func main() {
 	input := []byte(sample1)
