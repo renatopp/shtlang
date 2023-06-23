@@ -2,30 +2,31 @@ package runtime
 
 type Scope struct {
 	Parent *Scope
-	Values map[string]interface{}
+	Values map[string]*Instance
 }
 
 func CreateScope(parent *Scope) *Scope {
 	s := &Scope{}
 	s.Parent = parent
-	s.Values = make(map[string]interface{})
+	s.Values = make(map[string]*Instance)
 	return s
 }
 
-func (s *Scope) Get(name string) interface{} {
+func (s *Scope) Get(name string) (*Instance, bool) {
 	if val, ok := s.Values[name]; ok {
-		return val
+		return val, true
 	}
 
 	if s.Parent != nil {
 		return s.Parent.Get(name)
 	}
 
-	return nil
+	return nil, false
 }
 
-func (s *Scope) Set(name string, value interface{}) {
+func (s *Scope) Set(name string, value *Instance) *Instance {
 	s.Values[name] = value
+	return value
 }
 
 func (s *Scope) Has(name string) bool {
@@ -42,4 +43,10 @@ func (s *Scope) Has(name string) bool {
 
 func (s *Scope) Delete(name string) {
 	delete(s.Values, name)
+}
+
+func (s *Scope) ForEach(fn func(string, *Instance)) {
+	for k, v := range s.Values {
+		fn(k, v)
+	}
 }

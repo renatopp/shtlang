@@ -3,12 +3,14 @@ package runtime
 import "sht/lang/ast"
 
 type Runtime struct {
-	// Context *Context
+	Global *Scope
+	Stack  *Stack
 }
 
 func CreateRuntime() *Runtime {
 	r := &Runtime{}
-	// r.Context = CreateContext()
+	r.Global = CreateScope(nil)
+	r.Stack = NewStack(r.Global)
 	return r
 }
 
@@ -27,15 +29,15 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) string {
 func (r *Runtime) EvalBlock(node *ast.Block) string {
 	// var result obj.Object
 	for _, stmt := range node.Statements {
-		return r.Eval(stmt)
+		return r.Eval(stmt, nil)
 	}
 
 	return ""
 }
 
 func (r *Runtime) EvalNumber(node *ast.Number) string {
-	inst := &Instance[NumberImpl]{
-		Type: DataType{Name: "Number"},
+	inst := &Instance{
+		Type: &DataType{Name: "Number"},
 		Impl: NumberImpl{Value: node.Value},
 	}
 	return inst.Impl.Repr()

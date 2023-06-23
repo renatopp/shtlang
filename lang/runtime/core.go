@@ -8,13 +8,20 @@ type DataImpl interface {
 	Repr() string
 }
 
-type Instance[T DataImpl] struct {
-	Type DataType
-	Impl T
+type Instance struct {
+	Type *DataType
+	Impl DataImpl
 }
 
-type AnyInstance Instance[DataImpl]
-
 type Function interface {
-	Call(r *Runtime, args []AnyInstance) AnyInstance
+	Call(r *Runtime, args []Instance) Instance
+}
+
+// ----------------------------------------------------------------------------
+
+func CreateNumber(value float64) *Instance {
+	return &Instance{
+		Type: NumberType,
+		Impl: NumberImpl{Value: value},
+	}
 }

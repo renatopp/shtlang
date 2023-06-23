@@ -4,7 +4,7 @@ import "sht/lang/ast"
 
 type FunctionParam struct {
 	Name    string
-	Default AnyInstance
+	Default Instance
 	Spread  bool
 }
 
@@ -14,18 +14,18 @@ type FunctionImpl struct {
 	Body   ast.Node
 }
 
-func (f *FunctionImpl) Call(r *Runtime, args []AnyInstance) AnyInstance {
-	scope := CreateScope(f.Scope)
-	for i, param := range f.Params {
-		if i < len(args) {
-			scope.Set(param.Name, args[i])
-		} else {
-			scope.Set(param.Name, param.Default)
-		}
-	}
+// func (f *FunctionImpl) Call(r *Runtime, args []Instance) Instance {
+// 	scope := CreateScope(f.Scope)
+// 	for i, param := range f.Params {
+// 		if i < len(args) {
+// 			scope.Set(param.Name, args[i])
+// 		} else {
+// 			scope.Set(param.Name, param.Default)
+// 		}
+// 	}
 
-	return r.Eval(f.Body, scope)
-}
+// 	return r.Eval(f.Body, scope)
+// }
 
 func (f *FunctionImpl) Repr() string {
 	return "<function>"

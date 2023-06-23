@@ -5,6 +5,8 @@ import (
 	"math"
 )
 
+var NumberType = &DataType{Name: "Number"}
+
 type NumberImpl struct {
 	Value float64
 }
