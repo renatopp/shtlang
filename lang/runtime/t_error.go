@@ -1,56 +1,58 @@
 package runtime
 
 import (
+	"fmt"
 	"sht/lang/ast"
 	"sht/lang/runtime/meta"
 )
 
-var Type = _setupType()
+var Error = _setupError()
 
-type TypeInfo struct {
+type ErrorInfo struct {
 	Instance *Instance
 	Type     *DataType
 }
 
-type TypeImpl struct {
-	DataType *DataType
+type ErrorImpl struct {
+	Values map[string]*Instance
 }
 
-func _setupType() *TypeInfo {
+func _setupError() *ErrorInfo {
 	dataType := &DataType{
-		Name:        "Type",
+		Name:        "Error",
 		Properties:  map[string]ast.Node{},
 		StaticFns:   map[string]Function{},
 		InstanceFns: map[string]Function{},
 		Meta:        map[meta.MetaName]Function{},
 	}
 
-	n := &TypeInfo{
-		Instance: &Instance{
-			Type:  dataType,
-			Impl:  TypeImpl{DataType: dataType},
-			Const: true,
-		},
-		Type: dataType,
+	n := &ErrorInfo{
+		Instance: Type.Create(dataType, true),
+		Type:     dataType,
 	}
 
+	dataType.Properties["message"] = &ast.String{Value: ""}
 	return n
 }
 
 // ----------------------------------------------------------------------------
-// Type Implementation
+// Error Implementation
 // ----------------------------------------------------------------------------
-func (n TypeImpl) Repr() string {
-	return n.DataType.Name
+func (n ErrorImpl) Repr() string {
+	return fmt.Sprintf("ERR! %s", n.Values["message"].Impl.(StringImpl).Value)
 }
 
 // ----------------------------------------------------------------------------
-// Type Info
+// Error Info
 // ----------------------------------------------------------------------------
-func (t *TypeInfo) Create(dataType *DataType, constant bool) *Instance {
+func (n *ErrorInfo) Create(msg string, constant bool) *Instance {
 	return &Instance{
-		Type:  t.Type,
-		Impl:  TypeImpl{DataType: dataType},
+		Type: n.Type,
+		Impl: ErrorImpl{
+			Values: map[string]*Instance{
+				"message": String.Create(msg, false),
+			},
+		},
 		Const: constant,
 	}
 }

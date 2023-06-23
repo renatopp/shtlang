@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var sample1 = `1 + 1`
+var sample1 = `1 + 'hello'`
 
 func main() {
 	input := []byte(sample1)

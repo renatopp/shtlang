@@ -5,8 +5,6 @@ import (
 	"sht/lang/runtime/meta"
 )
 
-var ZERO = CreateNumber(0, true)
-var ONE = CreateNumber(1, true)
 var TRUE = CreateBoolean(true, true)
 var FALSE = CreateBoolean(false, true)
 
@@ -20,11 +18,9 @@ type Runtime struct {
 func CreateRuntime() *Runtime {
 	r := &Runtime{}
 	r.Global = CreateScope(nil)
-	r.Global.Set(Type.Type.Name, Type)
-	r.Global.Set(Number.Type.Name, Number)
+	r.Global.Set(Type.Type.Name, Type.Instance)
+	r.Global.Set(Number.Type.Name, Number.Instance)
 	r.Global.Set(Boolean.Type.Name, Boolean)
-
-	SetupNumber()
 
 	r.Stack = NewStack(r.Global)
 	return r
@@ -45,6 +41,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.Boolean:
 		return r.EvalBoolean(n)
+
+	case *ast.String:
+		return r.EvalString(n)
 
 		// case *ast.UnaryOperator:
 		// 	return r.EvalUnaryOperator(n, scope)
@@ -69,11 +68,15 @@ func (r *Runtime) EvalBlock(node *ast.Block) *Instance {
 }
 
 func (r *Runtime) EvalNumber(node *ast.Number) *Instance {
-	return CreateNumber(node.Value, false)
+	return Number.Create(node.Value, false)
 }
 
 func (r *Runtime) EvalBoolean(node *ast.Boolean) *Instance {
 	return CreateBoolean(node.Value, false)
+}
+
+func (r *Runtime) EvalString(node *ast.String) *Instance {
+	return String.Create(node.Value, false)
 }
 
 // func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator, scope *Scope) *Instance {
@@ -81,9 +84,16 @@ func (r *Runtime) EvalBoolean(node *ast.Boolean) *Instance {
 // }
 
 func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
-
 	left := r.Eval(node.Left, nil)
 	right := r.Eval(node.Right, nil)
 
-	return left.Type.Meta[meta.Add].Call(r, []*Instance{left, right})
+	m := left.Type.Meta
+	switch node.Operator {
+	case "+":
+		return m[meta.Add].Call(r, left, right)
+	case "-":
+		return m[meta.Sub].Call(r, left, right)
+	}
+
+	return nil
 }

@@ -7,7 +7,7 @@ import (
 
 type DataType struct {
 	Name        string
-	Properties  map[string]*ast.Node
+	Properties  map[string]ast.Node
 	StaticFns   map[string]Function
 	InstanceFns map[string]Function
 	Meta        map[meta.MetaName]Function
@@ -24,5 +24,5 @@ type Instance struct {
 }
 
 type Function interface {
-	Call(r *Runtime, args []*Instance) *Instance
+	Call(r *Runtime, args ...*Instance) *Instance
 }

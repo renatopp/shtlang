@@ -101,6 +101,7 @@ func CreateParser() *Parser {
 
 	p.prefixFns[tokens.Keyword] = p.parsePrefixKeyword
 	p.prefixFns[tokens.Number] = p.parsePrefixNumber
+	p.prefixFns[tokens.String] = p.parsePrefixString
 	p.prefixFns[tokens.Bang] = p.parsePrefixOperator
 	p.prefixFns[tokens.Operator] = p.parsePrefixOperator
 	p.prefixFns[tokens.Lparen] = p.parsePrefixParenthesis
@@ -330,14 +331,25 @@ func (p *Parser) parsePrefixNumber() ast.Node {
 	cur := p.lexer.PeekToken()
 	v, e := strconv.ParseFloat(cur.Literal, 64)
 
+	p.lexer.EatToken()
 	if e != nil {
-		panic(e)
+		p.RegisterError(fmt.Sprintf("invalid number '%s'", cur.Literal), cur)
+		return nil
 	}
 
-	p.lexer.EatToken()
 	return &ast.Number{
 		Token: cur,
 		Value: v,
+	}
+}
+
+func (p *Parser) parsePrefixString() ast.Node {
+	cur := p.lexer.PeekToken()
+
+	p.lexer.EatToken()
+	return &ast.String{
+		Token: cur,
+		Value: cur.Literal,
 	}
 }
 

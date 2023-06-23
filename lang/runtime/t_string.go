@@ -5,52 +5,52 @@ import (
 	"sht/lang/runtime/meta"
 )
 
-var Type = _setupType()
+var String = _setupString()
 
-type TypeInfo struct {
+type StringInfo struct {
 	Instance *Instance
 	Type     *DataType
+
+	EMPTY *Instance
 }
 
-type TypeImpl struct {
-	DataType *DataType
+type StringImpl struct {
+	Value string
 }
 
-func _setupType() *TypeInfo {
+func _setupString() *StringInfo {
 	dataType := &DataType{
-		Name:        "Type",
+		Name:        "String",
 		Properties:  map[string]ast.Node{},
 		StaticFns:   map[string]Function{},
 		InstanceFns: map[string]Function{},
 		Meta:        map[meta.MetaName]Function{},
 	}
 
-	n := &TypeInfo{
-		Instance: &Instance{
-			Type:  dataType,
-			Impl:  TypeImpl{DataType: dataType},
-			Const: true,
-		},
-		Type: dataType,
+	n := &StringInfo{
+		Instance: Type.Create(dataType, true),
+		Type:     dataType,
 	}
+
+	n.EMPTY = n.Create("", true)
 
 	return n
 }
 
 // ----------------------------------------------------------------------------
-// Type Implementation
+// String Implementation
 // ----------------------------------------------------------------------------
-func (n TypeImpl) Repr() string {
-	return n.DataType.Name
+func (n StringImpl) Repr() string {
+	return n.Value
 }
 
 // ----------------------------------------------------------------------------
-// Type Info
+// String Info
 // ----------------------------------------------------------------------------
-func (t *TypeInfo) Create(dataType *DataType, constant bool) *Instance {
+func (n *StringInfo) Create(value string, constant bool) *Instance {
 	return &Instance{
-		Type:  t.Type,
-		Impl:  TypeImpl{DataType: dataType},
+		Type:  n.Type,
+		Impl:  StringImpl{Value: value},
 		Const: constant,
 	}
 }

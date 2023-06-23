@@ -1,7 +1,7 @@
 package runtime
 
 var BooleanType = &DataType{Name: "Boolean"}
-var Boolean = CreateType(BooleanType)
+var Boolean = Type.Create(BooleanType, true)
 
 func CreateBoolean(value bool, constant bool) *Instance {
 	return &Instance{
