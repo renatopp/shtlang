@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"sht/lang"
 	"sht/lang/ast"
+	"sht/lang/runtime"
 	"strings"
 )
 
-var sample1 = `!(false or true)`
+var sample1 = `1.2e2`
 
 func main() {
 	input := []byte(sample1)
@@ -22,6 +23,10 @@ func main() {
 	fmt.Println("-----------------------------------")
 	fmt.Println("")
 	testParser(input)
+	fmt.Println("")
+	fmt.Println("-----------------------------------")
+	fmt.Println("")
+	testRuntime(input)
 	fmt.Println("")
 	fmt.Println("-----------------------------------")
 }
@@ -48,4 +53,21 @@ func testParser(input []byte) {
 	tree.Traverse(0, func(level int, node ast.Node) {
 		fmt.Println(strings.Repeat("  ", level) + node.String())
 	})
+}
+
+func testRuntime(input []byte) {
+	tree, err := lang.Parse(input)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	runtime := runtime.CreateRuntime()
+	res := runtime.Eval(tree, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(res)
 }
