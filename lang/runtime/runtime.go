@@ -93,6 +93,16 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 		return m[meta.Add].Call(r, left, right)
 	case "-":
 		return m[meta.Sub].Call(r, left, right)
+	case "*":
+		return m[meta.Mul].Call(r, left, right)
+	case "/":
+		return m[meta.Div].Call(r, left, right)
+	case "//":
+		return m[meta.IntDiv].Call(r, left, right)
+	case "%":
+		return m[meta.Mod].Call(r, left, right)
+	case "**":
+		return m[meta.Pow].Call(r, left, right)
 	}
 
 	return nil

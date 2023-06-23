@@ -40,12 +40,6 @@ var (
 	Pos     MetaName = "pos"     // +
 	Neg     MetaName = "neg"     // -
 	Not     MetaName = "not"     // !
-	And     MetaName = "and"     // and
-	Nand    MetaName = "nand"    // nand
-	Or      MetaName = "or"      // or
-	Xor     MetaName = "xor"     // xor
-	Nor     MetaName = "nor"     // nor
-	Nxor    MetaName = "nxor"    // nxor
 	PostInc MetaName = "postInc" // ++
 	PostDec MetaName = "postDec" // --
 	Concat  MetaName = "concat"  // ..
