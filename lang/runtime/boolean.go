@@ -15,8 +15,8 @@ type BooleanImpl struct {
 	Value bool
 }
 
-func (n BooleanImpl) Repr() string {
-	if n.Value {
+func (b BooleanImpl) Repr() string {
+	if b.Value {
 		return "true"
 	} else {
 		return "false"

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var sample1 = `1.2e2`
+var sample1 = `1 + 1`
 
 func main() {
 	input := []byte(sample1)
@@ -63,7 +63,7 @@ func testRuntime(input []byte) {
 	}
 
 	runtime := runtime.CreateRuntime()
-	res := runtime.Eval(tree, nil)
+	res := runtime.Run(tree)
 	if err != nil {
 		fmt.Println(err)
 		return

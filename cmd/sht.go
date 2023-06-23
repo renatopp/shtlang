@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"sht/lang"
+	"sht/lang/runtime"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/urfave/cli/v2"
@@ -33,11 +34,21 @@ func replCompleter(d prompt.Document) []prompt.Suggest {
 }
 
 func repl(ctx *cli.Context) error {
+	runtime := runtime.CreateRuntime()
 	for {
 		t := prompt.Input("> ", replCompleter)
 		if t == "exit" {
 			break
 		}
+
+		tree, err := lang.Parse([]byte(t))
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		res := runtime.Run(tree)
+		fmt.Println(res)
 	}
 
 	return nil

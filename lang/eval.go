@@ -1,23 +1,18 @@
 package lang
 
-type Evaluator struct {
-	parser *Parser
-}
-
-func CreateEvaluator() *Evaluator {
-	e := &Evaluator{}
-	e.parser = CreateParser()
-	return e
-}
+import "sht/lang/runtime"
 
 func Eval(input []byte) (string, error) {
-	e := CreateEvaluator()
-	r, err := e.Eval(input)
-	return r, err
-}
+	tree, err := Parse(input)
+	if err != nil {
+		return "", err
+	}
 
-func (e *Evaluator) Eval(input []byte) (string, error) {
-	tree, err := e.parser.Parse(input)
+	runtime := runtime.CreateRuntime()
+	res := runtime.Run(tree)
+	if err != nil {
+		return "", err
+	}
 
-	return tree.String(), err
+	return res, nil
 }
