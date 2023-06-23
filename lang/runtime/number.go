@@ -6,6 +6,15 @@ import (
 )
 
 var NumberType = &DataType{Name: "Number"}
+var Number = CreateType(NumberType)
+
+func CreateNumber(value float64, constant bool) *Instance {
+	return &Instance{
+		Type:  NumberType,
+		Impl:  NumberImpl{Value: value},
+		Const: constant,
+	}
+}
 
 type NumberImpl struct {
 	Value float64

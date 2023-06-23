@@ -9,19 +9,11 @@ type DataImpl interface {
 }
 
 type Instance struct {
-	Type *DataType
-	Impl DataImpl
+	Type  *DataType
+	Impl  DataImpl
+	Const bool
 }
 
 type Function interface {
 	Call(r *Runtime, args []Instance) Instance
-}
-
-// ----------------------------------------------------------------------------
-
-func CreateNumber(value float64) *Instance {
-	return &Instance{
-		Type: NumberType,
-		Impl: NumberImpl{Value: value},
-	}
 }
