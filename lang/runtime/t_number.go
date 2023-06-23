@@ -37,6 +37,11 @@ func _setupNumber() *NumberInfo {
 
 	n.ZERO = n.Create(0, true)
 	n.ONE = n.Create(1, true)
+	dataType.Meta[meta.Boolean] = CreateNativeFunction(n.MetaBoolean)
+	dataType.Meta[meta.Pos] = CreateNativeFunction(n.MetaPos)
+	dataType.Meta[meta.Neg] = CreateNativeFunction(n.MetaNeg)
+	dataType.Meta[meta.Not] = CreateNativeFunction(n.MetaNot)
+
 	dataType.Meta[meta.Add] = CreateNativeFunction(n.MetaAdd)
 	dataType.Meta[meta.Sub] = CreateNativeFunction(n.MetaSub)
 	dataType.Meta[meta.Mul] = CreateNativeFunction(n.MetaMul)
@@ -44,6 +49,12 @@ func _setupNumber() *NumberInfo {
 	dataType.Meta[meta.IntDiv] = CreateNativeFunction(n.MetaIntDiv)
 	dataType.Meta[meta.Mod] = CreateNativeFunction(n.MetaMod)
 	dataType.Meta[meta.Pow] = CreateNativeFunction(n.MetaPow)
+	dataType.Meta[meta.Eq] = CreateNativeFunction(n.MetaEq)
+	dataType.Meta[meta.Neq] = CreateNativeFunction(n.MetaNeq)
+	dataType.Meta[meta.Gt] = CreateNativeFunction(n.MetaGt)
+	dataType.Meta[meta.Lt] = CreateNativeFunction(n.MetaLt)
+	dataType.Meta[meta.Gte] = CreateNativeFunction(n.MetaGte)
+	dataType.Meta[meta.Lte] = CreateNativeFunction(n.MetaLte)
 
 	return n
 }
@@ -72,6 +83,24 @@ func (n *NumberInfo) Create(value float64, constant bool) *Instance {
 
 func (n *NumberInfo) val(instance *Instance) float64 {
 	return instance.Impl.(NumberImpl).Value
+}
+
+func (n *NumberInfo) MetaPos(r *Runtime, args ...*Instance) *Instance {
+	return args[0]
+}
+
+func (n *NumberInfo) MetaNeg(r *Runtime, args ...*Instance) *Instance {
+	return n.Create(-n.val(args[0]), false)
+}
+
+func (n *NumberInfo) MetaNot(r *Runtime, args ...*Instance) *Instance {
+	this := n.val(args[0])
+	return Boolean.Create(this == 0, false)
+}
+
+func (n *NumberInfo) MetaBoolean(r *Runtime, args ...*Instance) *Instance {
+	this := n.val(args[0])
+	return Boolean.Create(this != 0, false)
 }
 
 func (n *NumberInfo) MetaAdd(r *Runtime, args ...*Instance) *Instance {
@@ -156,4 +185,74 @@ func (n *NumberInfo) MetaPow(r *Runtime, args ...*Instance) *Instance {
 	other := n.val(args[1])
 
 	return n.Create(math.Pow(this, other), false)
+}
+
+func (n *NumberInfo) MetaEq(r *Runtime, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		return Boolean.FALSE
+	}
+
+	this := n.val(args[0])
+	other := n.val(args[1])
+
+	return Boolean.Create(this == other, false)
+}
+
+func (n *NumberInfo) MetaNeq(r *Runtime, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		return Boolean.TRUE
+	}
+
+	this := n.val(args[0])
+	other := n.val(args[1])
+
+	return Boolean.Create(this != other, false)
+}
+
+func (n *NumberInfo) MetaGt(r *Runtime, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		msg := fmt.Sprintf("invalid operation: %s > %s", args[0].Type.Name, args[1].Type.Name)
+		return Error.Create(msg, false)
+	}
+
+	this := n.val(args[0])
+	other := n.val(args[1])
+
+	return Boolean.Create(this > other, false)
+}
+
+func (n *NumberInfo) MetaLt(r *Runtime, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		msg := fmt.Sprintf("invalid operation: %s < %s", args[0].Type.Name, args[1].Type.Name)
+		return Error.Create(msg, false)
+	}
+
+	this := n.val(args[0])
+	other := n.val(args[1])
+
+	return Boolean.Create(this < other, false)
+}
+
+func (n *NumberInfo) MetaGte(r *Runtime, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		msg := fmt.Sprintf("invalid operation: %s >= %s", args[0].Type.Name, args[1].Type.Name)
+		return Error.Create(msg, false)
+	}
+
+	this := n.val(args[0])
+	other := n.val(args[1])
+
+	return Boolean.Create(this >= other, false)
+}
+
+func (n *NumberInfo) MetaLte(r *Runtime, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		msg := fmt.Sprintf("invalid operation: %s <= %s", args[0].Type.Name, args[1].Type.Name)
+		return Error.Create(msg, false)
+	}
+
+	this := n.val(args[0])
+	other := n.val(args[1])
+
+	return Boolean.Create(this <= other, false)
 }

@@ -14,10 +14,10 @@ var (
 	Call MetaName = "call"
 
 	// Convertions
-	Bool   MetaName = "bool"
-	String MetaName = "string"
-	Repr   MetaName = "repr"
-	To     MetaName = "to" // <value> to <type> 		! STATIC
+	Boolean MetaName = "boolean"
+	String  MetaName = "string"
+	Repr    MetaName = "repr"
+	To      MetaName = "to" // <value> to <type> 		! STATIC
 
 	// Other meta
 	Iter MetaName = "iter" // for i in x
@@ -44,3 +44,55 @@ var (
 	PostDec MetaName = "postDec" // --
 	Concat  MetaName = "concat"  // ..
 )
+
+func FromUnaryOperator(op string) MetaName {
+	switch op {
+	case "+":
+		return Pos
+	case "-":
+		return Neg
+	case "!":
+		return Not
+	}
+
+	return ""
+}
+
+func FromBinaryOperator(op string) MetaName {
+	switch op {
+	case "+":
+		return Add
+	case "-":
+		return Sub
+	case "*":
+		return Mul
+	case "/":
+		return Div
+	case "//":
+		return IntDiv
+	case "%":
+		return Mod
+	case "**":
+		return Pow
+	case "==":
+		return Eq
+	case "!=":
+		return Neq
+	case ">":
+		return Gt
+	case "<":
+		return Lt
+	case ">=":
+		return Gte
+	case "<=":
+		return Lte
+	case "++":
+		return PostInc
+	case "--":
+		return PostDec
+	case "..":
+		return Concat
+	}
+
+	return ""
+}

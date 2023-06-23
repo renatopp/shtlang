@@ -5,9 +5,6 @@ import (
 	"sht/lang/runtime/meta"
 )
 
-var TRUE = CreateBoolean(true, true)
-var FALSE = CreateBoolean(false, true)
-
 const RETURN_KEY = "0_return"
 
 type Runtime struct {
@@ -20,7 +17,7 @@ func CreateRuntime() *Runtime {
 	r.Global = CreateScope(nil)
 	r.Global.Set(Type.Type.Name, Type.Instance)
 	r.Global.Set(Number.Type.Name, Number.Instance)
-	r.Global.Set(Boolean.Type.Name, Boolean)
+	r.Global.Set(Boolean.Type.Name, Boolean.Instance)
 
 	r.Stack = NewStack(r.Global)
 	return r
@@ -45,14 +42,14 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.String:
 		return r.EvalString(n)
 
-		// case *ast.UnaryOperator:
-		// 	return r.EvalUnaryOperator(n, scope)
+	case *ast.UnaryOperator:
+		return r.EvalUnaryOperator(n)
 
 	case *ast.BinaryOperator:
 		return r.EvalBinaryOperator(n)
 	}
 
-	return FALSE
+	return Boolean.FALSE
 }
 
 func (r *Runtime) EvalBlock(node *ast.Block) *Instance {
@@ -62,7 +59,7 @@ func (r *Runtime) EvalBlock(node *ast.Block) *Instance {
 	}
 
 	if result == nil {
-		return FALSE
+		return Boolean.FALSE
 	}
 	return result
 }
@@ -72,16 +69,28 @@ func (r *Runtime) EvalNumber(node *ast.Number) *Instance {
 }
 
 func (r *Runtime) EvalBoolean(node *ast.Boolean) *Instance {
-	return CreateBoolean(node.Value, false)
+	return Boolean.Create(node.Value, false)
 }
 
 func (r *Runtime) EvalString(node *ast.String) *Instance {
 	return String.Create(node.Value, false)
 }
 
-// func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator, scope *Scope) *Instance {
+func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator) *Instance {
+	right := r.Eval(node.Right, nil)
 
-// }
+	m := right.Type.Meta
+	switch node.Operator {
+	case "+":
+		return m[meta.Pos].Call(r, right)
+	case "-":
+		return m[meta.Neg].Call(r, right)
+	case "!":
+		return m[meta.Not].Call(r, right)
+	}
+
+	return nil
+}
 
 func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 	left := r.Eval(node.Left, nil)
@@ -89,21 +98,41 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 
 	m := left.Type.Meta
 	switch node.Operator {
-	case "+":
-		return m[meta.Add].Call(r, left, right)
-	case "-":
-		return m[meta.Sub].Call(r, left, right)
-	case "*":
-		return m[meta.Mul].Call(r, left, right)
-	case "/":
-		return m[meta.Div].Call(r, left, right)
-	case "//":
-		return m[meta.IntDiv].Call(r, left, right)
-	case "%":
-		return m[meta.Mod].Call(r, left, right)
-	case "**":
-		return m[meta.Pow].Call(r, left, right)
+	case "+", "-", "*", "/", "//", "%", "**", "==", "!=", ">", "<", ">=", "<=", "++", "--":
+		return m[meta.FromBinaryOperator(node.Operator)].Call(r, left, right)
+	case "and", "or", "nand", "nor", "xor", "nxor":
+		lt, rt := false, false
+		if !IsBool(left) {
+			lt = m[meta.Boolean].Call(r, left).Impl.(BooleanImpl).Value
+		} else {
+			lt = left.Impl.(BooleanImpl).Value
+		}
+
+		if !IsBool(right) {
+			rt = m[meta.Boolean].Call(r, right).Impl.(BooleanImpl).Value
+		} else {
+			rt = right.Impl.(BooleanImpl).Value
+		}
+
+		switch node.Operator {
+		case "and":
+			return Boolean.Create(lt && rt, false)
+		case "or":
+			return Boolean.Create(lt || rt, false)
+		case "nand":
+			return Boolean.Create(!(lt && rt), false)
+		case "nor":
+			return Boolean.Create(!(lt || rt), false)
+		case "xor":
+			return Boolean.Create(lt != rt, false)
+		case "nxor":
+			return Boolean.Create(lt == rt, false)
+		}
 	}
 
 	return nil
+}
+
+func IsBool(instance *Instance) bool {
+	return instance.Type == Boolean.Type
 }
