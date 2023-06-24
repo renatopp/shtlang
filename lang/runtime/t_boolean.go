@@ -60,3 +60,9 @@ func (n *BooleanInfo) Create(value bool, constant bool) *Instance {
 		Const: constant,
 	}
 }
+
+func (n *BooleanInfo) invalid(name string) Function {
+	return CreateNativeFunction(func(r *Runtime, args ...*Instance) *Instance {
+		return NotImplemented(name, n.Instance)
+	})
+}

@@ -98,8 +98,9 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 
 	m := left.Type.Meta
 	switch node.Operator {
-	case "+", "-", "*", "/", "//", "%", "**", "==", "!=", ">", "<", ">=", "<=", "++", "--":
+	case "+", "-", "*", "/", "//", "%", "**", "==", "!=", ">", "<", ">=", "<=":
 		return m[meta.FromBinaryOperator(node.Operator)].Call(r, left, right)
+
 	case "and", "or", "nand", "nor", "xor", "nxor":
 		lt, rt := false, false
 		if !IsBool(left) {
@@ -128,6 +129,11 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 		case "nxor":
 			return Boolean.Create(lt == rt, false)
 		}
+
+	case "..":
+		lt := left.Type.Meta[meta.String].Call(r, left).Impl.(StringImpl).Value
+		rt := left.Type.Meta[meta.String].Call(r, right).Impl.(StringImpl).Value
+		return String.Create(lt+rt, false)
 	}
 
 	return nil

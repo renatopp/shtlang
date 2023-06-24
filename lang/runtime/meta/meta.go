@@ -42,7 +42,6 @@ var (
 	Not     MetaName = "not"     // !
 	PostInc MetaName = "postInc" // ++
 	PostDec MetaName = "postDec" // --
-	Concat  MetaName = "concat"  // ..
 )
 
 func FromUnaryOperator(op string) MetaName {
@@ -90,8 +89,6 @@ func FromBinaryOperator(op string) MetaName {
 		return PostInc
 	case "--":
 		return PostDec
-	case "..":
-		return Concat
 	}
 
 	return ""

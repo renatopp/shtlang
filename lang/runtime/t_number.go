@@ -37,10 +37,15 @@ func _setupNumber() *NumberInfo {
 
 	n.ZERO = n.Create(0, true)
 	n.ONE = n.Create(1, true)
+	dataType.Meta[meta.SetProperty] = n.invalid(string(meta.SetProperty))
+	dataType.Meta[meta.GetProperty] = n.invalid(string(meta.GetProperty))
+	dataType.Meta[meta.SetItem] = n.invalid(string(meta.SetItem))
+	dataType.Meta[meta.GetItem] = n.invalid(string(meta.GetItem))
+	dataType.Meta[meta.Call] = n.invalid(string(meta.Call))
+
 	dataType.Meta[meta.Boolean] = CreateNativeFunction(n.MetaBoolean)
-	dataType.Meta[meta.Pos] = CreateNativeFunction(n.MetaPos)
-	dataType.Meta[meta.Neg] = CreateNativeFunction(n.MetaNeg)
-	dataType.Meta[meta.Not] = CreateNativeFunction(n.MetaNot)
+	dataType.Meta[meta.String] = CreateNativeFunction(n.MetaString)
+	dataType.Meta[meta.Repr] = CreateNativeFunction(n.MetaRepr)
 
 	dataType.Meta[meta.Add] = CreateNativeFunction(n.MetaAdd)
 	dataType.Meta[meta.Sub] = CreateNativeFunction(n.MetaSub)
@@ -55,6 +60,11 @@ func _setupNumber() *NumberInfo {
 	dataType.Meta[meta.Lt] = CreateNativeFunction(n.MetaLt)
 	dataType.Meta[meta.Gte] = CreateNativeFunction(n.MetaGte)
 	dataType.Meta[meta.Lte] = CreateNativeFunction(n.MetaLte)
+	dataType.Meta[meta.Pos] = CreateNativeFunction(n.MetaPos)
+	dataType.Meta[meta.Neg] = CreateNativeFunction(n.MetaNeg)
+	dataType.Meta[meta.Not] = CreateNativeFunction(n.MetaNot)
+	dataType.Meta[meta.PostInc] = CreateNativeFunction(n.MetaPostInc)
+	dataType.Meta[meta.PostDec] = CreateNativeFunction(n.MetaPostDec)
 
 	return n
 }
@@ -103,10 +113,17 @@ func (n *NumberInfo) MetaBoolean(r *Runtime, args ...*Instance) *Instance {
 	return Boolean.Create(this != 0, false)
 }
 
+func (n *NumberInfo) MetaString(r *Runtime, args ...*Instance) *Instance {
+	return String.Create(args[0].Impl.Repr(), false)
+}
+
+func (n *NumberInfo) MetaRepr(r *Runtime, args ...*Instance) *Instance {
+	return String.Create(args[0].Impl.Repr(), false)
+}
+
 func (n *NumberInfo) MetaAdd(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s + %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("+", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -117,8 +134,7 @@ func (n *NumberInfo) MetaAdd(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaSub(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s - %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("-", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -129,8 +145,7 @@ func (n *NumberInfo) MetaSub(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaMul(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s * %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("*", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -141,8 +156,7 @@ func (n *NumberInfo) MetaMul(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaDiv(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s / %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("/", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -153,8 +167,7 @@ func (n *NumberInfo) MetaDiv(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaIntDiv(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s / %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("/", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -165,8 +178,7 @@ func (n *NumberInfo) MetaIntDiv(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaMod(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s / %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("/", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -177,8 +189,7 @@ func (n *NumberInfo) MetaMod(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaPow(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s / %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("/", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -211,8 +222,7 @@ func (n *NumberInfo) MetaNeq(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaGt(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s > %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType(">", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -223,8 +233,7 @@ func (n *NumberInfo) MetaGt(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaLt(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s < %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("<", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -235,8 +244,7 @@ func (n *NumberInfo) MetaLt(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaGte(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s >= %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType(">=", args[0], args[1])
 	}
 
 	this := n.val(args[0])
@@ -247,12 +255,31 @@ func (n *NumberInfo) MetaGte(r *Runtime, args ...*Instance) *Instance {
 
 func (n *NumberInfo) MetaLte(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		msg := fmt.Sprintf("invalid operation: %s <= %s", args[0].Type.Name, args[1].Type.Name)
-		return Error.Create(msg, false)
+		return InvalidOperationType("<=", args[0], args[1])
 	}
 
 	this := n.val(args[0])
 	other := n.val(args[1])
 
 	return Boolean.Create(this <= other, false)
+}
+
+func (n *NumberInfo) MetaPostInc(r *Runtime, args ...*Instance) *Instance {
+	impl := args[0].Impl.(NumberImpl)
+	old := impl.Value
+	impl.Value += 1
+	return n.Create(old, false)
+}
+
+func (n *NumberInfo) MetaPostDec(r *Runtime, args ...*Instance) *Instance {
+	impl := args[0].Impl.(NumberImpl)
+	old := impl.Value
+	impl.Value -= 1
+	return n.Create(old, false)
+}
+
+func (n *NumberInfo) invalid(action string) Function {
+	return CreateNativeFunction(func(r *Runtime, args ...*Instance) *Instance {
+		return NotImplemented("meta", args[0])
+	})
 }
