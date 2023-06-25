@@ -28,6 +28,11 @@ func TestSuccessNumber(t *testing.T) {
 		{`9 // 2`, "4"},
 		{`9 % 2`, "1"},
 		{`2**10`, "1024"},
+
+		{`!1`, "false"},
+		{`!!0`, "false"},
+		{`!0`, "true"},
+		{`!!23123`, "true"},
 	}
 
 	for _, c := range cases {

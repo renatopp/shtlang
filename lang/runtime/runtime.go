@@ -102,18 +102,8 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 		return m[meta.FromBinaryOperator(node.Operator)].Call(r, left, right)
 
 	case "and", "or", "nand", "nor", "xor", "nxor":
-		lt, rt := false, false
-		if !IsBool(left) {
-			lt = m[meta.Boolean].Call(r, left).Impl.(BooleanImpl).Value
-		} else {
-			lt = left.Impl.(BooleanImpl).Value
-		}
-
-		if !IsBool(right) {
-			rt = m[meta.Boolean].Call(r, right).Impl.(BooleanImpl).Value
-		} else {
-			rt = right.Impl.(BooleanImpl).Value
-		}
+		lt := AsBool(left)
+		rt := AsBool(right)
 
 		switch node.Operator {
 		case "and":
@@ -131,8 +121,8 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 		}
 
 	case "..":
-		lt := left.Type.Meta[meta.String].Call(r, left).Impl.(StringImpl).Value
-		rt := left.Type.Meta[meta.String].Call(r, right).Impl.(StringImpl).Value
+		lt := AsString(left)
+		rt := AsString(right)
 		return String.Create(lt+rt, false)
 	}
 
@@ -141,4 +131,31 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 
 func IsBool(instance *Instance) bool {
 	return instance.Type == Boolean.Type
+}
+
+func IsString(instance *Instance) bool {
+	return instance.Type == String.Type
+}
+
+func AsBool(instance *Instance) bool {
+	if IsBool(instance) {
+		return instance.Impl.(BooleanImpl).Value
+	} else {
+		return instance.Type.Meta[meta.Boolean].Call(nil, instance).Impl.(BooleanImpl).Value
+	}
+}
+
+func AsNumber(instance *Instance) float64 {
+	if instance.Type == Number.Type {
+		return instance.Impl.(NumberImpl).Value
+	}
+	return 0
+}
+
+func AsString(instance *Instance) string {
+	if IsString(instance) {
+		return instance.Impl.(StringImpl).Value
+	} else {
+		return instance.Type.Meta[meta.String].Call(nil, instance).Impl.(StringImpl).Value
+	}
 }
