@@ -37,6 +37,7 @@ func _setupNumber() *NumberInfo {
 
 	n.ZERO = n.Create(0, true)
 	n.ONE = n.Create(1, true)
+
 	dataType.Meta[meta.SetProperty] = n.invalid(string(meta.SetProperty))
 	dataType.Meta[meta.GetProperty] = n.invalid(string(meta.GetProperty))
 	dataType.Meta[meta.SetItem] = n.invalid(string(meta.SetItem))

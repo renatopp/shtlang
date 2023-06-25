@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var sample1 = `true or false`
+var sample1 = `false == false`
 
 func main() {
 	input := []byte(sample1)
