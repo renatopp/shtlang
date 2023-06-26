@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var sample1 = `!!0`
+var sample1 = `+3`
 
 func main() {
 	input := []byte(sample1)

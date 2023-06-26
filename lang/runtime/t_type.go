@@ -2,55 +2,49 @@ package runtime
 
 import (
 	"sht/lang/ast"
-	"sht/lang/runtime/meta"
 )
 
-var Type = _setupType()
-
-type TypeInfo struct {
-	Instance *Instance
-	Type     *DataType
-}
-
-type TypeImpl struct {
-	DataType *DataType
-}
-
-func _setupType() *TypeInfo {
-	dataType := &DataType{
-		Name:        "Type",
-		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
-		Meta:        map[meta.MetaName]Function{},
-	}
-
-	n := &TypeInfo{
-		Instance: &Instance{
-			Type:  dataType,
-			Impl:  TypeImpl{DataType: dataType},
-			Const: true,
+var Type = &TypeInfo{
+	Type: &TypeDataType{
+		BaseDataType: BaseDataType{
+			Name:        "Type",
+			Properties:  map[string]ast.Node{},
+			StaticFns:   map[string]Function{},
+			InstanceFns: map[string]Function{},
 		},
-		Type: dataType,
-	}
-
-	return n
+	},
 }
 
 // ----------------------------------------------------------------------------
-// Type Implementation
+// TYPE INFO
 // ----------------------------------------------------------------------------
-func (n TypeImpl) Repr() string {
-	return n.DataType.Name
+type TypeInfo struct {
+	Type DataType
 }
 
-// ----------------------------------------------------------------------------
-// Type Info
-// ----------------------------------------------------------------------------
-func (t *TypeInfo) Create(dataType *DataType, constant bool) *Instance {
+func (t *TypeInfo) Create(dataType DataType) *Instance {
 	return &Instance{
-		Type:  t.Type,
-		Impl:  TypeImpl{DataType: dataType},
-		Const: constant,
+		Type: t.Type,
+		Impl: TypeDataImpl{
+			DataType: dataType,
+		},
 	}
+}
+
+// ----------------------------------------------------------------------------
+// TYPE DATA TYPE
+// ----------------------------------------------------------------------------
+type TypeDataType struct {
+	BaseDataType
+}
+
+func (d *TypeDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+	return String.Create(args[0].Type.GetName())
+}
+
+// ----------------------------------------------------------------------------
+// TYPE DATA IMPL
+// ----------------------------------------------------------------------------
+type TypeDataImpl struct {
+	DataType DataType
 }

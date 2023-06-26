@@ -2,151 +2,115 @@ package runtime
 
 import (
 	"sht/lang/ast"
-	"sht/lang/runtime/meta"
 )
 
-var Boolean = _setupBoolean()
+var booleanDT = &BooleanDataType{
+	BaseDataType: BaseDataType{
+		Name:        "Boolean",
+		Properties:  map[string]ast.Node{},
+		StaticFns:   map[string]Function{},
+		InstanceFns: map[string]Function{},
+	},
+}
 
+var Boolean = &BooleanInfo{
+	Type: booleanDT,
+
+	TRUE: &Instance{
+		Type: booleanDT,
+		Impl: BooleanDataImpl{
+			Value: true,
+		},
+	},
+	FALSE: &Instance{
+		Type: booleanDT,
+		Impl: BooleanDataImpl{
+			Value: false,
+		},
+	},
+}
+
+// ----------------------------------------------------------------------------
+// BOOLEAN INFO
+// ----------------------------------------------------------------------------
 type BooleanInfo struct {
-	Instance *Instance
-	Type     *DataType
+	Type DataType
 
 	TRUE  *Instance
 	FALSE *Instance
 }
 
-type BooleanImpl struct {
-	Value bool
-}
-
-func _setupBoolean() *BooleanInfo {
-	dataType := &DataType{
-		Name:        "Boolean",
-		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
-		Meta:        map[meta.MetaName]Function{},
-	}
-
-	n := &BooleanInfo{
-		Instance: Type.Create(dataType, true),
-		Type:     dataType,
-	}
-
-	n.TRUE = n.Create(true, true)
-	n.FALSE = n.Create(false, true)
-
-	dataType.Meta[meta.SetProperty] = n.notImplemented(string(meta.SetProperty))
-	dataType.Meta[meta.GetProperty] = n.notImplemented(string(meta.GetProperty))
-	dataType.Meta[meta.SetItem] = n.notImplemented(string(meta.SetItem))
-	dataType.Meta[meta.GetItem] = n.notImplemented(string(meta.GetItem))
-	dataType.Meta[meta.Call] = n.notImplemented(string(meta.Call))
-
-	dataType.Meta[meta.Boolean] = CreateNativeFunction(n.MetaBoolean)
-	dataType.Meta[meta.String] = CreateNativeFunction(n.MetaString)
-	dataType.Meta[meta.Repr] = CreateNativeFunction(n.MetaRepr)
-
-	dataType.Meta[meta.Add] = n.notImplemented(string(meta.Add))
-	dataType.Meta[meta.Sub] = n.notImplemented(string(meta.Sub))
-	dataType.Meta[meta.Mul] = n.notImplemented(string(meta.Mul))
-	dataType.Meta[meta.Div] = n.notImplemented(string(meta.Div))
-	dataType.Meta[meta.IntDiv] = n.notImplemented(string(meta.IntDiv))
-	dataType.Meta[meta.Mod] = n.notImplemented(string(meta.Mod))
-	dataType.Meta[meta.Pow] = n.notImplemented(string(meta.Pow))
-	dataType.Meta[meta.Eq] = CreateNativeFunction(n.MetaEq)
-	dataType.Meta[meta.Neq] = CreateNativeFunction(n.MetaNeq)
-	dataType.Meta[meta.Gt] = n.notImplemented(string(meta.Gt))
-	dataType.Meta[meta.Lt] = n.notImplemented(string(meta.Lt))
-	dataType.Meta[meta.Gte] = n.notImplemented(string(meta.Gte))
-	dataType.Meta[meta.Lte] = n.notImplemented(string(meta.Lte))
-	dataType.Meta[meta.Pos] = n.notImplemented(string(meta.Pos))
-	dataType.Meta[meta.Neg] = n.notImplemented(string(meta.Neg))
-	dataType.Meta[meta.Not] = CreateNativeFunction(n.MetaNot)
-	dataType.Meta[meta.PostInc] = n.notImplemented(string(meta.PostInc))
-	dataType.Meta[meta.PostDec] = n.notImplemented(string(meta.PostDec))
-
-	return n
-}
-
-// ----------------------------------------------------------------------------
-// Boolean Implementation
-// ----------------------------------------------------------------------------
-func (n BooleanImpl) Repr() string {
-	if n.Value {
-		return "true"
-	}
-
-	return "false"
-}
-
-// ----------------------------------------------------------------------------
-// Boolean Info
-// ----------------------------------------------------------------------------
-func (n *BooleanInfo) Create(value bool, constant bool) *Instance {
+func (t *BooleanInfo) Create(value bool) *Instance {
 	return &Instance{
-		Type:  n.Type,
-		Impl:  BooleanImpl{Value: value},
-		Const: constant,
+		Type: t.Type,
+		Impl: BooleanDataImpl{
+			Value: value,
+		},
 	}
 }
 
-func (n *BooleanInfo) val(instance *Instance) bool {
-	return instance.Impl.(BooleanImpl).Value
+// ----------------------------------------------------------------------------
+// BOOLEAN DATA TYPE
+// ----------------------------------------------------------------------------
+type BooleanDataType struct {
+	BaseDataType
 }
 
-func (n *BooleanInfo) MetaBoolean(r *Runtime, args ...*Instance) *Instance {
+func (d *BooleanDataType) OnBoolean(r *Runtime, args ...*Instance) *Instance {
 	return args[0]
 }
 
-func (n *BooleanInfo) MetaString(r *Runtime, args ...*Instance) *Instance {
-	return String.Create(args[0].Impl.Repr(), false)
+func (d *BooleanDataType) OnString(r *Runtime, args ...*Instance) *Instance {
+	return d.OnRepr(r, args...)
 }
 
-func (n *BooleanInfo) MetaRepr(r *Runtime, args ...*Instance) *Instance {
-	return String.Create(args[0].Impl.Repr(), false)
-}
-
-func (n *BooleanInfo) MetaNot(r *Runtime, args ...*Instance) *Instance {
-	this := n.val(args[0])
-	if this {
-		return n.FALSE
-	} else {
-		return n.TRUE
+func (d *BooleanDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+	v := AsBool(args[0])
+	if v {
+		return String.Create("true")
 	}
+
+	return String.Create("false")
 }
 
-func (n *BooleanInfo) MetaEq(r *Runtime, args ...*Instance) *Instance {
+func (d *BooleanDataType) OnNot(r *Runtime, args ...*Instance) *Instance {
+	v := AsBool(args[0])
+	return Boolean.Create(!v)
+}
+
+func (n *BooleanDataType) OnEq(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return n.FALSE
+		return Boolean.FALSE
 	}
 
-	this := n.val(args[0])
-	other := n.val(args[1])
+	this := AsBool(args[0])
+	other := AsBool(args[1])
 
 	if this == other {
-		return n.TRUE
+		return Boolean.TRUE
 	} else {
-		return n.FALSE
+		return Boolean.FALSE
 	}
 }
 
-func (n *BooleanInfo) MetaNeq(r *Runtime, args ...*Instance) *Instance {
+func (n *BooleanDataType) OnNeq(r *Runtime, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return n.FALSE
+		return Boolean.FALSE
 	}
 
-	this := n.val(args[0])
-	other := n.val(args[1])
+	this := AsBool(args[0])
+	other := AsBool(args[1])
 
 	if this != other {
-		return n.TRUE
+		return Boolean.TRUE
 	} else {
-		return n.FALSE
+		return Boolean.FALSE
 	}
 }
 
-func (n *BooleanInfo) notImplemented(name string) Function {
-	return CreateNativeFunction(func(r *Runtime, args ...*Instance) *Instance {
-		return NotImplemented(name, n.Instance)
-	})
+// ----------------------------------------------------------------------------
+// BOOLEAN DATA IMPL
+// ----------------------------------------------------------------------------
+type BooleanDataImpl struct {
+	Value bool
 }

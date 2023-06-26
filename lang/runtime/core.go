@@ -1,44 +1,45 @@
 package runtime
 
-import (
-	"fmt"
-	"sht/lang/ast"
-	"sht/lang/runtime/meta"
-)
+type DataImpl interface{}
 
-type DataType struct {
-	Name        string
-	Properties  map[string]ast.Node
-	StaticFns   map[string]Function
-	InstanceFns map[string]Function
-	Meta        map[meta.MetaName]Function
-}
-
-type DataImpl interface {
-	Repr() string
-}
-
-type Instance struct {
-	Type  *DataType
-	Impl  DataImpl
-	Const bool
-}
+type InternalFunction func(r *Runtime, args ...*Instance) *Instance
 
 type Function interface {
 	Call(r *Runtime, args ...*Instance) *Instance
 }
 
-func InvalidOperationType(op string, t1 *Instance, t2 *Instance) *Instance {
-	msg := fmt.Sprintf("invalid operation with incompatible types: %s %s %s", t1.Type.Name, op, t2.Type.Name)
-	return Error.Create(msg, false)
+func IsBool(instance *Instance) bool {
+	// return instance.Type == Boolean.Type
+	return false
 }
 
-func InvalidOperation(op string, t1 *Instance) *Instance {
-	msg := fmt.Sprintf("type %s does not implement operator %s", t1.Type.Name, op)
-	return Error.Create(msg, false)
+func IsString(instance *Instance) bool {
+	return instance.Type == String.Type
 }
 
-func NotImplemented(action string, t1 *Instance) *Instance {
-	msg := fmt.Sprintf("type %s does not implement action %s", t1.Type.Name, action)
-	return Error.Create(msg, false)
+func AsBool(instance *Instance) bool {
+	if instance == nil {
+		return false
+	} else if IsBool(instance) {
+		return instance.Impl.(BooleanDataImpl).Value
+	} else {
+		return instance.Type.OnBoolean(nil, instance).Impl.(BooleanDataImpl).Value
+	}
+}
+
+func AsNumber(instance *Instance) float64 {
+	if instance.Type == Number.Type {
+		return instance.Impl.(NumberDataImpl).Value
+	}
+	return 0
+}
+
+func AsString(instance *Instance) string {
+	if instance == nil {
+		return ""
+	} else if IsString(instance) {
+		return instance.Impl.(StringDataImpl).Value
+	} else {
+		return instance.Type.OnString(nil, instance).Impl.(StringDataImpl).Value
+	}
 }

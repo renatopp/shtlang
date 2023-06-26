@@ -2,55 +2,60 @@ package runtime
 
 import (
 	"sht/lang/ast"
-	"sht/lang/runtime/meta"
 )
 
-var String = _setupString()
-
-type StringInfo struct {
-	Instance *Instance
-	Type     *DataType
-
-	EMPTY *Instance
-}
-
-type StringImpl struct {
-	Value string
-}
-
-func _setupString() *StringInfo {
-	dataType := &DataType{
+var stringDT = &StringDataType{
+	BaseDataType: BaseDataType{
 		Name:        "String",
 		Properties:  map[string]ast.Node{},
 		StaticFns:   map[string]Function{},
 		InstanceFns: map[string]Function{},
-		Meta:        map[meta.MetaName]Function{},
-	}
+	},
+}
 
-	n := &StringInfo{
-		Instance: Type.Create(dataType, true),
-		Type:     dataType,
-	}
+var String = &StringInfo{
+	Type: stringDT,
 
-	n.EMPTY = n.Create("", true)
-
-	return n
+	EMPTY: &Instance{
+		Type: stringDT,
+		Impl: StringDataImpl{
+			Value: "",
+		},
+	},
 }
 
 // ----------------------------------------------------------------------------
-// String Implementation
+// STRING INFO
 // ----------------------------------------------------------------------------
-func (n StringImpl) Repr() string {
-	return n.Value
+type StringInfo struct {
+	Type DataType
+
+	EMPTY *Instance
 }
 
-// ----------------------------------------------------------------------------
-// String Info
-// ----------------------------------------------------------------------------
-func (n *StringInfo) Create(value string, constant bool) *Instance {
+func (t *StringInfo) Create(value string) *Instance {
 	return &Instance{
-		Type:  n.Type,
-		Impl:  StringImpl{Value: value},
-		Const: constant,
+		Type: t.Type,
+		Impl: StringDataImpl{
+			Value: value,
+		},
 	}
+}
+
+// ----------------------------------------------------------------------------
+// STRING DATA TYPE
+// ----------------------------------------------------------------------------
+type StringDataType struct {
+	BaseDataType
+}
+
+func (d *StringDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+	return args[0]
+}
+
+// ----------------------------------------------------------------------------
+// STRING DATA IMPL
+// ----------------------------------------------------------------------------
+type StringDataImpl struct {
+	Value string
 }
