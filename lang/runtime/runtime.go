@@ -44,8 +44,8 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.UnaryOperator:
 		return r.EvalUnaryOperator(n)
 
-		// case *ast.BinaryOperator:
-		// 	return r.EvalBinaryOperator(n)
+	case *ast.BinaryOperator:
+		return r.EvalBinaryOperator(n)
 	}
 
 	return Boolean.FALSE
@@ -90,39 +90,62 @@ func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator) *Instance {
 	return nil
 }
 
-// func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
-// 	left := r.Eval(node.Left, nil)
-// 	right := r.Eval(node.Right, nil)
+func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
+	left := r.Eval(node.Left, nil)
+	right := r.Eval(node.Right, nil)
 
-// 	m := left.Type.Meta
-// 	switch node.Operator {
-// 	case "+", "-", "*", "/", "//", "%", "**", "==", "!=", ">", "<", ">=", "<=":
-// 		return m[meta.FromBinaryOperator(node.Operator)].Call(r, left, right)
+	switch node.Operator {
+	case "+":
+		return left.Type.OnAdd(r, left, right)
+	case "-":
+		return left.Type.OnSub(r, left, right)
+	case "*":
+		return left.Type.OnMul(r, left, right)
+	case "/":
+		return left.Type.OnDiv(r, left, right)
+	case "//":
+		return left.Type.OnIntDiv(r, left, right)
+	case "%":
+		return left.Type.OnMod(r, left, right)
+	case "**":
+		return left.Type.OnPow(r, left, right)
+	case "==":
+		return left.Type.OnEq(r, left, right)
+	case "!=":
+		return left.Type.OnNeq(r, left, right)
+	case ">":
+		return left.Type.OnGt(r, left, right)
+	case "<":
+		return left.Type.OnLt(r, left, right)
+	case ">=":
+		return left.Type.OnGte(r, left, right)
+	case "<=":
+		return left.Type.OnLte(r, left, right)
 
-// 	case "and", "or", "nand", "nor", "xor", "nxor":
-// 		lt := AsBool(left)
-// 		rt := AsBool(right)
+	case "and", "or", "nand", "nor", "xor", "nxor":
+		lt := AsBool(left)
+		rt := AsBool(right)
 
-// 		switch node.Operator {
-// 		case "and":
-// 			return Boolean.Create(lt && rt, false)
-// 		case "or":
-// 			return Boolean.Create(lt || rt, false)
-// 		case "nand":
-// 			return Boolean.Create(!(lt && rt), false)
-// 		case "nor":
-// 			return Boolean.Create(!(lt || rt), false)
-// 		case "xor":
-// 			return Boolean.Create(lt != rt, false)
-// 		case "nxor":
-// 			return Boolean.Create(lt == rt, false)
-// 		}
+		switch node.Operator {
+		case "and":
+			return Boolean.Create(lt && rt)
+		case "or":
+			return Boolean.Create(lt || rt)
+		case "nand":
+			return Boolean.Create(!(lt && rt))
+		case "nor":
+			return Boolean.Create(!(lt || rt))
+		case "xor":
+			return Boolean.Create(lt != rt)
+		case "nxor":
+			return Boolean.Create(lt == rt)
+		}
 
-// 	case "..":
-// 		lt := AsString(left)
-// 		rt := AsString(right)
-// 		return String.Create(lt + rt)
-// 	}
+	case "..":
+		lt := AsString(left)
+		rt := AsString(right)
+		return String.Create(lt + rt)
+	}
 
-// 	return nil
-// }
+	return nil
+}

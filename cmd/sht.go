@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	repl "sht/cmd/sht"
 	"sht/lang"
 	"sht/lang/runtime"
 
@@ -33,28 +34,13 @@ func replCompleter(d prompt.Document) []prompt.Suggest {
 	return prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), true)
 }
 
-func repl(ctx *cli.Context) error {
+func cmdRepl(ctx *cli.Context) error {
 	runtime := runtime.CreateRuntime()
-	for {
-		t := prompt.Input("> ", replCompleter)
-		if t == "exit" {
-			break
-		}
-
-		tree, err := lang.Parse([]byte(t))
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		res := runtime.Run(tree)
-		fmt.Println(res)
-	}
-
+	repl.Start(runtime)
 	return nil
 }
 
-func run(ctx *cli.Context) error {
+func cmdRun(ctx *cli.Context) error {
 	file, err := os.Open(ctx.Args().Get(0))
 	if err != nil {
 		fmt.Println(err)
@@ -86,7 +72,7 @@ func run(ctx *cli.Context) error {
 	return nil
 }
 
-func exec(ctx *cli.Context) error {
+func cmdExec(ctx *cli.Context) error {
 	s := ""
 	args := ctx.Args()
 	for i := 0; i < ctx.NArg(); i++ {
@@ -117,18 +103,18 @@ func main() {
 				return nil
 			}
 
-			return repl(ctx)
+			return cmdRepl(ctx)
 		},
 		Commands: []*cli.Command{
 			{
 				Name:   "run",
 				Usage:  "run your sht script",
-				Action: run,
+				Action: cmdRun,
 			},
 			{
 				Name:   "exec",
 				Usage:  "execute your sht code",
-				Action: exec,
+				Action: cmdExec,
 			},
 			{
 				Name:   "help",
