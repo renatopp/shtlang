@@ -38,7 +38,7 @@ type TypeDataType struct {
 	BaseDataType
 }
 
-func (d *TypeDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return String.Create(args[0].Type.GetName())
 }
 

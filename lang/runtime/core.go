@@ -1,16 +1,19 @@
+// TODO: Co
 package runtime
 
 type DataImpl interface{}
 
-type InternalFunction func(r *Runtime, args ...*Instance) *Instance
+type InternalFunction func(r *Runtime, s *Scope, args ...*Instance) *Instance
 
 type Function interface {
-	Call(r *Runtime, args ...*Instance) *Instance
+	// GetName() string
+	// GetParams() []*FunctionParam
+	// GetParentScope() *Scope
+	Call(r *Runtime, s *Scope, args ...*Instance) *Instance
 }
 
 func IsBool(instance *Instance) bool {
-	// return instance.Type == Boolean.Type
-	return false
+	return instance.Type == Boolean.Type
 }
 
 func IsString(instance *Instance) bool {
@@ -23,7 +26,7 @@ func AsBool(instance *Instance) bool {
 	} else if IsBool(instance) {
 		return instance.Impl.(BooleanDataImpl).Value
 	} else {
-		return instance.Type.OnBoolean(nil, instance).Impl.(BooleanDataImpl).Value
+		return instance.Type.OnBoolean(nil, nil, instance).Impl.(BooleanDataImpl).Value
 	}
 }
 
@@ -40,6 +43,6 @@ func AsString(instance *Instance) string {
 	} else if IsString(instance) {
 		return instance.Impl.(StringDataImpl).Value
 	} else {
-		return instance.Type.OnString(nil, instance).Impl.(StringDataImpl).Value
+		return instance.Type.OnString(nil, nil, instance).Impl.(StringDataImpl).Value
 	}
 }

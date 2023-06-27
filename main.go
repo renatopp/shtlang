@@ -8,10 +8,23 @@ import (
 	"strings"
 )
 
-var sample1 = `fn foo(x) { let a = 2 + 3; return a + x; }`
+var sample1 = `let x = 2;fn foo(y) { y + x; }; foo(4)`
+var sample2 = `
+
+fn scale(x) {
+	fn inner(a) {
+		a * x
+	}
+}
+
+let scaled = scale(2)
+
+let x = 10
+scaled(4, 2)
+`
 
 func main() {
-	input := []byte(sample1)
+	input := []byte(sample2)
 
 	fmt.Println("")
 	fmt.Println("-----------------------------------")

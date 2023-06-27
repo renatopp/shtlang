@@ -6,5 +6,5 @@ type Instance struct {
 }
 
 func (i *Instance) Repr() string {
-	return AsString(i.Type.OnRepr(nil, i))
+	return AsString(i.Type.OnRepr(nil, nil, i))
 }

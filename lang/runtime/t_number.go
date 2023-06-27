@@ -58,15 +58,15 @@ type NumberDataType struct {
 	BaseDataType
 }
 
-func (d *NumberDataType) OnBoolean(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return Boolean.Create(AsNumber(args[0]) != 0)
 }
 
-func (d *NumberDataType) OnString(r *Runtime, args ...*Instance) *Instance {
-	return d.OnRepr(r, args...)
+func (d *NumberDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, args...)
 }
 
-func (d *NumberDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	v := AsNumber(args[0])
 
 	if math.Mod(v, 1.0) == 0 {
@@ -76,7 +76,7 @@ func (d *NumberDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
 	return String.Create(fmt.Sprintf("%f", v))
 }
 
-func (d *NumberDataType) OnAdd(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("+", args[0], args[1])
 	}
@@ -84,7 +84,7 @@ func (d *NumberDataType) OnAdd(r *Runtime, args ...*Instance) *Instance {
 	return Number.Create(AsNumber(args[0]) + AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnSub(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnSub(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("-", args[0], args[1])
 	}
@@ -92,7 +92,7 @@ func (d *NumberDataType) OnSub(r *Runtime, args ...*Instance) *Instance {
 	return Number.Create(AsNumber(args[0]) - AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnMul(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnMul(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("*", args[0], args[1])
 	}
@@ -100,7 +100,7 @@ func (d *NumberDataType) OnMul(r *Runtime, args ...*Instance) *Instance {
 	return Number.Create(AsNumber(args[0]) * AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnDiv(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnDiv(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("/", args[0], args[1])
 	}
@@ -108,7 +108,7 @@ func (d *NumberDataType) OnDiv(r *Runtime, args ...*Instance) *Instance {
 	return Number.Create(AsNumber(args[0]) / AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnIntDiv(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnIntDiv(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("//", args[0], args[1])
 	}
@@ -116,7 +116,7 @@ func (d *NumberDataType) OnIntDiv(r *Runtime, args ...*Instance) *Instance {
 	return Number.Create(math.Floor(AsNumber(args[0]) / AsNumber(args[1])))
 }
 
-func (d *NumberDataType) OnMod(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnMod(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("%", args[0], args[1])
 	}
@@ -124,7 +124,7 @@ func (d *NumberDataType) OnMod(r *Runtime, args ...*Instance) *Instance {
 	return Number.Create(math.Mod(AsNumber(args[0]), AsNumber(args[1])))
 }
 
-func (d *NumberDataType) OnPow(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnPow(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("**", args[0], args[1])
 	}
@@ -132,21 +132,21 @@ func (d *NumberDataType) OnPow(r *Runtime, args ...*Instance) *Instance {
 	return Number.Create(math.Pow(AsNumber(args[0]), AsNumber(args[1])))
 }
 
-func (d *NumberDataType) OnEq(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Boolean.FALSE
 	}
 	return Boolean.Create(AsNumber(args[0]) == AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnNeq(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Boolean.TRUE
 	}
 	return Boolean.Create(AsNumber(args[0]) != AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnGt(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnGt(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation(">", args[0], args[1])
 	}
@@ -154,7 +154,7 @@ func (d *NumberDataType) OnGt(r *Runtime, args ...*Instance) *Instance {
 	return Boolean.Create(AsNumber(args[0]) > AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnLt(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnLt(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("<", args[0], args[1])
 	}
@@ -162,7 +162,7 @@ func (d *NumberDataType) OnLt(r *Runtime, args ...*Instance) *Instance {
 	return Boolean.Create(AsNumber(args[0]) < AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnGte(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnGte(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation(">=", args[0], args[1])
 	}
@@ -170,7 +170,7 @@ func (d *NumberDataType) OnGte(r *Runtime, args ...*Instance) *Instance {
 	return Boolean.Create(AsNumber(args[0]) >= AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnLte(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnLte(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("<=", args[0], args[1])
 	}
@@ -178,29 +178,29 @@ func (d *NumberDataType) OnLte(r *Runtime, args ...*Instance) *Instance {
 	return Boolean.Create(AsNumber(args[0]) <= AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnPostInc(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnPostInc(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	impl := args[0].Impl.(NumberDataImpl)
 	old := impl.Value
 	impl.Value += 1
 	return Number.Create(old)
 }
 
-func (d *NumberDataType) OnPostDec(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnPostDec(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	impl := args[0].Impl.(NumberDataImpl)
 	old := impl.Value
 	impl.Value -= 1
 	return Number.Create(old)
 }
 
-func (d *NumberDataType) OnNot(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return Boolean.Create(!AsBool(args[0]))
 }
 
-func (d *NumberDataType) OnNeg(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnNeg(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return Number.Create(-AsNumber(args[0]))
 }
 
-func (d *NumberDataType) OnPos(r *Runtime, args ...*Instance) *Instance {
+func (d *NumberDataType) OnPos(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return args[0]
 }
 

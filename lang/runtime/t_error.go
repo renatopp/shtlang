@@ -68,7 +68,7 @@ type ErrorDataType struct {
 	BaseDataType
 }
 
-func (d *ErrorDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+func (d *ErrorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	msg := AsString(args[0].Impl.(ErrorDataImpl).Values["message"])
 	return String.Create("ERR! " + msg)
 }

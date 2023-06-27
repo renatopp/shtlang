@@ -49,7 +49,7 @@ type StringDataType struct {
 	BaseDataType
 }
 
-func (d *StringDataType) OnAdd(r *Runtime, args ...*Instance) *Instance {
+func (d *StringDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Error.IncompatibleTypeOperation("+", args[0], args[1])
 	}
@@ -57,7 +57,7 @@ func (d *StringDataType) OnAdd(r *Runtime, args ...*Instance) *Instance {
 	return String.Create(AsString(args[0]) + AsString(args[1]))
 }
 
-func (d *StringDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+func (d *StringDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return args[0]
 }
 

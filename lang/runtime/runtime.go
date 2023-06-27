@@ -8,7 +8,6 @@ const RETURN_KEY = "0_return"
 
 type Runtime struct {
 	Global *Scope
-	Stack  *Stack
 }
 
 func CreateRuntime() *Runtime {
@@ -18,7 +17,6 @@ func CreateRuntime() *Runtime {
 	// r.Global.Set(Number.Type.Name, Number.Instance)
 	// r.Global.Set(Boolean.Type.Name, Boolean.Instance)
 
-	r.Stack = NewStack(r.Global)
 	return r
 }
 
@@ -29,27 +27,36 @@ func (r *Runtime) Run(node ast.Node) string {
 
 func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	if scope == nil {
-		scope = r.Stack.Current()
+		scope = r.Global
 	}
+
+	// if node == nil {
+	// 	return Boolean.FALSE
+	// }
+
+	// fmt.Println("Evaluating", node.String(), "with")
+	// scope.ForEach(func(name string, ref *Reference) {
+	// 	fmt.Println("  ", name, "=", ref.Value.Repr())
+	// })
 
 	switch n := node.(type) {
 	case *ast.Block:
-		return r.EvalBlock(n)
+		return r.EvalBlock(n, scope)
 
 	case *ast.Number:
-		return r.EvalNumber(n)
+		return r.EvalNumber(n, scope)
 
 	case *ast.Boolean:
-		return r.EvalBoolean(n)
+		return r.EvalBoolean(n, scope)
 
 	case *ast.String:
-		return r.EvalString(n)
+		return r.EvalString(n, scope)
 
 	case *ast.UnaryOperator:
-		return r.EvalUnaryOperator(n)
+		return r.EvalUnaryOperator(n, scope)
 
 	case *ast.BinaryOperator:
-		return r.EvalBinaryOperator(n)
+		return r.EvalBinaryOperator(n, scope)
 
 	case *ast.Assignment:
 		scope.InAssignment = true
@@ -62,81 +69,88 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.FunctionDef:
 		return r.EvalFunctionDef(n, scope)
+
+	case *ast.Call:
+		return r.EvalCall(n, scope)
 	}
 
 	return Boolean.FALSE
 }
 
-func (r *Runtime) EvalBlock(node *ast.Block) *Instance {
+func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
 	var result *Instance
 	for _, stmt := range node.Statements {
-		result = r.Eval(stmt, nil)
+		result = r.Eval(stmt, scope)
+		if _, ok := scope.Get(RETURN_KEY); ok {
+			break
+		}
 	}
 
 	if result == nil {
 		return Boolean.FALSE
 	}
+
 	return result
 }
 
-func (r *Runtime) EvalNumber(node *ast.Number) *Instance {
+func (r *Runtime) EvalNumber(node *ast.Number, scope *Scope) *Instance {
 	return Number.Create(node.Value)
 }
 
-func (r *Runtime) EvalBoolean(node *ast.Boolean) *Instance {
+func (r *Runtime) EvalBoolean(node *ast.Boolean, scope *Scope) *Instance {
 	return Boolean.Create(node.Value)
 }
 
-func (r *Runtime) EvalString(node *ast.String) *Instance {
+func (r *Runtime) EvalString(node *ast.String, scope *Scope) *Instance {
 	return String.Create(node.Value)
 }
 
-func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator) *Instance {
-	right := r.Eval(node.Right, nil)
+func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator, scope *Scope) *Instance {
+	right := r.Eval(node.Right, scope)
 
 	switch node.Operator {
 	case "+":
-		return right.Type.OnPos(r, right)
+		return right.Type.OnPos(r, scope, right)
 	case "-":
-		return right.Type.OnNeg(r, right)
+		return right.Type.OnNeg(r, scope, right)
 	case "!":
-		return right.Type.OnNot(r, right)
+		return right.Type.OnNot(r, scope, right)
 	}
 
 	return nil
 }
 
-func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
-	left := r.Eval(node.Left, nil)
-	right := r.Eval(node.Right, nil)
+func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *Instance {
+	left := r.Eval(node.Left, scope)
+	right := r.Eval(node.Right, scope)
 
 	switch node.Operator {
 	case "+":
-		return left.Type.OnAdd(r, left, right)
+		return left.Type.OnAdd(r, scope, left, right)
 	case "-":
-		return left.Type.OnSub(r, left, right)
+		return left.Type.OnSub(r, scope, left, right)
 	case "*":
-		return left.Type.OnMul(r, left, right)
+		return left.Type.OnMul(r, scope, left, right)
 	case "/":
-		return left.Type.OnDiv(r, left, right)
+		return left.Type.OnDiv(r, scope, left, right)
 	case "//":
-		return left.Type.OnIntDiv(r, left, right)
+		return left.Type.OnIntDiv(r, scope, left, right)
 	case "%":
-		return left.Type.OnMod(r, left, right)
+		return left.Type.OnMod(r, scope, left, right)
 	case "**":
-		return left.Type.OnPow(r, left, right)
+		return left.Type.OnPow(r, scope, left, right)
 	case "==":
-		return left.Type.OnEq(r, left, right)
+		return left.Type.OnEq(r, scope, left, right)
 	case "!=":
-		return left.Type.OnNeq(r, left, right)
+		return left.Type.OnNeq(r, scope, left, right)
 	case ">":
-		return left.Type.OnGt(r, left, right)
+		return left.Type.OnGt(r, scope, left, right)
 	case "<":
-		return left.Type.OnLt(r, left, right)
+		return left.Type.OnLt(r, scope, left, right)
 	case ">=":
-		return left.Type.OnGte(r, left, right)
+		return left.Type.OnGte(r, scope, left, right)
 	case "<=":
-		return left.Type.OnLte(r, left, right)
+		return left.Type.OnLte(r, scope, left, right)
 
 	case "and", "or", "nand", "nor", "xor", "nxor":
 		lt := AsBool(left)
@@ -256,4 +270,16 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 	}
 
 	return fn
+}
+
+func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
+	target := r.Eval(node.Target, scope)
+
+	args := make([]*Instance, len(node.Arguments)+1)
+	args[0] = target
+	for i, v := range node.Arguments {
+		args[i+1] = r.Eval(v, scope)
+	}
+
+	return target.Type.OnCall(r, scope, args...)
 }

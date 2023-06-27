@@ -110,6 +110,7 @@ func CreateParser() *Parser {
 	p.infixFns[tokens.Operator] = p.parseInfixOperator
 	p.infixFns[tokens.Keyword] = p.parseInfixKeyword
 	p.infixFns[tokens.Assignment] = p.parseInfixAssignment
+	p.infixFns[tokens.Lparen] = p.parseInfixCall
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -493,6 +494,29 @@ func (p *Parser) parseLiteral() ast.Node {
 	}
 }
 
+func (p *Parser) parseExpressionList() []ast.Node {
+	args := make([]ast.Node, 0)
+
+	cur := p.lexer.PeekToken()
+	for !cur.Is(tokens.Rparen) {
+		p.eatNewLines()
+
+		arg := p.parseExpression(order.Lowest)
+		if arg == nil {
+			break
+		}
+
+		args = append(args, arg)
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Comma) {
+			p.lexer.EatToken()
+		}
+	}
+
+	return args
+}
+
 // ----------------------------------------------------------------
 // Prefix Functions
 // ----------------------------------------------------------------
@@ -628,6 +652,19 @@ func (p *Parser) parseInfixAssignment(left ast.Node) ast.Node {
 		Expression: exp,
 		Definition: false,
 	}
+}
+
+func (p *Parser) parseInfixCall(left ast.Node) ast.Node {
+	p.lexer.EatToken()
+
+	node := &ast.Call{
+		Target:    left,
+		Arguments: p.parseExpressionList(),
+	}
+
+	p.Expect(tokens.Rparen)
+	p.lexer.EatToken()
+	return node
 }
 
 // ----------------------------------------------------------------

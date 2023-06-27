@@ -56,15 +56,15 @@ type BooleanDataType struct {
 	BaseDataType
 }
 
-func (d *BooleanDataType) OnBoolean(r *Runtime, args ...*Instance) *Instance {
+func (d *BooleanDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return args[0]
 }
 
-func (d *BooleanDataType) OnString(r *Runtime, args ...*Instance) *Instance {
-	return d.OnRepr(r, args...)
+func (d *BooleanDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, args...)
 }
 
-func (d *BooleanDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
+func (d *BooleanDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	v := AsBool(args[0])
 	if v {
 		return String.Create("true")
@@ -73,12 +73,12 @@ func (d *BooleanDataType) OnRepr(r *Runtime, args ...*Instance) *Instance {
 	return String.Create("false")
 }
 
-func (d *BooleanDataType) OnNot(r *Runtime, args ...*Instance) *Instance {
+func (d *BooleanDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	v := AsBool(args[0])
 	return Boolean.Create(!v)
 }
 
-func (n *BooleanDataType) OnEq(r *Runtime, args ...*Instance) *Instance {
+func (n *BooleanDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Boolean.FALSE
 	}
@@ -93,7 +93,7 @@ func (n *BooleanDataType) OnEq(r *Runtime, args ...*Instance) *Instance {
 	}
 }
 
-func (n *BooleanDataType) OnNeq(r *Runtime, args ...*Instance) *Instance {
+func (n *BooleanDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return Boolean.FALSE
 	}
