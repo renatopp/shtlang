@@ -37,11 +37,11 @@ func (s *Stack) Pop() *Scope {
 	return s.Current()
 }
 
-func (e *Stack) Get(name string) (*Instance, bool) {
+func (e *Stack) Get(name string) (*Reference, bool) {
 	return e.Current().Get(name)
 }
 
-func (e *Stack) Set(name string, val *Instance) *Instance {
+func (e *Stack) Set(name string, val *Reference) *Reference {
 	return e.Current().Set(name, val)
 }
 
@@ -49,6 +49,6 @@ func (e *Stack) Delete(name string) {
 	e.Current().Delete(name)
 }
 
-func (e *Stack) ForEach(fn func(string, *Instance)) {
+func (e *Stack) ForEach(fn func(string, *Reference)) {
 	e.Global.ForEach(fn)
 }

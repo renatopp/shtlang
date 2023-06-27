@@ -105,9 +105,11 @@ func CreateParser() *Parser {
 	p.prefixFns[tokens.Bang] = p.parsePrefixOperator
 	p.prefixFns[tokens.Operator] = p.parsePrefixOperator
 	p.prefixFns[tokens.Lparen] = p.parsePrefixParenthesis
+	p.prefixFns[tokens.Identifier] = p.parsePrefixIdentifier
 
 	p.infixFns[tokens.Operator] = p.parseInfixOperator
 	p.infixFns[tokens.Keyword] = p.parseInfixKeyword
+	p.infixFns[tokens.Assignment] = p.parseInfixAssignment
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -223,8 +225,7 @@ func (p *Parser) parseStatement() ast.Node {
 		// parse if
 
 	} else if cur.Is(tokens.Keyword) && (cur.Literal == "let" || cur.Literal == "const") {
-		// parse declaration
-
+		return p.parseDeclaration()
 	}
 
 	e := p.parseExpression(order.Lowest)
@@ -242,8 +243,48 @@ func (p *Parser) parseStatement() ast.Node {
 	return e
 }
 
+func (p *Parser) parseDeclaration() ast.Node {
+	cur := p.lexer.PeekToken()
+	p.lexer.EatToken()
+	constant := cur.Literal == "const"
+
+	if !p.Expect(tokens.Identifier) {
+		return nil
+	}
+
+	cur = p.lexer.PeekToken()
+	p.lexer.EatToken()
+	identifier := &ast.Identifier{
+		Token: cur,
+		Value: cur.Literal,
+	}
+
+	if !p.Expect(tokens.Assignment) {
+		return nil
+	}
+	cur = p.lexer.PeekToken()
+	p.lexer.EatToken()
+	decl := &ast.Assignment{
+		Token:      cur,
+		Literal:    cur.Literal,
+		Identifier: identifier,
+		Expression: nil,
+		Definition: true,
+		Constant:   constant,
+	}
+
+	decl.Expression = p.parseExpression(order.Lowest)
+	if decl.Expression == nil {
+		p.RegisterError(fmt.Sprintf("expected expression, got '%s'", cur.Literal), cur)
+		return nil
+	}
+
+	return decl
+}
+
 func (p *Parser) parseExpression(priority int) ast.Node {
 	cur := p.lexer.PeekToken()
+	// fmt.Println("parsing expression", priority, "-", cur)
 
 	prefixFn := p.prefixFns[cur.Type]
 
@@ -258,8 +299,10 @@ func (p *Parser) parseExpression(priority int) ast.Node {
 
 repeat_infix:
 	for {
-		for !isEndOfExpression(cur) && priority < priorityOf(cur) && isInfix(cur) {
+		// fmt.Println("for infix", priority, priorityOf(cur), cur)
+		for !isEndOfExpression(cur) && priority < priorityOf(cur) {
 			infixFn := p.infixFns[cur.Type]
+			// fmt.Println("checking infix", left, infixFn, cur)
 			if infixFn == nil {
 				return left
 			}
@@ -377,6 +420,16 @@ func (p *Parser) parsePrefixParenthesis() ast.Node {
 	return e
 }
 
+func (p *Parser) parsePrefixIdentifier() ast.Node {
+	cur := p.lexer.PeekToken()
+	// fmt.Println("parsePrefixIdentifier", cur)
+	p.lexer.EatToken()
+	return &ast.Identifier{
+		Token: cur,
+		Value: cur.Literal,
+	}
+}
+
 // ----------------------------------------------------------------
 // Infix Functions
 // ----------------------------------------------------------------
@@ -404,6 +457,32 @@ func (p *Parser) parseInfixKeyword(left ast.Node) ast.Node {
 		Operator: cur.Literal,
 		Left:     left,
 		Right:    p.parseExpression(priority),
+	}
+}
+
+func (p *Parser) parseInfixAssignment(left ast.Node) ast.Node {
+	left, ok := left.(*ast.Identifier)
+	// fmt.Println("infix assignment", left, p.lexer.PeekToken())
+	if !ok {
+		p.RegisterError(fmt.Sprintf("invalid left assignment. Expected identifier, got '%s'", left.String()), p.lexer.PeekToken())
+		return nil
+	}
+
+	id := left
+	ass := p.lexer.PeekToken()
+	p.lexer.EatToken()
+	exp := p.parseExpression(order.Lowest)
+
+	if exp == nil {
+		p.RegisterError(fmt.Sprintf("expected expression, got %s instead", p.lexer.PeekToken()), ass)
+	}
+
+	return &ast.Assignment{
+		Token:      ass,
+		Identifier: id,
+		Literal:    ass.Literal,
+		Expression: exp,
+		Definition: false,
 	}
 }
 

@@ -19,8 +19,9 @@ var (
 	accentColor       = lipgloss.AdaptiveColor{Light: "#FFA41B", Dark: "#FFA41B"}
 	promptChar        = "→ "
 	promptPlaceholder = "Enter command"
-	// cmdChar           = ">>> "
-	cmdChar     = "sht> "
+	// cmdChar = "⟜⥁🜂▵Ⲇ "
+	// cmdChar     = "[sht] "
+	cmdChar     = "▵ "
 	spinnerType = spinner.Points
 
 	promptStyle = func() lipgloss.Style {

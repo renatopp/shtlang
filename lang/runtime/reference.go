@@ -1,6 +1,6 @@
 package runtime
 
 type Reference struct {
-	Instance *Instance
+	Value    *Instance
 	Constant bool
 }

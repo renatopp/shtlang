@@ -38,15 +38,27 @@ func (t *ErrorInfo) Create(message string, a ...any) *Instance {
 }
 
 func (t *ErrorInfo) IncompatibleTypeOperation(op string, t1 *Instance, t2 *Instance) *Instance {
-	return Error.Create("invalid operation with incompatible types: %s %s %s", t1.Type.GetName(), op, t2.Type.GetName())
+	return Error.Create("invalid operation with incompatible types: '%s' %s '%s'", t1.Type.GetName(), op, t2.Type.GetName())
 }
 
 func (t *ErrorInfo) InvalidOperation(op string, t1 *Instance) *Instance {
-	return Error.Create("type %s does not implement operator %s", t1.Type.GetName(), op)
+	return Error.Create("type '%s' does not implement operator '%s'", t1.Type.GetName(), op)
 }
 
 func (t *ErrorInfo) InvalidAction(action string, t1 *Instance) *Instance {
-	return Error.Create("type %s does not implement action %s", t1.Type.GetName(), action)
+	return Error.Create("type '%s' does not implement action '%s'", t1.Type.GetName(), action)
+}
+
+func (t *ErrorInfo) DuplicatedDefinition(name string) *Instance {
+	return Error.Create("variable '%s' is already defined", name)
+}
+
+func (t *ErrorInfo) ReassigningConstant(name string) *Instance {
+	return Error.Create("invalid constant assignment '%s'", name)
+}
+
+func (t *ErrorInfo) VariableNotDefined(name string) *Instance {
+	return Error.Create("trying to use an unidentified variable '%s'", name)
 }
 
 // ----------------------------------------------------------------------------

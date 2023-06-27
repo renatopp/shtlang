@@ -28,6 +28,10 @@ func (r *Runtime) Run(node ast.Node) string {
 }
 
 func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
+	if scope == nil {
+		scope = r.Stack.Current()
+	}
+
 	switch n := node.(type) {
 	case *ast.Block:
 		return r.EvalBlock(n)
@@ -46,6 +50,12 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.BinaryOperator:
 		return r.EvalBinaryOperator(n)
+
+	case *ast.Assignment:
+		return r.EvalAssignment(n, scope)
+
+	case *ast.Identifier:
+		return r.EvalIdentifier(n, scope)
 	}
 
 	return Boolean.FALSE
@@ -148,4 +158,46 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator) *Instance {
 	}
 
 	return nil
+}
+
+func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
+	name := node.Identifier.(*ast.Identifier).Value
+	if node.Definition && scope.HasInScope(name) {
+		return Error.DuplicatedDefinition(name)
+	}
+
+	ref, ok := scope.Get(name)
+	if !node.Definition && !ok {
+		return Error.VariableNotDefined(name)
+	}
+
+	if !node.Definition && ok && ref.Constant {
+		return Error.ReassigningConstant(name)
+	}
+
+	exp := r.Eval(node.Expression, scope)
+	if exp.Type == Error.Type {
+		// TODO: Convert to maybe
+	}
+
+	if ok {
+		ref.Value = exp
+	} else {
+		scope.Set(name, &Reference{
+			Value:    exp,
+			Constant: node.Constant,
+		})
+	}
+
+	return exp
+}
+
+func (r *Runtime) EvalIdentifier(node *ast.Identifier, scope *Scope) *Instance {
+	name := node.Value
+	ref, ok := scope.Get(name)
+	if !ok {
+		return Error.VariableNotDefined(name)
+	}
+
+	return ref.Value
 }
