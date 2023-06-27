@@ -10,12 +10,7 @@ import (
 
 var sample1 = `fn hello(a,b,c=4) { a + b + c};`
 var sample2 = `
-fn func() {
-	return 1
-	4
-}
-
-func()
+'renato'
 `
 
 func main() {

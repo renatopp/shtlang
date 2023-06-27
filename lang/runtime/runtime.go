@@ -73,6 +73,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.Return:
 		return r.EvalReturn(n, scope)
 
+	case *ast.Indexing:
+		return r.EvalIndexing(n, scope)
+
 	}
 	return Boolean.FALSE
 }
@@ -298,4 +301,16 @@ func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {
 	})
 
 	return exp
+}
+
+func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
+	target := r.Eval(node.Target, scope)
+
+	args := make([]*Instance, len(node.Values)+1)
+	args[0] = target
+	for i, v := range node.Values {
+		args[i+1] = r.Eval(v, scope)
+	}
+
+	return target.Type.OnGetItem(r, scope, args...)
 }

@@ -118,7 +118,6 @@ func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Ins
 	this := AsString(args[0])
 
 	nargs := len(args)
-
 	if nargs > 1 && !IsNumber(args[1]) {
 		return Error.Create("index of a string must be a number, '%s' provided", args[1].Type.GetName())
 	}
@@ -131,21 +130,38 @@ func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Ins
 		return Error.Create("string indexing accepts only 0, 1 or 2 parameters, %d given", nargs-1)
 	}
 
-	if nargs == 2 {
-		idx := int(AsNumber(args[1]))
-		return String.Create(this[idx : idx+1])
-	} else if nargs == 3 {
-		idx0 := int(AsNumber(args[1]))
-		idx1 := int(AsNumber(args[2]))
-
-		if idx1 <= idx0 {
-			return Error.Create("second index '%d' of string slicing must be greater than the first '%d'", idx1, idx0)
+	idx0 := 0
+	if nargs >= 2 {
+		idx0 = int(AsNumber(args[1]))
+		if idx0 < 0 {
+			idx0 = 0
 		}
-
-		return String.Create(this[idx0:idx1])
+		if idx0 >= len(this) {
+			idx0 = len(this) - 1
+		}
 	}
 
-	return String.Create(this)
+	idx1 := idx0 + 1
+	if nargs >= 3 {
+		idx1 = int(AsNumber(args[2]))
+		if idx1 < 1 {
+			idx1 = 1
+		}
+		if idx1 > len(this) {
+			idx1 = len(this)
+		}
+	}
+
+	if nargs == 1 {
+		idx0 = 0
+		idx1 = len(this)
+	}
+
+	if idx1 <= idx0 {
+		return Error.Create("second index '%d' of string slicing must be greater than the first '%d'", idx1, idx0)
+	}
+
+	return String.Create(this[idx0:idx1])
 }
 
 // ----------------------------------------------------------------------------

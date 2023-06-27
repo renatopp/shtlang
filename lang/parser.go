@@ -111,6 +111,7 @@ func CreateParser() *Parser {
 	p.infixFns[tokens.Keyword] = p.parseInfixKeyword
 	p.infixFns[tokens.Assignment] = p.parseInfixAssignment
 	p.infixFns[tokens.Lparen] = p.parseInfixCall
+	p.infixFns[tokens.Lbracket] = p.parseInfixBracket
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -663,6 +664,19 @@ func (p *Parser) parseInfixCall(left ast.Node) ast.Node {
 	}
 
 	p.Expect(tokens.Rparen)
+	p.lexer.EatToken()
+	return node
+}
+
+func (p *Parser) parseInfixBracket(left ast.Node) ast.Node {
+	p.lexer.EatToken()
+
+	node := &ast.Indexing{
+		Target: left,
+		Values: p.parseExpressionList(),
+	}
+
+	p.Expect(tokens.Rbracket)
 	p.lexer.EatToken()
 	return node
 }
