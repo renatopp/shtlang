@@ -88,10 +88,29 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	return Boolean.FALSE
 }
 
+func (r *Runtime) Throw(err *Instance, scope *Scope) *Instance {
+	e, ok := scope.GetInScope(RAISE_KEY)
+	if ok {
+		return e.Value
+	}
+
+	scope.Set(RAISE_KEY, &Reference{
+		Value:    err,
+		Constant: true,
+	})
+
+	return err
+}
+
 func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
 	var result *Instance
 	for _, stmt := range node.Statements {
 		result = r.Eval(stmt, scope)
+		if err, ok := scope.Get(RAISE_KEY); ok {
+			result = err.Value
+			break
+		}
+
 		if _, ok := scope.Get(RETURN_KEY); ok {
 			break
 		}
@@ -194,7 +213,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 	name := node.Identifier.(*ast.Identifier).Value
 	if node.Definition && scope.HasInScope(name) {
-		return Error.DuplicatedDefinition(scope, name)
+		return r.Throw(Error.DuplicatedDefinition(scope, name), scope)
 	}
 
 	globalRef, _ := scope.Get(name)
@@ -205,17 +224,14 @@ func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 	}
 
 	if !node.Definition && ref == nil {
-		return Error.VariableNotDefined(scope, name)
+		return r.Throw(Error.VariableNotDefined(scope, name), scope)
 	}
 
 	if !node.Definition && ref != nil && ref.Constant {
-		return Error.ReassigningConstant(scope, name)
+		return r.Throw(Error.ReassigningConstant(scope, name), scope)
 	}
 
 	exp := r.Eval(node.Expression, scope)
-	if exp.Type == Error.Type {
-		// TODO: Convert to maybe
-	}
 
 	if ref != nil {
 		ref.Value = exp
@@ -233,7 +249,7 @@ func (r *Runtime) EvalIdentifier(node *ast.Identifier, scope *Scope) *Instance {
 	name := node.Value
 	ref, ok := scope.Get(name)
 	if !ok {
-		return Error.VariableNotDefined(scope, name)
+		return r.Throw(Error.VariableNotDefined(scope, name), scope)
 	}
 
 	return ref.Value
@@ -254,12 +270,18 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 		}
 
 		if p.Spread && p.Default != nil {
-			return Error.Create(scope, "spread arguments cannot have default values: '%s'", p.Name)
+			return r.Throw(
+				Error.Create(scope, "spread arguments cannot have default values: '%s'", p.Name),
+				scope,
+			)
 		}
 
 		if p.Spread {
 			if hasSpread {
-				return Error.Create(scope, "only one spread argument is allowed: '%s'", p.Name)
+				return r.Throw(
+					Error.Create(scope, "only one spread argument is allowed: '%s'", p.Name),
+					scope,
+				)
 			}
 
 			hasSpread = true
@@ -267,11 +289,17 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 
 		if p.Default != nil {
 			if hasSpread {
-				return Error.Create(scope, "default arguments cannot proceed spread arguments: '%s'", p.Name)
+				return r.Throw(
+					Error.Create(scope, "default arguments cannot proceed spread arguments: '%s'", p.Name),
+					scope,
+				)
 			}
 			hasDefault = true
 		} else if hasDefault {
-			return Error.Create(scope, "default arguments must be at the end: '%s'", p.Name)
+			return r.Throw(
+				Error.Create(scope, "default arguments must be at the end: '%s'", p.Name),
+				scope,
+			)
 		}
 
 		params[i] = p

@@ -78,7 +78,7 @@ func (d *NumberDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instan
 
 func (d *NumberDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "+", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "+", args[0], args[1]), s)
 	}
 
 	return Number.Create(AsNumber(args[0]) + AsNumber(args[1]))
@@ -86,7 +86,7 @@ func (d *NumberDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instanc
 
 func (d *NumberDataType) OnSub(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "-", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "-", args[0], args[1]), s)
 	}
 
 	return Number.Create(AsNumber(args[0]) - AsNumber(args[1]))
@@ -94,7 +94,7 @@ func (d *NumberDataType) OnSub(r *Runtime, s *Scope, args ...*Instance) *Instanc
 
 func (d *NumberDataType) OnMul(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "*", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "*", args[0], args[1]), s)
 	}
 
 	return Number.Create(AsNumber(args[0]) * AsNumber(args[1]))
@@ -102,7 +102,7 @@ func (d *NumberDataType) OnMul(r *Runtime, s *Scope, args ...*Instance) *Instanc
 
 func (d *NumberDataType) OnDiv(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "/", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "/", args[0], args[1]), s)
 	}
 
 	return Number.Create(AsNumber(args[0]) / AsNumber(args[1]))
@@ -110,7 +110,7 @@ func (d *NumberDataType) OnDiv(r *Runtime, s *Scope, args ...*Instance) *Instanc
 
 func (d *NumberDataType) OnIntDiv(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "//", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "//", args[0], args[1]), s)
 	}
 
 	return Number.Create(math.Floor(AsNumber(args[0]) / AsNumber(args[1])))
@@ -118,7 +118,7 @@ func (d *NumberDataType) OnIntDiv(r *Runtime, s *Scope, args ...*Instance) *Inst
 
 func (d *NumberDataType) OnMod(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "%", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "%", args[0], args[1]), s)
 	}
 
 	return Number.Create(math.Mod(AsNumber(args[0]), AsNumber(args[1])))
@@ -126,7 +126,7 @@ func (d *NumberDataType) OnMod(r *Runtime, s *Scope, args ...*Instance) *Instanc
 
 func (d *NumberDataType) OnPow(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "**", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "**", args[0], args[1]), s)
 	}
 
 	return Number.Create(math.Pow(AsNumber(args[0]), AsNumber(args[1])))
@@ -148,7 +148,7 @@ func (d *NumberDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instanc
 
 func (d *NumberDataType) OnGt(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, ">", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, ">", args[0], args[1]), s)
 	}
 
 	return Boolean.Create(AsNumber(args[0]) > AsNumber(args[1]))
@@ -156,7 +156,7 @@ func (d *NumberDataType) OnGt(r *Runtime, s *Scope, args ...*Instance) *Instance
 
 func (d *NumberDataType) OnLt(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "<", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "<", args[0], args[1]), s)
 	}
 
 	return Boolean.Create(AsNumber(args[0]) < AsNumber(args[1]))
@@ -164,7 +164,7 @@ func (d *NumberDataType) OnLt(r *Runtime, s *Scope, args ...*Instance) *Instance
 
 func (d *NumberDataType) OnGte(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, ">=", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, ">=", args[0], args[1]), s)
 	}
 
 	return Boolean.Create(AsNumber(args[0]) >= AsNumber(args[1]))
@@ -172,7 +172,7 @@ func (d *NumberDataType) OnGte(r *Runtime, s *Scope, args ...*Instance) *Instanc
 
 func (d *NumberDataType) OnLte(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "<=", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "<=", args[0], args[1]), s)
 	}
 
 	return Boolean.Create(AsNumber(args[0]) <= AsNumber(args[1]))

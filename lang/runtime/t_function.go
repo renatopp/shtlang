@@ -95,7 +95,7 @@ func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *
 			var value *Instance
 			if g >= tArgs {
 				if v.Default == nil {
-					return Error.Create(scope, "missing argument: '%s'", v.Name)
+					return r.Throw(Error.Create(scope, "missing argument: '%s'", v.Name), scope)
 				}
 				value = v.Default
 			} else {
@@ -109,7 +109,7 @@ func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *
 			})
 		} else {
 			// TODO: Handle spread arguments
-			return Error.Create(scope, "spread arguments are not supported yet: '%s'", v.Name)
+			return r.Throw(Error.Create(scope, "spread arguments are not supported yet: '%s'", v.Name), scope)
 
 			if i == 0 {
 			} // TODO: REMOVE

@@ -51,7 +51,7 @@ type StringDataType struct {
 
 func (d *StringDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
-		return Error.IncompatibleTypeOperation(s, "+", args[0], args[1])
+		return r.Throw(Error.IncompatibleTypeOperation(s, "+", args[0], args[1]), s)
 	}
 
 	return String.Create(AsString(args[0]) + AsString(args[1]))
@@ -119,15 +119,15 @@ func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Ins
 
 	nargs := len(args)
 	if nargs > 1 && !IsNumber(args[1]) {
-		return Error.Create(s, "index of a string must be a number, '%s' provided", args[1].Type.GetName())
+		return r.Throw(Error.Create(s, "index of a string must be a number, '%s' provided", args[1].Type.GetName()), s)
 	}
 
 	if nargs > 2 && !IsNumber(args[2]) {
-		return Error.Create(s, "index of a string must be a number, '%s' provided", args[2].Type.GetName())
+		return r.Throw(Error.Create(s, "index of a string must be a number, '%s' provided", args[2].Type.GetName()), s)
 	}
 
 	if nargs > 3 {
-		return Error.Create(s, "string indexing accepts only 0, 1 or 2 parameters, %d given", nargs-1)
+		return r.Throw(Error.Create(s, "string indexing accepts only 0, 1 or 2 parameters, %d given", nargs-1), s)
 	}
 
 	idx0 := 0
@@ -158,7 +158,7 @@ func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Ins
 	}
 
 	if idx1 <= idx0 {
-		return Error.Create(s, "second index '%d' of string slicing must be greater than the first '%d'", idx1, idx0)
+		return r.Throw(Error.Create(s, "second index '%d' of string slicing must be greater than the first '%d'", idx1, idx0), s)
 	}
 
 	return String.Create(this[idx0:idx1])

@@ -12,6 +12,10 @@ var sample1 = `fn hello(a,b,c=4) { a + b + c};`
 var sample2 = `
 fn hello(x) {
 	x()
+
+	1 + 2
+
+	3
 }
 
 hello('renato')

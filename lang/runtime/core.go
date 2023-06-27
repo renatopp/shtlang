@@ -7,6 +7,7 @@ import (
 )
 
 const RETURN_KEY = "0_return"
+const RAISE_KEY = "0_raise"
 const SCOPE_NAME_KEY = "0_scope_name"
 const SCOPE_DEPTH_KEY = "0_scope_depth"
 const SCOPE_ID_KEY = "0_scope_id"
