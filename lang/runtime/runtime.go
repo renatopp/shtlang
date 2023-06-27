@@ -194,7 +194,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 	name := node.Identifier.(*ast.Identifier).Value
 	if node.Definition && scope.HasInScope(name) {
-		return Error.DuplicatedDefinition(name)
+		return Error.DuplicatedDefinition(scope, name)
 	}
 
 	globalRef, _ := scope.Get(name)
@@ -205,11 +205,11 @@ func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 	}
 
 	if !node.Definition && ref == nil {
-		return Error.VariableNotDefined(name)
+		return Error.VariableNotDefined(scope, name)
 	}
 
 	if !node.Definition && ref != nil && ref.Constant {
-		return Error.ReassigningConstant(name)
+		return Error.ReassigningConstant(scope, name)
 	}
 
 	exp := r.Eval(node.Expression, scope)
@@ -233,7 +233,7 @@ func (r *Runtime) EvalIdentifier(node *ast.Identifier, scope *Scope) *Instance {
 	name := node.Value
 	ref, ok := scope.Get(name)
 	if !ok {
-		return Error.VariableNotDefined(name)
+		return Error.VariableNotDefined(scope, name)
 	}
 
 	return ref.Value
@@ -254,12 +254,12 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 		}
 
 		if p.Spread && p.Default != nil {
-			return Error.Create("spread arguments cannot have default values: '%s'", p.Name)
+			return Error.Create(scope, "spread arguments cannot have default values: '%s'", p.Name)
 		}
 
 		if p.Spread {
 			if hasSpread {
-				return Error.Create("only one spread argument is allowed: '%s'", p.Name)
+				return Error.Create(scope, "only one spread argument is allowed: '%s'", p.Name)
 			}
 
 			hasSpread = true
@@ -267,11 +267,11 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 
 		if p.Default != nil {
 			if hasSpread {
-				return Error.Create("default arguments cannot proceed spread arguments: '%s'", p.Name)
+				return Error.Create(scope, "default arguments cannot proceed spread arguments: '%s'", p.Name)
 			}
 			hasDefault = true
 		} else if hasDefault {
-			return Error.Create("default arguments must be at the end: '%s'", p.Name)
+			return Error.Create(scope, "default arguments must be at the end: '%s'", p.Name)
 		}
 
 		params[i] = p

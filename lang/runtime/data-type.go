@@ -78,93 +78,92 @@ func (d *BaseDataType) HasInstanceFn(name string) bool {
 }
 
 func (d *BaseDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("Set", args[0])
+	return Error.InvalidAction(s, "Set", args[0])
 }
 func (d *BaseDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("Get", args[0])
+	return Error.InvalidAction(s, "Get", args[0])
 }
 func (d *BaseDataType) OnSetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("SetItem", args[0])
+	return Error.InvalidAction(s, "SetItem", args[0])
 }
 func (d *BaseDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("GetItem", args[0])
+	return Error.InvalidAction(s, "GetItem", args[0])
 }
 func (d *BaseDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("New", args[0])
+	return Error.InvalidAction(s, "New", args[0])
 }
 func (d *BaseDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	Error.StackTrace(s)
-	return Error.InvalidAction("Call", args[0])
+	return Error.InvalidAction(s, "Call", args[0])
 }
 func (d *BaseDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("Boolean", args[0])
+	return Error.InvalidAction(s, "Boolean", args[0])
 }
 func (d *BaseDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("String", args[0])
+	return Error.InvalidAction(s, "String", args[0])
 }
 func (d *BaseDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("Repr", args[0])
+	return Error.InvalidAction(s, "Repr", args[0])
 }
 func (d *BaseDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("To", args[0])
+	return Error.InvalidAction(s, "To", args[0])
 }
 func (d *BaseDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("Iter", args[0])
+	return Error.InvalidAction(s, "Iter", args[0])
 }
 func (d *BaseDataType) OnBang(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidAction("Bang", args[0])
+	return Error.InvalidAction(s, "Bang", args[0])
 }
 func (d *BaseDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Add", args[0])
+	return Error.InvalidOperation(s, "Add", args[0])
 }
 func (d *BaseDataType) OnSub(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Sub", args[0])
+	return Error.InvalidOperation(s, "Sub", args[0])
 }
 func (d *BaseDataType) OnMul(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Mul", args[0])
+	return Error.InvalidOperation(s, "Mul", args[0])
 }
 func (d *BaseDataType) OnDiv(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Div", args[0])
+	return Error.InvalidOperation(s, "Div", args[0])
 }
 func (d *BaseDataType) OnIntDiv(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("IntDiv", args[0])
+	return Error.InvalidOperation(s, "IntDiv", args[0])
 }
 func (d *BaseDataType) OnMod(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Mod", args[0])
+	return Error.InvalidOperation(s, "Mod", args[0])
 }
 func (d *BaseDataType) OnPow(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Pow", args[0])
+	return Error.InvalidOperation(s, "Pow", args[0])
 }
 func (d *BaseDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Eq", args[0])
+	return Error.InvalidOperation(s, "Eq", args[0])
 }
 func (d *BaseDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Neq", args[0])
+	return Error.InvalidOperation(s, "Neq", args[0])
 }
 func (d *BaseDataType) OnGt(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Gt", args[0])
+	return Error.InvalidOperation(s, "Gt", args[0])
 }
 func (d *BaseDataType) OnLt(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Lt", args[0])
+	return Error.InvalidOperation(s, "Lt", args[0])
 }
 func (d *BaseDataType) OnGte(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Gte", args[0])
+	return Error.InvalidOperation(s, "Gte", args[0])
 }
 func (d *BaseDataType) OnLte(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Lte", args[0])
+	return Error.InvalidOperation(s, "Lte", args[0])
 }
 func (d *BaseDataType) OnPos(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Pos", args[0])
+	return Error.InvalidOperation(s, "Pos", args[0])
 }
 func (d *BaseDataType) OnNeg(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Neg", args[0])
+	return Error.InvalidOperation(s, "Neg", args[0])
 }
 func (d *BaseDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("Not", args[0])
+	return Error.InvalidOperation(s, "Not", args[0])
 }
 func (d *BaseDataType) OnPostInc(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("PostInc", args[0])
+	return Error.InvalidOperation(s, "PostInc", args[0])
 }
 func (d *BaseDataType) OnPostDec(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return Error.InvalidOperation("PostDec", args[0])
+	return Error.InvalidOperation(s, "PostDec", args[0])
 }
