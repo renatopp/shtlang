@@ -3,6 +3,10 @@ package runtime
 type Scope struct {
 	Parent *Scope
 	Values map[string]*Reference
+
+	InAssignment bool
+	InExpression bool
+	InArgument   bool
 }
 
 func CreateScope(parent *Scope) *Scope {

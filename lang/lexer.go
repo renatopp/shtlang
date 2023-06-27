@@ -24,6 +24,7 @@ var keywords = []string{
 	"as",
 	"data",
 	"raise",
+	"yield",
 	"on",
 	"module",
 	"use",

@@ -215,8 +215,11 @@ func (p *Parser) parseStatement() ast.Node {
 		p.lexer.EatToken()
 		return nil
 
-	} else if cur.Is(tokens.Keyword) && cur.Literal == "return" {
-		// parse return
+	} else if cur.Is(tokens.Keyword) &&
+		cur.Literal == "return" ||
+		cur.Literal == "raise" ||
+		cur.Literal == "yield" {
+		return p.parseReturn()
 
 	} else if cur.Is(tokens.Keyword) && cur.Literal == "for" {
 		// parse for
@@ -241,6 +244,34 @@ func (p *Parser) parseStatement() ast.Node {
 	}
 
 	return e
+}
+
+func (p *Parser) parseReturn() ast.Node {
+	cur := p.lexer.PeekToken()
+	p.lexer.EatToken()
+
+	exp := p.parseExpression(order.Lowest)
+
+	switch cur.Literal {
+	case "return":
+		return &ast.Return{
+			Token:      cur,
+			Expression: exp,
+		}
+	case "raise":
+		return &ast.Raise{
+			Token:      cur,
+			Expression: exp,
+		}
+	case "yield":
+		return &ast.Yield{
+			Token:      cur,
+			Expression: exp,
+		}
+	default:
+		p.RegisterError(fmt.Sprintf("invalid return token '%s'", cur.Literal), cur)
+		return nil
+	}
 }
 
 func (p *Parser) parseDeclaration() ast.Node {
@@ -351,6 +382,117 @@ func (p *Parser) parseBoolean() ast.Node {
 	}
 }
 
+func (p *Parser) parseFunctionDef() ast.Node {
+	cur := p.lexer.EatToken()
+	if !p.Expect(tokens.Identifier, tokens.Lparen, tokens.Lbrace, tokens.Question) {
+		p.RegisterError(fmt.Sprintf("invalid function definition"), p.lexer.PeekToken())
+		return nil
+	}
+
+	fn := &ast.FunctionDef{
+		Token: cur,
+	}
+
+	cur = p.lexer.PeekToken()
+	if cur.Is(tokens.Identifier) {
+		p.lexer.EatToken()
+		fn.Name = cur.Literal
+	}
+
+	cur = p.lexer.PeekToken()
+	if cur.Is(tokens.Lparen) {
+		fn.Params = p.parseParameters()
+	}
+
+	cur = p.lexer.PeekToken()
+	if cur.Is(tokens.Question) {
+		p.lexer.EatToken()
+		fn.Maybe = true
+	}
+
+	cur = p.lexer.PeekToken()
+	if !p.Expect(tokens.Lbrace) {
+		p.RegisterError(fmt.Sprintf("invalid function definition"), p.lexer.PeekToken())
+		return nil
+	}
+
+	if cur.Is(tokens.Lbrace) {
+		fn.Body = p.parseBlock()
+	}
+
+	return fn
+}
+
+func (p *Parser) parseParameters() []ast.Node {
+	cur := p.lexer.PeekToken()
+	if cur.Is(tokens.Lparen) {
+		p.lexer.EatToken()
+	}
+
+	params := []ast.Node{}
+
+	cur = p.lexer.PeekToken()
+	for !cur.Is(tokens.Rparen) {
+		for cur.Is(tokens.Newline) {
+			p.lexer.EatToken()
+		}
+
+		if !p.Expect(tokens.Identifier) {
+			p.RegisterError(fmt.Sprintf("invalid parameter token '%s'", cur.Literal), cur)
+			return nil
+		}
+
+		p.lexer.EatToken()
+		param := &ast.Parameter{
+			Token: cur,
+			Name:  cur.Literal,
+		}
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Spread) {
+			p.lexer.EatToken()
+			param.Spread = true
+		}
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Assignment) && cur.Literal == "=" {
+			p.lexer.EatToken()
+			param.Default = p.parseLiteral()
+		}
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Comma) {
+			p.lexer.EatToken()
+		}
+
+		params = append(params, param)
+
+		if !p.Expect(tokens.Identifier, tokens.Rparen, tokens.Newline) {
+			p.RegisterError(fmt.Sprintf("invalid parameter token '%s'", cur.Literal), cur)
+			return nil
+		}
+	}
+
+	p.lexer.EatToken() // )
+	return params
+}
+
+func (p *Parser) parseLiteral() ast.Node {
+	cur := p.lexer.PeekToken()
+
+	switch {
+	case cur.Is(tokens.Number):
+		return p.parsePrefixNumber()
+	case cur.Is(tokens.String):
+		return p.parsePrefixString()
+	case cur.Is(tokens.Keyword) && (cur.Literal == "true" || cur.Literal == "false"):
+		return p.parseBoolean()
+	default:
+		p.RegisterError(fmt.Sprintf("invalid literal '%s'", cur.Literal), cur)
+		return nil
+	}
+}
+
 // ----------------------------------------------------------------
 // Prefix Functions
 // ----------------------------------------------------------------
@@ -363,6 +505,9 @@ func (p *Parser) parsePrefixKeyword() ast.Node {
 
 	case "!":
 		return p.parsePrefixOperator()
+
+	case "fn":
+		return p.parseFunctionDef()
 
 	default:
 		p.RegisterError(fmt.Sprintf("invalid keyword '%s'", cur.Literal), cur)
@@ -433,7 +578,6 @@ func (p *Parser) parsePrefixIdentifier() ast.Node {
 // ----------------------------------------------------------------
 // Infix Functions
 // ----------------------------------------------------------------
-
 func (p *Parser) parseInfixOperator(left ast.Node) ast.Node {
 	cur := p.lexer.PeekToken()
 	priority := priorityOf(cur)
@@ -489,7 +633,6 @@ func (p *Parser) parseInfixAssignment(left ast.Node) ast.Node {
 // ----------------------------------------------------------------
 // Postfix Functions
 // ----------------------------------------------------------------
-
 func (p *Parser) parsePostfixOperator(left ast.Node) ast.Node {
 	cur := p.lexer.PeekToken()
 	p.lexer.EatToken()
@@ -504,7 +647,6 @@ func (p *Parser) parsePostfixOperator(left ast.Node) ast.Node {
 // ----------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------
-
 func isEndOfBlock(t *tokens.Token) bool {
 	return t.Is(tokens.Rbrace) || t.Is(tokens.Eof)
 }

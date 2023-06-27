@@ -52,10 +52,16 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 		return r.EvalBinaryOperator(n)
 
 	case *ast.Assignment:
-		return r.EvalAssignment(n, scope)
+		scope.InAssignment = true
+		v := r.EvalAssignment(n, scope)
+		scope.InAssignment = false
+		return v
 
 	case *ast.Identifier:
 		return r.EvalIdentifier(n, scope)
+
+	case *ast.FunctionDef:
+		return r.EvalFunctionDef(n, scope)
 	}
 
 	return Boolean.FALSE
@@ -200,4 +206,54 @@ func (r *Runtime) EvalIdentifier(node *ast.Identifier, scope *Scope) *Instance {
 	}
 
 	return ref.Value
+}
+
+func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance {
+	name := node.Name
+	params := make([]*FunctionParam, len(node.Params))
+
+	hasSpread := false
+	hasDefault := false
+	for i, param := range node.Params {
+		param := param.(*ast.Parameter)
+		p := &FunctionParam{
+			Name:    param.Name,
+			Spread:  param.Spread,
+			Default: r.Eval(param.Default, nil),
+		}
+
+		if p.Spread && p.Default != nil {
+			return Error.Create("spread arguments cannot have default values: '%s'", p.Name)
+		}
+
+		if p.Spread {
+			if hasSpread {
+				return Error.Create("only one spread argument is allowed: '%s'", p.Name)
+			}
+
+			hasSpread = true
+		}
+
+		if p.Default != nil {
+			if hasSpread {
+				return Error.Create("default arguments cannot proceed spread arguments: '%s'", p.Name)
+			}
+			hasDefault = true
+		} else if hasDefault {
+			return Error.Create("default arguments must be at the end: '%s'", p.Name)
+		}
+
+		params[i] = p
+	}
+
+	fn := CustomFunction.Create(name, params, node.Body, scope)
+
+	if !scope.InAssignment && !scope.InArgument && name != "" {
+		scope.Set(name, &Reference{
+			Value:    fn,
+			Constant: false,
+		})
+	}
+
+	return fn
 }

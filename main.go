@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var sample1 = `x = 5;`
+var sample1 = `fn foo(x) { let a = 2 + 3; return a + x; }`
 
 func main() {
 	input := []byte(sample1)
