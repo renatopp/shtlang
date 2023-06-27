@@ -36,47 +36,55 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 		return Boolean.FALSE
 	}
 
+	scope.PushNode(node)
+	var result *Instance
 	switch n := node.(type) {
 	case *ast.Block:
-		return r.EvalBlock(n, scope)
+		result = r.EvalBlock(n, scope)
 
 	case *ast.Number:
-		return r.EvalNumber(n, scope)
+		result = r.EvalNumber(n, scope)
 
 	case *ast.Boolean:
-		return r.EvalBoolean(n, scope)
+		result = r.EvalBoolean(n, scope)
 
 	case *ast.String:
-		return r.EvalString(n, scope)
+		result = r.EvalString(n, scope)
 
 	case *ast.UnaryOperator:
-		return r.EvalUnaryOperator(n, scope)
+		result = r.EvalUnaryOperator(n, scope)
 
 	case *ast.BinaryOperator:
-		return r.EvalBinaryOperator(n, scope)
+		result = r.EvalBinaryOperator(n, scope)
 
 	case *ast.Assignment:
 		scope.InAssignment = true
-		v := r.EvalAssignment(n, scope)
+		result = r.EvalAssignment(n, scope)
 		scope.InAssignment = false
-		return v
 
 	case *ast.Identifier:
-		return r.EvalIdentifier(n, scope)
+		result = r.EvalIdentifier(n, scope)
 
 	case *ast.FunctionDef:
-		return r.EvalFunctionDef(n, scope)
+		result = r.EvalFunctionDef(n, scope)
 
 	case *ast.Call:
-		return r.EvalCall(n, scope)
+		result = r.EvalCall(n, scope)
 
 	case *ast.Return:
-		return r.EvalReturn(n, scope)
+		result = r.EvalReturn(n, scope)
 
 	case *ast.Indexing:
-		return r.EvalIndexing(n, scope)
+		result = r.EvalIndexing(n, scope)
 
 	}
+
+	scope.PopNode()
+
+	if result != nil {
+		return result
+	}
+
 	return Boolean.FALSE
 }
 

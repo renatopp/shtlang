@@ -82,6 +82,10 @@ func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *
 	scope.Set(SCOPE_NAME_KEY, Constant(String.Create(d.Name)))
 	scope.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(AsNumber(depth.Value)+1)))
 	scope.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
+	scope.Set(SCOPE_FN_KEY, Constant(&Instance{
+		Type: CustomFunction.Type,
+		Impl: d,
+	}))
 
 	tArgs := len(args)
 	// tParams := len(d.Params)

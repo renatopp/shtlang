@@ -1,6 +1,9 @@
 package runtime
 
-import "fmt"
+import (
+	"fmt"
+	"sht/lang/ast"
+)
 
 type Scope struct {
 	Parent *Scope
@@ -9,6 +12,8 @@ type Scope struct {
 	InAssignment bool
 	InExpression bool
 	InArgument   bool
+
+	nodeStack []ast.Node
 }
 
 func CreateScope(parent *Scope) *Scope {
@@ -16,6 +21,21 @@ func CreateScope(parent *Scope) *Scope {
 	s.Parent = parent
 	s.Values = make(map[string]*Reference)
 	return s
+}
+
+func (s *Scope) PushNode(node ast.Node) {
+	s.nodeStack = append(s.nodeStack, node)
+}
+
+func (s *Scope) PopNode() {
+	s.nodeStack = s.nodeStack[:len(s.nodeStack)-1]
+}
+
+func (s *Scope) CurrentNode() ast.Node {
+	if len(s.nodeStack) <= 0 {
+		return nil
+	}
+	return s.nodeStack[len(s.nodeStack)-1]
 }
 
 func (s *Scope) Get(name string) (*Reference, bool) {
@@ -100,11 +120,17 @@ func (s *Scope) print(i int, stack []*Scope) {
 }
 
 func (s *Scope) Print() {
+	stack := s.Stack()
+	s.print(0, stack)
+}
+
+func (s *Scope) Stack() []*Scope {
 	stack := make([]*Scope, 0)
 	scope := s
 	for scope != nil {
 		stack = append([]*Scope{scope}, stack...)
 		scope = scope.Parent
 	}
-	s.print(0, stack)
+
+	return stack
 }

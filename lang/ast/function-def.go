@@ -10,6 +10,10 @@ type FunctionDef struct {
 	Maybe  bool
 }
 
+func (p *FunctionDef) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *FunctionDef) String() string {
 	return "<funcdef:" + p.Name + ">"
 }

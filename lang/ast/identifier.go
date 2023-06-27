@@ -10,6 +10,10 @@ type Identifier struct {
 	Value string
 }
 
+func (p *Identifier) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Identifier) String() string {
 	return fmt.Sprintf("<identifier:%s>", p.Value)
 }

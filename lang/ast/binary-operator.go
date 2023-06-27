@@ -12,6 +12,10 @@ type BinaryOperator struct {
 	Right    Node
 }
 
+func (p *BinaryOperator) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *BinaryOperator) String() string {
 	return fmt.Sprintf("<operator:%s>", p.Operator)
 }

@@ -93,6 +93,7 @@ func (d *BaseDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance 
 	return Error.InvalidAction("New", args[0])
 }
 func (d *BaseDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	Error.StackTrace(s)
 	return Error.InvalidAction("Call", args[0])
 }
 func (d *BaseDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {

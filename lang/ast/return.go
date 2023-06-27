@@ -7,6 +7,10 @@ type Return struct {
 	Expression Node
 }
 
+func (p *Return) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Return) String() string {
 	return "<return>"
 }

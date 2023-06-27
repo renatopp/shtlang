@@ -10,6 +10,10 @@ type String struct {
 	Value string
 }
 
+func (p *String) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *String) String() string {
 	return fmt.Sprintf("<string:%s>", p.Value)
 }

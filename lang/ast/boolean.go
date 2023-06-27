@@ -7,6 +7,10 @@ type Boolean struct {
 	Value bool
 }
 
+func (p *Boolean) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Boolean) String() string {
 	return "<boolean:" + p.Token.Literal + ">"
 }

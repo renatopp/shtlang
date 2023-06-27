@@ -10,6 +10,10 @@ type Number struct {
 	Value float64
 }
 
+func (p *Number) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Number) String() string {
 	return fmt.Sprintf("<number:%f>", p.Value)
 }

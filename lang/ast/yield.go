@@ -7,6 +7,10 @@ type Yield struct {
 	Expression Node
 }
 
+func (p *Yield) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Yield) String() string {
 	return "<yield>"
 }

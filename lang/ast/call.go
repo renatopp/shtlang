@@ -1,8 +1,14 @@
 package ast
 
+import "sht/lang/tokens"
+
 type Call struct {
 	Target    Node
 	Arguments []Node
+}
+
+func (p *Call) GetToken() *tokens.Token {
+	return p.Target.GetToken()
 }
 
 func (p *Call) String() string {

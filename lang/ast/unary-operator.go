@@ -11,6 +11,10 @@ type UnaryOperator struct {
 	Right    Node
 }
 
+func (p *UnaryOperator) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *UnaryOperator) String() string {
 	return fmt.Sprintf("<unary:%s>", p.Operator)
 }

@@ -14,6 +14,10 @@ type Assignment struct {
 	Constant   bool
 }
 
+func (p *Assignment) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Assignment) String() string {
 	add := ""
 	if p.Definition {

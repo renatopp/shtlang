@@ -11,6 +11,10 @@ type PostfixOperator struct {
 	Left     Node
 }
 
+func (p *PostfixOperator) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *PostfixOperator) String() string {
 	return fmt.Sprintf("<postfix:%s>", p.Operator)
 }

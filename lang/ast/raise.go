@@ -7,6 +7,10 @@ type Raise struct {
 	Expression Node
 }
 
+func (p *Raise) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Raise) String() string {
 	return "<raise>"
 }

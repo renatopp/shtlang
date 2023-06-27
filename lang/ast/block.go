@@ -1,7 +1,13 @@
 package ast
 
+import "sht/lang/tokens"
+
 type Block struct {
 	Statements []Node
+}
+
+func (p *Block) GetToken() *tokens.Token {
+	return nil
 }
 
 func (p *Block) String() string {

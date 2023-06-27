@@ -10,7 +10,11 @@ import (
 
 var sample1 = `fn hello(a,b,c=4) { a + b + c};`
 var sample2 = `
-'renato'
+fn hello(x) {
+	x()
+}
+
+hello('renato')
 `
 
 func main() {

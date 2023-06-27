@@ -11,6 +11,10 @@ type Indexing struct {
 	Values []Node
 }
 
+func (p *Indexing) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Indexing) String() string {
 	return fmt.Sprintf("<indexing>")
 }

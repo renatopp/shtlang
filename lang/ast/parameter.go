@@ -9,6 +9,10 @@ type Parameter struct {
 	Default Node
 }
 
+func (p *Parameter) GetToken() *tokens.Token {
+	return p.Token
+}
+
 func (p *Parameter) String() string {
 	prefix := ""
 	suffix := ""

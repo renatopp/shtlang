@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"sht/lang/ast"
+	"sht/lang/tokens"
 )
 
 var errorDT = &ErrorDataType{
@@ -34,6 +35,31 @@ func (t *ErrorInfo) Create(message string, a ...any) *Instance {
 				"message": String.Create(msg),
 			},
 		},
+	}
+}
+
+func (t *ErrorInfo) StackTrace(s *Scope) {
+	stack := s.Stack()
+
+	for _, scope := range stack {
+		fn, _ := scope.GetInScope(SCOPE_FN_KEY)
+		if fn == nil {
+			fmt.Print("global")
+		} else {
+			fn := fn.Value.Impl.(*CustomFunctionDataImpl)
+			fmt.Print(fn.Name)
+		}
+
+		node := scope.CurrentNode()
+		var token *tokens.Token
+		if node != nil {
+			token = node.GetToken()
+		}
+		if token != nil {
+			fmt.Printf(" at %d, %d\n", token.Line, token.Column)
+		} else {
+			fmt.Println()
+		}
 	}
 }
 
