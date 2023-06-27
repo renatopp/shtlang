@@ -4,8 +4,6 @@ import (
 	"sht/lang/ast"
 )
 
-const RETURN_KEY = "0_return"
-
 type Runtime struct {
 	Global *Scope
 }
@@ -13,6 +11,10 @@ type Runtime struct {
 func CreateRuntime() *Runtime {
 	r := &Runtime{}
 	r.Global = CreateScope(nil)
+	r.Global.Set(SCOPE_NAME_KEY, Constant(String.Create("Global")))
+	r.Global.Set(SCOPE_DEPTH_KEY, Constant(Number.ZERO))
+	r.Global.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
+
 	// r.Global.Set(Type.Type.Name, Type.Instance)
 	// r.Global.Set(Number.Type.Name, Number.Instance)
 	// r.Global.Set(Boolean.Type.Name, Boolean.Instance)
@@ -30,14 +32,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 		scope = r.Global
 	}
 
-	// if node == nil {
-	// 	return Boolean.FALSE
-	// }
-
-	// fmt.Println("Evaluating", node.String(), "with")
-	// scope.ForEach(func(name string, ref *Reference) {
-	// 	fmt.Println("  ", name, "=", ref.Value.Repr())
-	// })
+	if node == nil {
+		return Boolean.FALSE
+	}
 
 	switch n := node.(type) {
 	case *ast.Block:
@@ -72,8 +69,11 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.Call:
 		return r.EvalCall(n, scope)
-	}
 
+	case *ast.Return:
+		return r.EvalReturn(n, scope)
+
+	}
 	return Boolean.FALSE
 }
 
@@ -186,12 +186,18 @@ func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 		return Error.DuplicatedDefinition(name)
 	}
 
-	ref, ok := scope.Get(name)
-	if !node.Definition && !ok {
+	globalRef, _ := scope.Get(name)
+	localRef, _ := scope.GetInScope(name)
+	ref := localRef
+	if localRef == nil && !node.Definition {
+		ref = globalRef
+	}
+
+	if !node.Definition && ref == nil {
 		return Error.VariableNotDefined(name)
 	}
 
-	if !node.Definition && ok && ref.Constant {
+	if !node.Definition && ref != nil && ref.Constant {
 		return Error.ReassigningConstant(name)
 	}
 
@@ -200,7 +206,7 @@ func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 		// TODO: Convert to maybe
 	}
 
-	if ok {
+	if ref != nil {
 		ref.Value = exp
 	} else {
 		scope.Set(name, &Reference{
@@ -282,4 +288,14 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 	}
 
 	return target.Type.OnCall(r, scope, args...)
+}
+
+func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {
+	exp := r.Eval(node.Expression, scope)
+	scope.Set(RETURN_KEY, &Reference{
+		Value:    exp,
+		Constant: true,
+	})
+
+	return exp
 }

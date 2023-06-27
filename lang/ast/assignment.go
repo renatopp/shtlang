@@ -17,12 +17,12 @@ type Assignment struct {
 func (p *Assignment) String() string {
 	add := ""
 	if p.Definition {
-		add = ";def"
+		add += ";def"
 	}
 	if p.Constant {
-		add = ";const"
+		add += ";const"
 	} else {
-		add = ";var"
+		add += ";var"
 	}
 	return fmt.Sprintf("<assignment%s:%s>", add, p.Literal)
 }

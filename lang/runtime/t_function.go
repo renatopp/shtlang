@@ -76,8 +76,12 @@ func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *
 		parentScope = s
 	}
 
+	depth, _ := parentScope.GetInScope(SCOPE_DEPTH_KEY)
+
 	scope := CreateScope(parentScope)
-	// TODO: Setup scoped information here
+	scope.Set(SCOPE_NAME_KEY, Constant(String.Create(d.Name)))
+	scope.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(AsNumber(depth.Value)+1)))
+	scope.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
 
 	tArgs := len(args)
 	// tParams := len(d.Params)

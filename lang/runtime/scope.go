@@ -1,5 +1,7 @@
 package runtime
 
+import "fmt"
+
 type Scope struct {
 	Parent *Scope
 	Values map[string]*Reference
@@ -69,4 +71,40 @@ func (s *Scope) ForEach(fn func(string, *Reference)) {
 	for k, v := range s.Values {
 		fn(k, v)
 	}
+}
+
+func (s *Scope) PrintSelf() {
+	s.ForEach(func(s string, r *Reference) {
+		fmt.Println(s, ":", r.Value.Repr())
+	})
+}
+
+func (s *Scope) print(i int, stack []*Scope) {
+	if i >= len(stack) {
+		return
+	}
+
+	scope := stack[i]
+	name, _ := scope.Get(SCOPE_NAME_KEY)
+	prefix := fmt.Sprintf("%*s", (i+1)*2, "")
+	prefix2 := fmt.Sprintf("%*s", (i+2)*2, "")
+	fmt.Printf(prefix+"scope %s {\n", AsString(name.Value))
+
+	scope.ForEach(func(s string, r *Reference) {
+		fmt.Println(prefix2 + s + ": " + r.Value.Repr())
+	})
+
+	s.print(i+1, stack)
+
+	fmt.Println(prefix + "}")
+}
+
+func (s *Scope) Print() {
+	stack := make([]*Scope, 0)
+	scope := s
+	for scope != nil {
+		stack = append([]*Scope{scope}, stack...)
+		scope = scope.Parent
+	}
+	s.print(0, stack)
 }

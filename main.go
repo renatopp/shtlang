@@ -8,19 +8,14 @@ import (
 	"strings"
 )
 
-var sample1 = `let x = 2;fn foo(y) { y + x; }; foo(4)`
+var sample1 = `fn hello(a,b,c=4) { a + b + c};`
 var sample2 = `
-
-fn scale(x) {
-	fn inner(a) {
-		a * x
-	}
+fn func() {
+	return 1
+	4
 }
 
-let scaled = scale(2)
-
-let x = 10
-scaled(4, 2)
+func()
 `
 
 func main() {

@@ -1,14 +1,21 @@
 // TODO: Co
 package runtime
 
+import (
+	"math/rand"
+	"time"
+)
+
+const RETURN_KEY = "0_return"
+const SCOPE_NAME_KEY = "0_scope_name"
+const SCOPE_DEPTH_KEY = "0_scope_depth"
+const SCOPE_ID_KEY = "0_scope_id"
+
 type DataImpl interface{}
 
 type InternalFunction func(r *Runtime, s *Scope, args ...*Instance) *Instance
 
 type Function interface {
-	// GetName() string
-	// GetParams() []*FunctionParam
-	// GetParentScope() *Scope
 	Call(r *Runtime, s *Scope, args ...*Instance) *Instance
 }
 
@@ -45,4 +52,29 @@ func AsString(instance *Instance) string {
 	} else {
 		return instance.Type.OnString(nil, nil, instance).Impl.(StringDataImpl).Value
 	}
+}
+
+func Variable(i *Instance) *Reference {
+	return &Reference{
+		Value:    i,
+		Constant: false,
+	}
+}
+
+func Constant(i *Instance) *Reference {
+	return &Reference{
+		Value:    i,
+		Constant: true,
+	}
+}
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func Id() string {
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, 16)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
 }

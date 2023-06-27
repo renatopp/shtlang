@@ -434,9 +434,7 @@ func (p *Parser) parseParameters() []ast.Node {
 
 	cur = p.lexer.PeekToken()
 	for !cur.Is(tokens.Rparen) {
-		for cur.Is(tokens.Newline) {
-			p.lexer.EatToken()
-		}
+		p.eatNewLines()
 
 		if !p.Expect(tokens.Identifier) {
 			p.RegisterError(fmt.Sprintf("invalid parameter token '%s'", cur.Literal), cur)
@@ -472,6 +470,8 @@ func (p *Parser) parseParameters() []ast.Node {
 			p.RegisterError(fmt.Sprintf("invalid parameter token '%s'", cur.Literal), cur)
 			return nil
 		}
+
+		cur = p.lexer.PeekToken()
 	}
 
 	p.lexer.EatToken() // )
