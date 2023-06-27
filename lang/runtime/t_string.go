@@ -61,6 +61,93 @@ func (d *StringDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instan
 	return args[0]
 }
 
+func (d *StringDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return args[0]
+}
+func (d *StringDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := AsString(args[0])
+
+	if this == "" {
+		return Boolean.FALSE
+	}
+
+	return Boolean.TRUE
+}
+
+func (d *StringDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := AsBool(d.OnBoolean(r, s, args...))
+
+	if this {
+		return Boolean.FALSE
+	}
+
+	return Boolean.TRUE
+}
+
+func (n *StringDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		return Boolean.FALSE
+	}
+
+	this := AsString(args[0])
+	other := AsString(args[1])
+
+	if this == other {
+		return Boolean.TRUE
+	} else {
+		return Boolean.FALSE
+	}
+}
+
+func (n *StringDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	if args[0].Type != args[1].Type {
+		return Boolean.FALSE
+	}
+
+	this := AsString(args[0])
+	other := AsString(args[1])
+
+	if this != other {
+		return Boolean.TRUE
+	} else {
+		return Boolean.FALSE
+	}
+}
+
+func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := AsString(args[0])
+
+	nargs := len(args)
+
+	if nargs > 1 && !IsNumber(args[1]) {
+		return Error.Create("index of a string must be a number, '%s' provided", args[1].Type.GetName())
+	}
+
+	if nargs > 2 && !IsNumber(args[2]) {
+		return Error.Create("index of a string must be a number, '%s' provided", args[2].Type.GetName())
+	}
+
+	if nargs > 3 {
+		return Error.Create("string indexing accepts only 0, 1 or 2 parameters, %d given", nargs-1)
+	}
+
+	if nargs == 2 {
+		idx := int(AsNumber(args[1]))
+		return String.Create(this[idx : idx+1])
+	} else if nargs == 3 {
+		idx0 := int(AsNumber(args[1]))
+		idx1 := int(AsNumber(args[2]))
+
+		if idx1 <= idx0 {
+			return Error.Create("second index '%d' of string slicing must be greater than the first '%d'", idx1, idx0)
+		}
+
+		return String.Create(this[idx0:idx1])
+	}
+
+	return String.Create(this)
+}
+
 // ----------------------------------------------------------------------------
 // STRING DATA IMPL
 // ----------------------------------------------------------------------------

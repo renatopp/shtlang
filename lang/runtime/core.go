@@ -27,6 +27,10 @@ func IsString(instance *Instance) bool {
 	return instance.Type == String.Type
 }
 
+func IsNumber(instance *Instance) bool {
+	return instance.Type == Number.Type
+}
+
 func AsBool(instance *Instance) bool {
 	if instance == nil {
 		return false
