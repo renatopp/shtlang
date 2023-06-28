@@ -16,7 +16,7 @@ const (
 	String     = "string"     // '.*'
 
 	// Operators
-	Operator   = "operator"   // +, -, *, /, //, %, **, ++, --, <, <=, >, >=, ==, !=, ..
+	Operator   = "operator"   // +, -, *, /, //, %, **, ++, --, <, <=, >, >=, ==, !=, .., ??
 	Assignment = "assignment" // =, +=, -=, *=, /=, //=,
 
 	// Separators

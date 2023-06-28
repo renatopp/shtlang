@@ -107,7 +107,13 @@ func (l *Lexer) PeekToken() *tokens.Token {
 
 func (l *Lexer) PeekTokenN(i int) *tokens.Token {
 	if len(l.tokenQueue) <= i {
-		l.tokenQueue = append(l.tokenQueue, l.parseNextToken())
+		t := l.parseNextToken()
+
+		if t.Literal == "??" {
+			l.tokenQueue = append(l.tokenQueue, tokens.CreateToken(tokens.Question, "?", t.Line, t.Column))
+		}
+
+		l.tokenQueue = append(l.tokenQueue, t)
 	}
 
 	return l.tokenQueue[i]
@@ -193,7 +199,8 @@ func (l *Lexer) isDoubleOperator(a rune, b rune) bool {
 		a == '>' && b == '=',
 		a == '=' && b == '=',
 		a == '!' && b == '=',
-		a == '.' && b == '.':
+		a == '.' && b == '.',
+		a == '?' && b == '?':
 		return true
 	default:
 		return false

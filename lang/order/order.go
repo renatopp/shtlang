@@ -5,6 +5,7 @@ const (
 	Comma          = -10
 	Concat         = -5
 	Spread         = 0
+	Unwrapping     = 5
 	Arrow          = 10
 	Assign         = 20
 	Conditional    = 30

@@ -158,41 +158,68 @@ func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator, scope *Scope) *Inst
 }
 
 func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *Instance {
-	left := r.Eval(node.Left, scope)
-	right := r.Eval(node.Right, scope)
 
 	switch node.Operator {
 	case "+":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnAdd(r, scope, left, right)
 	case "-":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnSub(r, scope, left, right)
 	case "*":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnMul(r, scope, left, right)
 	case "/":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnDiv(r, scope, left, right)
 	case "//":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnIntDiv(r, scope, left, right)
 	case "%":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnMod(r, scope, left, right)
 	case "**":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnPow(r, scope, left, right)
 	case "==":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnEq(r, scope, left, right)
 	case "!=":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnNeq(r, scope, left, right)
 	case ">":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnGt(r, scope, left, right)
 	case "<":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnLt(r, scope, left, right)
 	case ">=":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnGte(r, scope, left, right)
 	case "<=":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		return left.Type.OnLte(r, scope, left, right)
 
 	case "and", "or", "nand", "nor", "xor", "nxor":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		lt := AsBool(left)
 		rt := AsBool(right)
 
+		// TODO: only evaluating if necessary
 		switch node.Operator {
 		case "and":
 			return Boolean.Create(lt && rt)
@@ -209,9 +236,29 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 		}
 
 	case "..":
+		left := r.Eval(node.Left, scope)
+		right := r.Eval(node.Right, scope)
 		lt := AsString(left)
 		rt := AsString(right)
 		return String.Create(lt + rt)
+
+	case "??":
+		left := r.Eval(node.Left, scope)
+		if left.Type != Maybe.Type && left.Type != Error.Type {
+			return left
+		}
+
+		if left.Type == Error.Type {
+			return r.Eval(node.Right, scope)
+		}
+
+		maybe := left.Impl.(*MaybeDataImpl)
+		if maybe.Error != nil {
+			return r.Eval(node.Right, scope)
+		}
+
+		r.SolveMaybe(left, scope)
+		return maybe.Value
 	}
 
 	return nil
@@ -381,6 +428,10 @@ func (r *Runtime) EvalWrapping(node *ast.Wrapping, scope *Scope) *Instance {
 
 func (r *Runtime) EvalUnwrap(node *ast.Unwrapping, scope *Scope) *Instance {
 	target := r.Eval(node.Target, scope)
+	return r.SolveMaybe(target, scope)
+}
+
+func (r *Runtime) SolveMaybe(target *Instance, scope *Scope) *Instance {
 	if target.Type != Maybe.Type {
 		return r.Throw(Error.Create(scope, "cannot unwrap non-maybe type"), scope)
 	}

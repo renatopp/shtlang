@@ -51,6 +51,8 @@ func priorityOf(t *tokens.Token) int {
 			return order.Postfix
 		case "..":
 			return order.Concat
+		case "??":
+			return order.Unwrapping
 		}
 
 	case t.Is(tokens.Keyword):
@@ -745,7 +747,7 @@ func isPostfix(t *tokens.Token) bool {
 
 func isInfix(t *tokens.Token) bool {
 	switch t.Literal {
-	case "+", "-", "*", "/", "//", "%", "**", "==", "!=", ">", "<", ">=", "<=", "and", "nand", "or", "xor", "nor", "nxor", "..":
+	case "+", "-", "*", "/", "//", "%", "**", "==", "!=", ">", "<", ">=", "<=", "and", "nand", "or", "xor", "nor", "nxor", "..", "??":
 		return true
 	}
 

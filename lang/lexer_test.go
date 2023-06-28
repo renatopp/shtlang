@@ -45,7 +45,7 @@ func TestTokenizeSymbols(t *testing.T) {
 }
 
 func TestTokenizeOperators(t *testing.T) {
-	input := `+ - * / // % ** ++ -- < <= > >= == != ..`
+	input := `+ - * / // ?? % ** ++ -- < <= > >= == != ..`
 
 	expected := []*tokens.Token{
 		_createToken(tokens.Operator, "+"),
@@ -53,6 +53,7 @@ func TestTokenizeOperators(t *testing.T) {
 		_createToken(tokens.Operator, "*"),
 		_createToken(tokens.Operator, "/"),
 		_createToken(tokens.Operator, "//"),
+		_createToken(tokens.Operator, "??"),
 		_createToken(tokens.Operator, "%"),
 		_createToken(tokens.Operator, "**"),
 		_createToken(tokens.Operator, "++"),
