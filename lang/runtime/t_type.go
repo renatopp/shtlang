@@ -25,7 +25,7 @@ type TypeInfo struct {
 func (t *TypeInfo) Create(dataType DataType) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: TypeDataImpl{
+		Impl: &TypeDataImpl{
 			DataType: dataType,
 		},
 	}

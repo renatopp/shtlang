@@ -115,6 +115,10 @@ type ErrorDataType struct {
 	BaseDataType
 }
 
+func (t *ErrorDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return t.OnRepr(r, s, args[0])
+}
+
 func (d *ErrorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	msg := AsString(args[0].Impl.(ErrorDataImpl).Values["message"])
 	trace := AsString(args[0].Impl.(ErrorDataImpl).Values["trace"])

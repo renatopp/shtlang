@@ -24,6 +24,8 @@ func CreateRuntime() *Runtime {
 
 func (r *Runtime) Run(node ast.Node) string {
 	instance := r.Eval(node, nil)
+
+	delete(r.Global.Values, RAISE_KEY)
 	return instance.Repr()
 }
 
@@ -79,6 +81,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.Catching:
 		result = r.EvalCatching(n, scope)
+
+	case *ast.Unwrapping:
+		result = r.EvalUnwrap(n, scope)
 	}
 
 	scope.PopNode()
@@ -356,11 +361,39 @@ func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
 func (r *Runtime) EvalCatching(node *ast.Catching, scope *Scope) *Instance {
 	exp := r.Eval(node.Expression, scope)
 
-	if scope.HasInScope(RAISE_KEY) {
-		scope.Delete(RAISE_KEY)
-		return String.Create("Maybe")
-	} else {
+	if exp.Type == Maybe.Type {
 		return exp
 	}
 
+	maybe := Maybe.Create()
+	impl := maybe.Impl.(*MaybeDataImpl)
+	err, ok := scope.GetInScope(RAISE_KEY)
+
+	if ok {
+		scope.Delete(RAISE_KEY)
+		impl.Error = err.Value
+	} else {
+		impl.Value = exp
+	}
+
+	return maybe
+}
+
+func (r *Runtime) EvalUnwrap(node *ast.Unwrapping, scope *Scope) *Instance {
+	target := r.Eval(node.Target, scope)
+	if target.Type != Maybe.Type {
+		return r.Throw(Error.Create(scope, "cannot unwrap non-maybe type"), scope)
+	}
+
+	maybe := target.Impl.(*MaybeDataImpl)
+
+	if maybe.Error != nil {
+		target.Type = maybe.Error.Type
+		target.Impl = maybe.Error.Impl
+		return maybe.Error
+	} else {
+		target.Type = maybe.Value.Type
+		target.Impl = maybe.Value.Impl
+		return Boolean.FALSE
+	}
 }

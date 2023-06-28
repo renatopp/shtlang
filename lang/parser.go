@@ -695,6 +695,12 @@ func (p *Parser) parsePostfixOperator(left ast.Node) ast.Node {
 			Token:      cur,
 			Expression: left,
 		}
+
+	} else if cur.Is(tokens.Bang) {
+		return &ast.Unwrapping{
+			Token:  cur,
+			Target: left,
+		}
 	}
 
 	return &ast.PostfixOperator{

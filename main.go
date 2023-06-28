@@ -15,7 +15,7 @@ import (
 var sample1 = `a?`
 var sample2 = `
 fn a {
-	blaa
+	fasdf
 }
 
 fn b {

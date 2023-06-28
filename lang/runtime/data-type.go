@@ -96,7 +96,7 @@ func (d *BaseDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance
 	return r.Throw(Error.InvalidAction(s, "Call", args[0]), s)
 }
 func (d *BaseDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Boolean", args[0]), s)
+	return Boolean.TRUE
 }
 func (d *BaseDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, "String", args[0]), s)
