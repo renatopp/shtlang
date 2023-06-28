@@ -8,17 +8,25 @@ import (
 	"strings"
 )
 
-var sample1 = `fn hello(a,b,c=4) { a + b + c};`
+// var sample1 = `a++`
+
+// var sample1 = `a!`
+
+var sample1 = `a?`
 var sample2 = `
-fn hello(x) {
-	x()
-
-	1 + 2
-
-	3
+fn a {
+	blaa
 }
 
-hello('renato')
+fn b {
+	a()
+}
+
+fn c {
+	b()
+}
+
+c()?
 `
 
 func main() {

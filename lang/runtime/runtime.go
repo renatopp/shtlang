@@ -10,7 +10,7 @@ type Runtime struct {
 
 func CreateRuntime() *Runtime {
 	r := &Runtime{}
-	r.Global = CreateScope(nil)
+	r.Global = CreateScope(nil, nil)
 	r.Global.Set(SCOPE_NAME_KEY, Constant(String.Create("Global")))
 	r.Global.Set(SCOPE_DEPTH_KEY, Constant(Number.ZERO))
 	r.Global.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
@@ -77,6 +77,8 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.Indexing:
 		result = r.EvalIndexing(n, scope)
 
+	case *ast.Catching:
+		result = r.EvalCatching(n, scope)
 	}
 
 	scope.PopNode()
@@ -349,4 +351,16 @@ func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
 	}
 
 	return target.Type.OnGetItem(r, scope, args...)
+}
+
+func (r *Runtime) EvalCatching(node *ast.Catching, scope *Scope) *Instance {
+	exp := r.Eval(node.Expression, scope)
+
+	if scope.HasInScope(RAISE_KEY) {
+		scope.Delete(RAISE_KEY)
+		return String.Create("Maybe")
+	} else {
+		return exp
+	}
+
 }

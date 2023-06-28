@@ -7,6 +7,7 @@ import (
 
 type Scope struct {
 	Parent *Scope
+	Caller *Scope
 	Values map[string]*Reference
 
 	InAssignment bool
@@ -16,26 +17,13 @@ type Scope struct {
 	nodeStack []ast.Node
 }
 
-func CreateScope(parent *Scope) *Scope {
+func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s := &Scope{}
 	s.Parent = parent
+	s.Caller = caller
 	s.Values = make(map[string]*Reference)
+	s.nodeStack = make([]ast.Node, 0)
 	return s
-}
-
-func (s *Scope) PushNode(node ast.Node) {
-	s.nodeStack = append(s.nodeStack, node)
-}
-
-func (s *Scope) PopNode() {
-	s.nodeStack = s.nodeStack[:len(s.nodeStack)-1]
-}
-
-func (s *Scope) CurrentNode() ast.Node {
-	if len(s.nodeStack) <= 0 {
-		return nil
-	}
-	return s.nodeStack[len(s.nodeStack)-1]
 }
 
 func (s *Scope) Get(name string) (*Reference, bool) {
@@ -93,12 +81,6 @@ func (s *Scope) ForEach(fn func(string, *Reference)) {
 	}
 }
 
-func (s *Scope) PrintSelf() {
-	s.ForEach(func(s string, r *Reference) {
-		fmt.Println(s, ":", r.Value.Repr())
-	})
-}
-
 func (s *Scope) print(i int, stack []*Scope) {
 	if i >= len(stack) {
 		return
@@ -119,17 +101,49 @@ func (s *Scope) print(i int, stack []*Scope) {
 	fmt.Println(prefix + "}")
 }
 
+func (s *Scope) PrintSelf() {
+	s.ForEach(func(s string, r *Reference) {
+		fmt.Println(s, ":", r.Value.Repr())
+	})
+}
+
 func (s *Scope) Print() {
-	stack := s.Stack()
+	stack := s.ScopeStack()
 	s.print(0, stack)
 }
 
-func (s *Scope) Stack() []*Scope {
+func (s *Scope) PushNode(node ast.Node) {
+	s.nodeStack = append(s.nodeStack, node)
+}
+
+func (s *Scope) PopNode() {
+	s.nodeStack = s.nodeStack[:len(s.nodeStack)-1]
+}
+
+func (s *Scope) CurrentNode() ast.Node {
+	if len(s.nodeStack) <= 0 {
+		return nil
+	}
+	return s.nodeStack[len(s.nodeStack)-1]
+}
+
+func (s *Scope) ScopeStack() []*Scope {
 	stack := make([]*Scope, 0)
 	scope := s
 	for scope != nil {
 		stack = append([]*Scope{scope}, stack...)
 		scope = scope.Parent
+	}
+
+	return stack
+}
+
+func (s *Scope) CallStack() []*Scope {
+	stack := make([]*Scope, 0)
+	scope := s
+	for scope != nil {
+		stack = append([]*Scope{scope}, stack...)
+		scope = scope.Caller
 	}
 
 	return stack

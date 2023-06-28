@@ -67,8 +67,8 @@ func priorityOf(t *tokens.Token) int {
 		return order.Indexing
 	case t.Is(tokens.Dot):
 		return order.Chain
-	case t.Is(tokens.Question):
-		return order.Conditional
+	// case t.Is(tokens.Question), t.Is(tokens.Bang):
+	// 	return order.Catching
 	default:
 		return order.Lowest
 	}
@@ -115,6 +115,7 @@ func CreateParser() *Parser {
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
+	p.postfixFns[tokens.Question] = p.parsePostfixOperator
 
 	return p
 }
@@ -351,9 +352,10 @@ repeat_infix:
 		}
 
 		cur = p.lexer.PeekToken()
+		// fmt.Println("for postfix", priority, priorityOf(cur), cur)
 		for isPostfix(cur) {
-
 			postfixFn := p.postfixFns[cur.Type]
+			// fmt.Println("has postfix?", postfixFn, cur.Type)
 			if postfixFn == nil {
 				return left
 			}
@@ -688,6 +690,13 @@ func (p *Parser) parsePostfixOperator(left ast.Node) ast.Node {
 	cur := p.lexer.PeekToken()
 	p.lexer.EatToken()
 
+	if cur.Is(tokens.Question) {
+		return &ast.Catching{
+			Token:      cur,
+			Expression: left,
+		}
+	}
+
 	return &ast.PostfixOperator{
 		Token:    cur,
 		Operator: cur.Literal,
@@ -721,7 +730,7 @@ func isUnary(t *tokens.Token) bool {
 
 func isPostfix(t *tokens.Token) bool {
 	switch t.Literal {
-	case "++", "--", "!":
+	case "++", "--", "!", "?":
 		return true
 	}
 

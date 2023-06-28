@@ -14,18 +14,18 @@ var functionDT = &CustomFunctionDataType{
 	},
 }
 
-var CustomFunction = &FunctionInfo{
+var CustomFunction = &CustomFunctionInfo{
 	Type: functionDT,
 }
 
 // ----------------------------------------------------------------------------
 // FUNCTION INFO
 // ----------------------------------------------------------------------------
-type FunctionInfo struct {
+type CustomFunctionInfo struct {
 	Type DataType
 }
 
-func (t *FunctionInfo) Create(name string, params []*FunctionParam, body ast.Node, scope *Scope) *Instance {
+func (t *CustomFunctionInfo) Create(name string, params []*FunctionParam, body ast.Node, scope *Scope) *Instance {
 	return &Instance{
 		Type: t.Type,
 		Impl: CustomFunctionDataImpl{
@@ -78,7 +78,7 @@ func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *
 
 	depth, _ := parentScope.GetInScope(SCOPE_DEPTH_KEY)
 
-	scope := CreateScope(parentScope)
+	scope := CreateScope(parentScope, s)
 	scope.Set(SCOPE_NAME_KEY, Constant(String.Create(d.Name)))
 	scope.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(AsNumber(depth.Value)+1)))
 	scope.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
@@ -133,5 +133,12 @@ func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *
 		}
 	}
 
-	return r.Eval(d.Body, scope)
+	res := r.Eval(d.Body, scope)
+
+	if scope.HasInScope(RAISE_KEY) {
+		err, _ := scope.GetInScope(RAISE_KEY)
+		s.Set(RAISE_KEY, err)
+	}
+
+	return res
 }

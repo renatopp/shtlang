@@ -18,6 +18,8 @@ type DataImpl interface{}
 type InternalFunction func(r *Runtime, s *Scope, args ...*Instance) *Instance
 
 type Function interface {
+	// GetName() string
+	// GetToken() tokens.Token
 	Call(r *Runtime, s *Scope, args ...*Instance) *Instance
 }
 

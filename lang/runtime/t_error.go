@@ -41,7 +41,7 @@ func (t *ErrorInfo) Create(s *Scope, message string, a ...any) *Instance {
 }
 
 func (t *ErrorInfo) StackTrace(s *Scope) string {
-	stack := s.Stack()
+	stack := s.CallStack()
 
 	trace := strings.Builder{}
 	total := 0
@@ -59,8 +59,12 @@ func (t *ErrorInfo) StackTrace(s *Scope) string {
 		if fn == nil {
 			trace.WriteString("<global>")
 		} else {
-			fn := fn.Value.Impl.(*CustomFunctionDataImpl)
-			trace.WriteString("<function " + fn.Name + ">")
+			switch fn := fn.Value.Impl.(type) {
+			case *CustomFunctionDataImpl:
+				trace.WriteString("<function " + fn.Name + ">")
+				// case *BuiltinFunctionDataImpl:
+				// 	trace.WriteString("<builtin " + fn.Name + ">")
+			}
 		}
 
 		node := scope.CurrentNode()
