@@ -14,7 +14,8 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-(3, '2') != (3, 'a')
+let a = (1, 2, 3, 4)
+a[3,4]
 `
 
 func main() {

@@ -52,6 +52,10 @@ func AsNumber(instance *Instance) float64 {
 	return 0
 }
 
+func AsInteger(instance *Instance) int {
+	return int(AsNumber(instance))
+}
+
 func AsString(instance *Instance) string {
 	if instance == nil {
 		return ""

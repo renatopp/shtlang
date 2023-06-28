@@ -41,7 +41,52 @@ type TupleDataType struct {
 	BaseDataType
 }
 
-// TODO GetItem
+func (t *TupleDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*TupleDataImpl)
+
+	nargs := len(args)
+	if nargs > 1 && !IsNumber(args[1]) {
+		return r.Throw(Error.Create(s, "index of a tuple must be a number, '%s' provided", args[1].Type.GetName()), s)
+	}
+
+	if nargs > 2 && !IsNumber(args[2]) {
+		return r.Throw(Error.Create(s, "index of a tuple must be a number, '%s' provided", args[2].Type.GetName()), s)
+	}
+
+	if nargs > 3 {
+		return r.Throw(Error.Create(s, "tuple indexing accepts only 1 or 2 parameters, %d given", nargs-1), s)
+	}
+
+	if nargs == 2 {
+		return this.Values[AsInteger(args[1])]
+	}
+
+	if nargs == 1 {
+		return Tuple.Create(this.Values...)
+	}
+
+	size := len(this.Values)
+	idx0 := AsInteger(args[1])
+	if idx0 < 0 || idx0 > size-1 {
+		return r.Throw(Error.Create(s, "first index '%d' of tuple slicing out of bounds", idx0), s)
+	}
+
+	idx1 := AsInteger(args[2])
+	if idx1 < 0 || idx1 > size {
+		return r.Throw(Error.Create(s, "second index '%d' of tuple slicing out of bounds", idx0), s)
+	}
+
+	if idx1 <= idx0 {
+		return r.Throw(Error.Create(s, "second index '%d' of tuple slicing must be greater than the first '%d'", idx1, idx0), s)
+	}
+
+	values := make([]*Instance, 0)
+	for _, v := range this.Values[idx0:idx1] {
+		values = append(values, v)
+	}
+
+	return Tuple.Create(values...)
+}
 
 func (d *TupleDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {

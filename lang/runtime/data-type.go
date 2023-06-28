@@ -21,7 +21,6 @@ type DataType interface {
 	OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance
-	OnBang(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnSub(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnMul(r *Runtime, s *Scope, args ...*Instance) *Instance
@@ -167,7 +166,12 @@ func (d *BaseDataType) OnNeg(r *Runtime, s *Scope, args ...*Instance) *Instance 
 	return r.Throw(Error.InvalidOperation(s, "Neg", args[0]), s)
 }
 func (d *BaseDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Not", args[0]), s)
+	b := AsBool(d.OnBoolean(r, s, args...))
+	if b {
+		return Boolean.FALSE
+	}
+
+	return Boolean.TRUE
 }
 func (d *BaseDataType) OnPostInc(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidOperation(s, "PostInc", args[0]), s)
