@@ -15,7 +15,8 @@ import (
 var sample1 = `a?`
 var sample2 = `
 fn a {
-	asdf
+	raise 'error'
+	3
 }
 
 fn b {
@@ -26,7 +27,7 @@ fn c {
 	b()
 }
 
-c() ?? 'default'
+c()
 `
 
 func main() {

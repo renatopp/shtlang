@@ -76,6 +76,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.Return:
 		result = r.EvalReturn(n, scope)
 
+	case *ast.Raise:
+		result = r.EvalRaise(n, scope)
+
 	case *ast.Indexing:
 		result = r.EvalIndexing(n, scope)
 
@@ -385,12 +388,31 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 
 func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {
 	exp := r.Eval(node.Expression, scope)
+	if exp == nil {
+		exp = Boolean.FALSE
+	}
+
 	scope.Set(RETURN_KEY, &Reference{
 		Value:    exp,
 		Constant: true,
 	})
 
 	return exp
+}
+
+func (r *Runtime) EvalRaise(node *ast.Raise, scope *Scope) *Instance {
+	exp := r.Eval(node.Expression, scope)
+	if exp == nil {
+		exp = Boolean.FALSE
+	}
+
+	if exp.Type == Error.Type {
+		return r.Throw(exp, scope)
+	} else {
+		return r.Throw(Error.Create(scope,
+			AsString(exp.Type.OnString(r, scope, exp)),
+		), scope)
+	}
 }
 
 func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
