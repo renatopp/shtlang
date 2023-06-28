@@ -12,7 +12,7 @@ func (p *Tuple) GetToken() *tokens.Token {
 }
 
 func (p *Tuple) String() string {
-	return "<return>"
+	return "<tuple>"
 }
 
 func (p *Tuple) Children() []Node {

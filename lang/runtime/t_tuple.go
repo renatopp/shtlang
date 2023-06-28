@@ -41,6 +41,11 @@ type TupleDataType struct {
 	BaseDataType
 }
 
+func (d *TupleDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*TupleDataImpl)
+	return Number.Create(float64(len(this.Values)))
+}
+
 func (t *TupleDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	this := args[0].Impl.(*TupleDataImpl)
 

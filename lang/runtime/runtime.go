@@ -15,9 +15,15 @@ func CreateRuntime() *Runtime {
 	r.Global.Set(SCOPE_DEPTH_KEY, Constant(Number.ZERO))
 	r.Global.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
 
-	// r.Global.Set(Type.Type.Name, Type.Instance)
-	// r.Global.Set(Number.Type.Name, Number.Instance)
-	// r.Global.Set(Boolean.Type.Name, Boolean.Instance)
+	r.Global.Set(Boolean.Type.GetName(), Constant(Type.Create(Boolean.Type)))
+	r.Global.Set(Error.Type.GetName(), Constant(Type.Create(Error.Type)))
+	r.Global.Set(CustomFunction.Type.GetName(), Constant(Type.Create(CustomFunction.Type)))
+	r.Global.Set(List.Type.GetName(), Constant(Type.Create(List.Type)))
+	r.Global.Set(Maybe.Type.GetName(), Constant(Type.Create(Maybe.Type)))
+	r.Global.Set(Number.Type.GetName(), Constant(Type.Create(Number.Type)))
+	r.Global.Set(String.Type.GetName(), Constant(Type.Create(String.Type)))
+	r.Global.Set(Tuple.Type.GetName(), Constant(Type.Create(Tuple.Type)))
+	r.Global.Set(Type.Type.GetName(), Constant(Type.Create(Type.Type)))
 
 	return r
 }
@@ -149,10 +155,22 @@ func (r *Runtime) EvalString(node *ast.String, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalTuple(node *ast.Tuple, scope *Scope) *Instance {
-	values := make([]*Instance, len(node.Values))
-	for i, v := range node.Values {
-		values[i] = r.Eval(v, scope)
+	values := make([]*Instance, 0)
+
+	for _, v := range node.Values {
+		s, isSpread := v.(*ast.SpreadOut)
+
+		if isSpread {
+			spreaded := r.Eval(s.Target, scope)
+
+			for _, v := range spreaded.Impl.(*TupleDataImpl).Values {
+				values = append(values, v)
+			}
+		} else {
+			values = append(values, r.Eval(v, scope))
+		}
 	}
+
 	return Tuple.Create(values...)
 }
 
@@ -278,35 +296,64 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 	return nil
 }
 
+// func (r *Runtime) evalAssign(id ast.Node, )
+
 func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
-	name := node.Identifier.(*ast.Identifier).Value
-	if node.Definition && scope.HasInScope(name) {
+	// idpool := []ast.Node{}
+	// expool := []*Instance{}
+
+	identifiers := node.Identifier.(*ast.Tuple)
+	values := r.Eval(node.Expression, scope)
+
+	if len(identifiers.Values) > 1 {
+		if values.Type != Tuple.Type {
+			return r.Throw(Error.Create(scope, "cannot unpack non-tuple type"), scope)
+		}
+		tupledValues := values.Impl.(*TupleDataImpl)
+		if len(identifiers.Values) != len(tupledValues.Values) {
+			return r.Throw(Error.Create(scope, "cannot unpack tuple of length %d into %d variables",
+				len(tupledValues.Values), len(identifiers.Values)), scope)
+		}
+
+		for i, _ := range identifiers.Values {
+			id := identifiers.Values[i].(*ast.Identifier).Value
+			exp := tupledValues.Values[i]
+			r.Assign(id, exp, node.Definition, node.Constant, scope)
+		}
+
+		return values
+	}
+
+	name := identifiers.Values[0].(*ast.Identifier).Value
+	return r.Assign(name, values, node.Definition, node.Constant, scope)
+}
+
+func (r *Runtime) Assign(name string, exp *Instance, def, cnst bool, scope *Scope) *Instance {
+	if def && scope.HasInScope(name) {
 		return r.Throw(Error.DuplicatedDefinition(scope, name), scope)
 	}
 
 	globalRef, _ := scope.Get(name)
 	localRef, _ := scope.GetInScope(name)
 	ref := localRef
-	if localRef == nil && !node.Definition {
+	if localRef == nil && !def {
 		ref = globalRef
 	}
 
-	if !node.Definition && ref == nil {
+	if !def && ref == nil {
 		return r.Throw(Error.VariableNotDefined(scope, name), scope)
 	}
 
-	if !node.Definition && ref != nil && ref.Constant {
+	if !def && ref != nil && ref.Constant {
 		return r.Throw(Error.ReassigningConstant(scope, name), scope)
 	}
-
-	exp := r.Eval(node.Expression, scope)
 
 	if ref != nil {
 		ref.Value = exp
 	} else {
 		scope.Set(name, &Reference{
 			Value:    exp,
-			Constant: node.Constant,
+			Constant: cnst,
 		})
 	}
 
@@ -388,13 +435,25 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 	target := r.Eval(node.Target, scope)
 
+	isType := target.Type == Type.Type
+	if !isType && node.Initializer != nil {
+		return r.Throw(Error.Create(scope, "cannot initialize non-type"), scope)
+	}
+
 	args := make([]*Instance, len(node.Arguments)+1)
 	args[0] = target
 	for i, v := range node.Arguments {
 		args[i+1] = r.Eval(v, scope)
 	}
 
-	return target.Type.OnCall(r, scope, args...)
+	if isType {
+		impl := target.Impl.(*TypeDataImpl)
+		value := impl.DataType.Instantiate(r, scope, node.Initializer)
+		return value.Type.OnNew(r, scope, append([]*Instance{value}, args[1:]...)...)
+
+	} else {
+		return target.Type.OnCall(r, scope, args...)
+	}
 }
 
 func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {

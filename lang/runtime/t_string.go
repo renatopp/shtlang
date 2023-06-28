@@ -49,6 +49,11 @@ type StringDataType struct {
 	BaseDataType
 }
 
+func (d *StringDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := AsString(args[0])
+	return Number.Create(float64(len(this)))
+}
+
 func (d *StringDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return r.Throw(Error.IncompatibleTypeOperation(s, "+", args[0], args[1]), s)

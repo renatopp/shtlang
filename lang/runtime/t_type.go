@@ -38,6 +38,13 @@ type TypeDataType struct {
 	BaseDataType
 }
 
+// func (d *TypeDataType) OnCall(r *Runtime, s *Scope, def map[string]*Instance, args ...*Instance) *Instance {
+// 	impl := args[0].Impl.(*TypeDataImpl)
+// 	instance := impl.DataType.Instantiate(r, s, def)
+// 	instance = impl.DataType.OnNew(r, s, append([]*Instance{instance}, args[1:]...)...)
+// 	return instance
+// }
+
 func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return String.Create(args[0].Type.GetName())
 }

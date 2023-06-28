@@ -4,10 +4,10 @@ const (
 	Lowest         = -1000
 	Comma          = -10
 	Concat         = -5
-	Spread         = 0
 	Unwrapping     = 5
 	Arrow          = 10
 	Assign         = 20
+	Tuple          = 25
 	Conditional    = 30
 	Postfix        = 0
 	Or             = 40
@@ -21,8 +21,8 @@ const (
 	Mod            = 90
 	Unary          = 100
 	Exponentiation = 110
+	Spread         = 115
 	Indexing       = 120
-	Chain          = 126
 	Calls          = 130
 	Grouping       = 140
 	Highest        = 1000

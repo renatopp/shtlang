@@ -4,12 +4,14 @@ import "sht/lang/ast"
 
 type DataType interface {
 	GetName() string
+	Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance
 	GetProperty(name string) ast.Node
 	HasProperty(name string) bool
 	GetStaticFn(name string) Function
 	HasStaticFn(name string) bool
 	GetInstanceFn(name string) Function
 	HasInstanceFn(name string) bool
+	OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnSetItem(r *Runtime, s *Scope, args ...*Instance) *Instance
@@ -52,6 +54,10 @@ func (d *BaseDataType) GetName() string {
 	return d.Name
 }
 
+func (d *BaseDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
+	return r.Throw(Error.Create(s, "type '%s' does not allow instantiation", d.Name), s)
+}
+
 func (d *BaseDataType) GetProperty(name string) ast.Node {
 	return d.Properties[name]
 }
@@ -76,6 +82,9 @@ func (d *BaseDataType) HasInstanceFn(name string) bool {
 	return ok
 }
 
+func (d *BaseDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return r.Throw(Error.InvalidAction(s, "Len", args[0]), s)
+}
 func (d *BaseDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, "Set", args[0]), s)
 }
@@ -98,7 +107,7 @@ func (d *BaseDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Insta
 	return Boolean.TRUE
 }
 func (d *BaseDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "String", args[0]), s)
+	return d.OnRepr(r, s, args...)
 }
 func (d *BaseDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, "Repr", args[0]), s)

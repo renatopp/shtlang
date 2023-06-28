@@ -14,8 +14,11 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-let a = (1, 2, 3, 4)
-a[3,4]
+
+let a = (1, 2, 3)
+
+('>', a...)
+
 `
 
 func main() {

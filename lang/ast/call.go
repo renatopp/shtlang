@@ -3,8 +3,9 @@ package ast
 import "sht/lang/tokens"
 
 type Call struct {
-	Target    Node
-	Arguments []Node
+	Target      Node
+	Arguments   []Node
+	Initializer Initializer
 }
 
 func (p *Call) GetToken() *tokens.Token {
@@ -16,13 +17,18 @@ func (p *Call) String() string {
 }
 
 func (p *Call) Children() []Node {
-	return append(append([]Node{}, p.Target), p.Arguments...)
+	children := []Node{p.Target}
+	if p.Initializer != nil {
+		children = append(children, p.Initializer)
+	}
+	children = append(children, p.Arguments...)
+
+	return children
 }
 
 func (p *Call) Traverse(level int, fn tfunc) {
 	fn(level, p)
-	p.Target.Traverse(level+1, fn)
-	for _, args := range p.Arguments {
+	for _, args := range p.Children() {
 		args.Traverse(level+1, fn)
 	}
 }
