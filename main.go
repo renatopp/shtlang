@@ -14,20 +14,7 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-fn a {
-	raise 'error'
-	3
-}
-
-fn b {
-	a()
-}
-
-fn c {
-	b()
-}
-
-c()
+(3, '2') != (3, 'a')
 `
 
 func main() {

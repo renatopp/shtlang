@@ -135,10 +135,18 @@ func (d *BaseDataType) OnPow(r *Runtime, s *Scope, args ...*Instance) *Instance 
 	return r.Throw(Error.InvalidOperation(s, "Pow", args[0]), s)
 }
 func (d *BaseDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Eq", args[0]), s)
+	if args[0] == args[1] {
+		return Boolean.TRUE
+	}
+
+	return Boolean.FALSE
 }
 func (d *BaseDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Neq", args[0]), s)
+	if args[0] != args[1] {
+		return Boolean.TRUE
+	}
+
+	return Boolean.FALSE
 }
 func (d *BaseDataType) OnGt(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidOperation(s, "Gt", args[0]), s)

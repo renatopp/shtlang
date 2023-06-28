@@ -589,7 +589,16 @@ func (p *Parser) parsePrefixOperator() ast.Node {
 func (p *Parser) parsePrefixParenthesis() ast.Node {
 	p.lexer.EatToken()
 	e := p.parseExpression(order.Lowest)
-	p.Expect(tokens.Rparen)
+	p.Expect(tokens.Rparen, tokens.Comma)
+
+	if p.lexer.PeekToken().Is(tokens.Comma) {
+		p.lexer.EatToken()
+		e = &ast.Tuple{
+			Token:  p.lexer.PeekToken(),
+			Values: append([]ast.Node{e}, p.parseExpressionList()...),
+		}
+	}
+
 	p.lexer.EatToken()
 	return e
 }

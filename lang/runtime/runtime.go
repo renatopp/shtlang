@@ -53,6 +53,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.String:
 		result = r.EvalString(n, scope)
 
+	case *ast.Tuple:
+		result = r.EvalTuple(n, scope)
+
 	case *ast.UnaryOperator:
 		result = r.EvalUnaryOperator(n, scope)
 
@@ -143,6 +146,14 @@ func (r *Runtime) EvalBoolean(node *ast.Boolean, scope *Scope) *Instance {
 
 func (r *Runtime) EvalString(node *ast.String, scope *Scope) *Instance {
 	return String.Create(node.Value)
+}
+
+func (r *Runtime) EvalTuple(node *ast.Tuple, scope *Scope) *Instance {
+	values := make([]*Instance, len(node.Values))
+	for i, v := range node.Values {
+		values[i] = r.Eval(v, scope)
+	}
+	return Tuple.Create(values...)
 }
 
 func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator, scope *Scope) *Instance {
