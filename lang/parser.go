@@ -691,7 +691,7 @@ func (p *Parser) parsePostfixOperator(left ast.Node) ast.Node {
 	p.lexer.EatToken()
 
 	if cur.Is(tokens.Question) {
-		return &ast.Catching{
+		return &ast.Wrapping{
 			Token:      cur,
 			Expression: left,
 		}

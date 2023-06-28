@@ -79,8 +79,8 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.Indexing:
 		result = r.EvalIndexing(n, scope)
 
-	case *ast.Catching:
-		result = r.EvalCatching(n, scope)
+	case *ast.Wrapping:
+		result = r.EvalWrapping(n, scope)
 
 	case *ast.Unwrapping:
 		result = r.EvalUnwrap(n, scope)
@@ -358,7 +358,7 @@ func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
 	return target.Type.OnGetItem(r, scope, args...)
 }
 
-func (r *Runtime) EvalCatching(node *ast.Catching, scope *Scope) *Instance {
+func (r *Runtime) EvalWrapping(node *ast.Wrapping, scope *Scope) *Instance {
 	exp := r.Eval(node.Expression, scope)
 
 	if exp.Type == Maybe.Type {
