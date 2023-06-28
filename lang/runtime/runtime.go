@@ -17,6 +17,8 @@ func CreateRuntime() *Runtime {
 
 	r.Global.Set(Boolean.Type.GetName(), Constant(Type.Create(Boolean.Type)))
 	r.Global.Set(Error.Type.GetName(), Constant(Type.Create(Error.Type)))
+	r.Global.Set(Iteration.Type.GetName(), Constant(Type.Create(Iteration.Type)))
+	r.Global.Set(Iterator.Type.GetName(), Constant(Type.Create(Iterator.Type)))
 	r.Global.Set(CustomFunction.Type.GetName(), Constant(Type.Create(CustomFunction.Type)))
 	r.Global.Set(List.Type.GetName(), Constant(Type.Create(List.Type)))
 	r.Global.Set(Maybe.Type.GetName(), Constant(Type.Create(Maybe.Type)))
@@ -295,8 +297,6 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	return nil
 }
-
-// func (r *Runtime) evalAssign(id ast.Node, )
 
 func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 	// idpool := []ast.Node{}

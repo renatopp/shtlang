@@ -90,3 +90,7 @@ func Id() string {
 	}
 	return string(b)
 }
+
+var DoneFn = BuiltinFunction.Create("done", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return Iteration.DONE
+})

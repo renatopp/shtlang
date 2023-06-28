@@ -32,7 +32,7 @@ func (t *ErrorInfo) Create(s *Scope, message string, a ...any) *Instance {
 	return &Instance{
 		Type: t.Type,
 		Impl: ErrorDataImpl{
-			Values: map[string]*Instance{
+			Properties: map[string]*Instance{
 				"message": String.Create(msg),
 				"trace":   String.Create(t.StackTrace(s)),
 			},
@@ -108,6 +108,10 @@ func (t *ErrorInfo) VariableNotDefined(s *Scope, name string) *Instance {
 	return Error.Create(s, "trying to use an unidentified variable '%s'", name)
 }
 
+func (t *ErrorInfo) NoProperty(s *Scope, typeName string, name string) *Instance {
+	return Error.Create(s, "instance of type '%s' does not have property '%s'", typeName, name)
+}
+
 // ----------------------------------------------------------------------------
 // ERROR DATA TYPE
 // ----------------------------------------------------------------------------
@@ -115,13 +119,52 @@ type ErrorDataType struct {
 	BaseDataType
 }
 
+func (d *ErrorDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
+	return Error.Create(s, "application error")
+}
+
+func (d *ErrorDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*ErrorDataImpl)
+
+	if len(args) > 1 {
+		this.Properties["message"] = args[1]
+	}
+
+	return args[0]
+}
+
+func (d *ErrorDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*ErrorDataImpl)
+	name := AsString(args[1])
+
+	_, has := this.Properties[name]
+	if !has {
+		return r.Throw(Error.NoProperty(s, d.Name, name), s)
+	}
+
+	this.Properties[name] = args[2]
+	return args[2]
+}
+
+func (d *ErrorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*ErrorDataImpl)
+	name := AsString(args[1])
+
+	value, has := this.Properties[name]
+	if !has {
+		return r.Throw(Error.NoProperty(s, d.Name, name), s)
+	}
+
+	return value
+}
+
 func (t *ErrorDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return t.OnRepr(r, s, args[0])
 }
 
 func (d *ErrorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	msg := AsString(args[0].Impl.(ErrorDataImpl).Values["message"])
-	trace := AsString(args[0].Impl.(ErrorDataImpl).Values["trace"])
+	msg := AsString(args[0].Impl.(ErrorDataImpl).Properties["message"])
+	trace := AsString(args[0].Impl.(ErrorDataImpl).Properties["trace"])
 	return String.Create("ERR! " + msg + "\n" + trace)
 }
 
@@ -129,5 +172,5 @@ func (d *ErrorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instanc
 // ERROR DATA IMPL
 // ----------------------------------------------------------------------------
 type ErrorDataImpl struct {
-	Values map[string]*Instance
+	Properties map[string]*Instance
 }

@@ -5,7 +5,7 @@ import (
 	"sht/lang/ast"
 )
 
-var functionDT = &CustomFunctionDataType{
+var customfunctionDT = &CustomFunctionDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Function",
 		Properties:  map[string]ast.Node{},
@@ -15,7 +15,7 @@ var functionDT = &CustomFunctionDataType{
 }
 
 var CustomFunction = &CustomFunctionInfo{
-	Type: functionDT,
+	Type: customfunctionDT,
 }
 
 // ----------------------------------------------------------------------------

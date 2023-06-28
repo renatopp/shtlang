@@ -41,6 +41,14 @@ type TupleDataType struct {
 	BaseDataType
 }
 
+func (d *TupleDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
+	return Error.Create(s, "application error")
+}
+
+func (d *TupleDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return args[0]
+}
+
 func (d *TupleDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	this := args[0].Impl.(*TupleDataImpl)
 	return Number.Create(float64(len(this.Values)))
