@@ -9,8 +9,8 @@ var listDT = &ListDataType{
 	BaseDataType: BaseDataType{
 		Name:        "List",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Callable{},
-		InstanceFns: map[string]Callable{},
+		StaticFns:   map[string]*Instance{},
+		InstanceFns: map[string]*Instance{},
 	},
 }
 
@@ -46,6 +46,22 @@ func (d *ListDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 	case *ast.ListInitializer:
 		values := make([]*Instance, 0)
 		for _, value := range init.Values {
+			if spread, ok := value.(*ast.SpreadOut); ok {
+				var e *Instance
+				target := r.Eval(spread.Target, s)
+				r.ResolveIterator(target, s, func(v *Instance, err *Instance) {
+					if err != nil {
+						e = err
+					} else if v != nil {
+						t := v.Impl.(*TupleDataImpl)
+						values = append(values, t.Values...)
+					}
+				})
+				if e != nil {
+					return e
+				}
+				continue
+			}
 			values = append(values, r.Eval(value, s))
 		}
 		return List.Create(values...)
@@ -56,6 +72,21 @@ func (d *ListDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 
 func (d *ListDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return args[0]
+}
+
+func (d *ListDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	cur := 0
+	this := args[0].Impl.(*ListDataImpl)
+	return Iterator.Create(
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			if cur >= len(this.Values) {
+				return Iteration.DONE
+			}
+
+			cur++
+			return Iteration.Create(this.Values[cur-1])
+		}),
+	)
 }
 
 func (d *ListDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {

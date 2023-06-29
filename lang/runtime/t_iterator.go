@@ -8,8 +8,8 @@ var iteratorDT = &IteratorDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Iterator",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Callable{},
-		InstanceFns: map[string]Callable{},
+		StaticFns:   map[string]*Instance{},
+		InstanceFns: map[string]*Instance{},
 	},
 }
 
@@ -24,13 +24,18 @@ type IteratorInfo struct {
 	Type DataType
 }
 
+func (t *IteratorInfo) Setup() {
+	t.Type.SetInstanceFn("next", Iterator_Next)
+}
+
 func (t *IteratorInfo) Create(nextFn *Instance) *Instance {
 	return &Instance{
 		Type: t.Type,
 		Impl: &IteratorDataImpl{
 			Properties: map[string]*Instance{
-				"next": nextFn,
+				"finished": Boolean.FALSE,
 			},
+			Next: nextFn,
 		},
 	}
 }
@@ -44,19 +49,6 @@ type IteratorDataType struct {
 
 func (d *IteratorDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
 	return Iterator.Create(DoneFn)
-}
-
-func (d *IteratorDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IteratorDataImpl)
-	name := AsString(args[1])
-
-	_, has := this.Properties[name]
-	if !has {
-		return r.Throw(Error.NoProperty(s, d.Name, name), s)
-	}
-
-	this.Properties[name] = args[2]
-	return args[2]
 }
 
 func (d *IteratorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
@@ -76,7 +68,7 @@ func (d *IteratorDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Insta
 		return args[0]
 	}
 
-	_, ok := args[1].Impl.(Callable)
+	_, ok := args[1].Impl.(*FunctionDataImpl)
 	if !ok {
 		return r.Throw(Error.Create(s, "Expected function, %s given", args[0].Type.GetName()), s)
 	}
@@ -100,4 +92,21 @@ func (d *IteratorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Inst
 // ----------------------------------------------------------------------------
 type IteratorDataImpl struct {
 	Properties map[string]*Instance
+	Next       *Instance
 }
+
+var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*IteratorDataImpl)
+	nextFn := this.Next.Impl.(*FunctionDataImpl)
+	ret := nextFn.Call(r, s)
+
+	if ret.Type != Iteration.Type {
+		return r.Throw(Error.Create(s, "Expected Iteration, %s given", ret.Type.GetName()), s)
+	}
+
+	if ret == Iteration.DONE {
+		this.Properties["finished"] = Boolean.TRUE
+	}
+
+	return ret
+})

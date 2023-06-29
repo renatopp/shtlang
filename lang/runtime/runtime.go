@@ -10,6 +10,9 @@ type Runtime struct {
 
 func CreateRuntime() *Runtime {
 	r := &Runtime{}
+
+	Iterator.Setup()
+
 	r.Global = CreateScope(nil, nil)
 	r.Global.Set(SCOPE_NAME_KEY, Constant(String.Create("Global")))
 	r.Global.Set(SCOPE_DEPTH_KEY, Constant(Number.ZERO))
@@ -103,6 +106,10 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.If:
 		result = r.EvalIf(n, scope)
+
+	case *ast.SpreadOut:
+		result = r.EvalSpreadOut(n, scope)
+
 	}
 
 	scope.PopNode()
@@ -168,11 +175,21 @@ func (r *Runtime) EvalTuple(node *ast.Tuple, scope *Scope) *Instance {
 		s, isSpread := v.(*ast.SpreadOut)
 
 		if isSpread {
-			spreaded := r.Eval(s.Target, scope)
+			spread := r.Eval(s.Target, scope)
+			var e *Instance
+			r.ResolveIterator(spread, scope, func(v *Instance, err *Instance) {
+				if err != nil {
+					e = err
+				} else if v != nil {
+					t := v.Impl.(*TupleDataImpl)
+					values = append(values, t.Values...)
+				}
+			})
 
-			for _, v := range spreaded.Impl.(*TupleDataImpl).Values {
-				values = append(values, v)
+			if e != nil {
+				return e
 			}
+
 		} else {
 			values = append(values, r.Eval(v, scope))
 		}
@@ -445,10 +462,26 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 		return r.Throw(Error.Create(scope, "cannot initialize non-type"), scope)
 	}
 
-	args := make([]*Instance, len(node.Arguments)+1)
-	args[0] = target
-	for i, v := range node.Arguments {
-		args[i+1] = r.Eval(v, scope)
+	args := []*Instance{target}
+	for _, v := range node.Arguments {
+		if spread, ok := v.(*ast.SpreadOut); ok {
+			var e *Instance
+			target := r.Eval(spread.Target, scope)
+			r.ResolveIterator(target, scope, func(v *Instance, err *Instance) {
+				if err != nil {
+					e = err
+				} else if v != nil {
+					t := v.Impl.(*TupleDataImpl)
+					args = append(args, t.Values...)
+				}
+			})
+			if e != nil {
+				return e
+			}
+			continue
+		}
+
+		args = append(args, r.Eval(v, scope))
 	}
 
 	if isType {
@@ -559,4 +592,43 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 		return r.Eval(node.FalseBody, scope)
 	}
 	return Boolean.FALSE
+}
+
+func (r *Runtime) EvalSpreadOut(node *ast.SpreadOut, scope *Scope) *Instance {
+	target := r.Eval(node.Target, scope)
+
+	values := []*Instance{}
+	var e *Instance
+	r.ResolveIterator(target, scope, func(v *Instance, err *Instance) {
+		if err != nil {
+			e = err
+		} else if v != nil {
+			t := v.Impl.(*TupleDataImpl)
+			values = append(values, t.Values...)
+		}
+	})
+
+	if e != nil {
+		return e
+	}
+
+	return Tuple.Create(values...)
+}
+
+func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Instance, *Instance)) {
+	iter := target.Type.OnIter(r, scope, target)
+	if iter.Type != Iterator.Type {
+		up(nil, r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope))
+	}
+
+	// impl := iter.Impl.(*IteratorDataImpl)
+	fn := AsFunction(iter.Type.GetInstanceFn("next"))
+
+	v := fn(r, scope, iter)
+	for v != Iteration.DONE {
+		ret := v.Impl.(*IterationDataImpl)
+		up(ret.value(), nil)
+		v = fn(r, scope, iter)
+	}
+	up(nil, nil)
 }

@@ -64,6 +64,10 @@ func AsString(instance *Instance) string {
 	}
 }
 
+func AsFunction(instance *Instance) MetaFunction {
+	return instance.Impl.(*FunctionDataImpl).Call
+}
+
 func Variable(i *Instance) *Reference {
 	return &Reference{
 		Value:    i,

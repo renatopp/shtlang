@@ -8,8 +8,8 @@ var stringDT = &StringDataType{
 	BaseDataType: BaseDataType{
 		Name:        "String",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Callable{},
-		InstanceFns: map[string]Callable{},
+		StaticFns:   map[string]*Instance{},
+		InstanceFns: map[string]*Instance{},
 	},
 }
 

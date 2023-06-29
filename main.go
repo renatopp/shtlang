@@ -14,10 +14,14 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-let a = 1
-let b = 2
 
-let c = a + b
+let x = (1, 2, 3)
+fn main(a, b, c) {
+	a + b + c
+}
+
+main(x...)
+
 `
 
 func main() {

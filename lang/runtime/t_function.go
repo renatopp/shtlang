@@ -9,8 +9,8 @@ var functionDT = &FunctionDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Function",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Callable{},
-		InstanceFns: map[string]Callable{},
+		StaticFns:   map[string]*Instance{},
+		InstanceFns: map[string]*Instance{},
 	},
 }
 
@@ -28,7 +28,7 @@ type FunctionInfo struct {
 func (t *FunctionInfo) Create(name string, params []*FunctionParam, body ast.Node, scope *Scope) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: FunctionDataImpl{
+		Impl: &FunctionDataImpl{
 			ParentScope: scope,
 			Name:        name,
 			Params:      params,
@@ -40,7 +40,7 @@ func (t *FunctionInfo) Create(name string, params []*FunctionParam, body ast.Nod
 func (t *FunctionInfo) CreateNative(name string, params []*FunctionParam, fn MetaFunction) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: FunctionDataImpl{
+		Impl: &FunctionDataImpl{
 			Name:     name,
 			Params:   params,
 			NativeFn: fn,
@@ -56,12 +56,12 @@ type FunctionDataType struct {
 }
 
 func (d *FunctionDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	name := args[0].Impl.(FunctionDataImpl).Name
+	name := args[0].Impl.(*FunctionDataImpl).Name
 	return String.Create(fmt.Sprintf("<function:%s>", name))
 }
 
 func (d *FunctionDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	impl := args[0].Impl.(FunctionDataImpl)
+	impl := args[0].Impl.(*FunctionDataImpl)
 	return impl.Call(r, s, args[1:]...)
 }
 
