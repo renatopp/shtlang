@@ -83,6 +83,8 @@ type Parser struct {
 	infixFns   map[tokens.Type]infixFn
 	postfixFns map[tokens.Type]postfixFn
 	errors     []string
+
+	inCondition bool
 }
 
 func CreateParser() *Parser {
@@ -109,6 +111,7 @@ func CreateParser() *Parser {
 	p.infixFns[tokens.Lparen] = p.parseInfixCall
 	p.infixFns[tokens.Lbrace] = p.parseInfixCall
 	p.infixFns[tokens.Lbracket] = p.parseInfixBracket
+	// p.infixFns[tokens.Arrow] = p.parseInfixArrow
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -190,6 +193,7 @@ func (p *Parser) parseBlock() ast.Node {
 
 	cur := p.lexer.PeekToken()
 	for !isEndOfBlock(cur) && !p.HasError() {
+		p.eatNewLines()
 		s := p.parseStatement()
 		if s != nil {
 			block.Statements = append(block.Statements, s)
@@ -209,47 +213,53 @@ func (p *Parser) parseStatement() ast.Node {
 	p.eatNewLines()
 
 	cur := p.lexer.PeekToken()
+	var node ast.Node
 	if isEndOfBlock(cur) {
-		return nil
+		node = nil
 
 	} else if cur.Is(tokens.Semicolon) {
 		p.lexer.EatToken()
-		return nil
+		node = nil
 
 	} else if cur.Is(tokens.Keyword) &&
 		cur.Literal == "return" ||
 		cur.Literal == "raise" ||
 		cur.Literal == "yield" {
-		return p.parseReturn()
+		node = p.parseReturn()
 
 	} else if cur.Is(tokens.Keyword) && cur.Literal == "for" {
 		// parse for
 
 	} else if cur.Is(tokens.Keyword) && cur.Literal == "if" {
-		// parse if
+		node = p.parseIf()
 
 	} else if cur.Is(tokens.Keyword) && (cur.Literal == "let" || cur.Literal == "const") {
-		return p.parseDeclaration()
+		node = p.parseDeclaration()
+
+	} else if cur.Is(tokens.Arrow) {
+		node = p.checkArrowDef(nil)
+
+	} else {
+		node = p.parseExpressionTuple()
+		if node == nil {
+			p.RegisterError(fmt.Sprintf("invalid token '%s'", cur.Literal), cur)
+			node = nil
+		} else {
+			cur = p.lexer.PeekToken()
+			if cur.Is(tokens.Assignment) {
+				node = p.parseAssignment(node)
+			}
+
+			cur = p.lexer.PeekToken()
+			if !isEndOfStatement(cur) {
+				p.RegisterError(fmt.Sprintf("unexpected token '%s'", cur.Literal), cur)
+				node = nil
+			}
+		}
+
 	}
 
-	e := p.parseExpressionTuple()
-	if e == nil {
-		p.RegisterError(fmt.Sprintf("invalid token '%s'", cur.Literal), cur)
-		return nil
-	}
-
-	cur = p.lexer.PeekToken()
-	if cur.Is(tokens.Assignment) {
-		return p.parseAssignment(e)
-	}
-
-	cur = p.lexer.PeekToken()
-	if !isEndOfStatement(cur) {
-		p.RegisterError(fmt.Sprintf("unexpected token '%s'", cur.Literal), cur)
-		return nil
-	}
-
-	return e
+	return node
 }
 
 func (p *Parser) parseReturn() ast.Node {
@@ -278,6 +288,61 @@ func (p *Parser) parseReturn() ast.Node {
 		p.RegisterError(fmt.Sprintf("invalid return token '%s'", cur.Literal), cur)
 		return nil
 	}
+}
+
+func (p *Parser) parseIf() ast.Node {
+	p.lexer.EatToken()
+
+	p.inCondition = true
+	exp := p.parseSingleExpression(order.Lowest)
+	p.inCondition = false
+	if exp == nil {
+		p.RegisterError(fmt.Sprintf("invalid if expression"), p.lexer.PeekToken())
+		return nil
+	}
+
+	if !p.Expect(tokens.Keyword, tokens.Lbrace) {
+		return nil
+	}
+
+	node := &ast.If{
+		Token:     p.lexer.PeekToken(),
+		Condition: exp,
+	}
+
+	p.eatNewLines()
+
+	cur := p.lexer.PeekToken()
+	switch cur.Literal {
+	case "return", "raise", "yield":
+		node.TrueBody = p.parseReturn()
+	case "{":
+		node.TrueBody = p.parseBlock()
+		fallthrough
+
+	case "else":
+		p.lexer.EatToken()
+		p.eatNewLines()
+
+		cur := p.lexer.PeekToken()
+		switch cur.Literal {
+		case "return", "raise", "yield":
+			node.FalseBody = p.parseReturn()
+		case "if":
+			node.FalseBody = p.parseIf()
+		case "{":
+			node.FalseBody = p.parseBlock()
+		default:
+			p.RegisterError(fmt.Sprintf("invalid else body"), p.lexer.PeekToken())
+			return nil
+		}
+
+	default:
+		p.RegisterError(fmt.Sprintf("invalid if body"), p.lexer.PeekToken())
+		return nil
+	}
+
+	return node
 }
 
 func (p *Parser) parseDeclaration() ast.Node {
@@ -410,12 +475,6 @@ func (p *Parser) parseFunctionDef() ast.Node {
 	}
 
 	cur = p.lexer.PeekToken()
-	if cur.Is(tokens.Question) {
-		p.lexer.EatToken()
-		fn.Maybe = true
-	}
-
-	cur = p.lexer.PeekToken()
 	if !p.Expect(tokens.Lbrace) {
 		p.RegisterError(fmt.Sprintf("invalid function definition"), p.lexer.PeekToken())
 		return nil
@@ -522,8 +581,10 @@ func (p *Parser) parseExpressionTuple() ast.Node {
 
 	if len(args) == 0 {
 		return nil
+
 	} else if len(args) == 1 {
 		return args[0]
+
 	} else {
 		return &ast.Tuple{
 			Token:  p.lexer.PeekToken(),
@@ -562,7 +623,7 @@ func (p *Parser) parseSingleExpression(priority int) ast.Node {
 	prefixFn := p.prefixFns[cur.Type]
 
 	if prefixFn == nil {
-		return nil
+		return p.checkArrowDef(nil)
 	}
 
 	left := prefixFn()
@@ -577,12 +638,12 @@ repeat_infix:
 			infixFn := p.infixFns[cur.Type]
 			// fmt.Println("checking infix", left, infixFn, cur)
 			if infixFn == nil {
-				return left
+				return p.checkArrowDef(left)
 			}
 
 			newleft := infixFn(left)
 			if newleft == nil {
-				return left
+				return p.checkArrowDef(left)
 			}
 			left = newleft
 			// fmt.Println("infix", left)
@@ -596,12 +657,12 @@ repeat_infix:
 			postfixFn := p.postfixFns[cur.Type]
 			// fmt.Println("has postfix?", postfixFn, cur.Type)
 			if postfixFn == nil {
-				return left
+				return p.checkArrowDef(left)
 			}
 
 			newleft := postfixFn(left)
 			if newleft == nil {
-				return left
+				return p.checkArrowDef(left)
 			}
 			left = newleft
 
@@ -614,7 +675,81 @@ repeat_infix:
 		break
 	}
 
-	return left
+	return p.checkArrowDef(left)
+}
+
+func (p *Parser) checkArrowDef(left ast.Node) ast.Node {
+	cur := p.lexer.PeekToken()
+	if !cur.Is(tokens.Arrow) {
+		return left
+	}
+
+	ini := p.lexer.PeekToken()
+	p.lexer.EatToken()
+	node := &ast.FunctionDef{
+		Scoped: false,
+		Token:  ini,
+		Name:   "Arrow",
+		Params: p.convertLeftToParameters(left),
+	}
+
+	p.eatNewLines()
+
+	cur = p.lexer.PeekToken()
+	if cur.Is(tokens.Lbrace) {
+		node.Body = p.parseBlock()
+	} else {
+		node.Body = p.parseSingleExpression(order.Lowest)
+	}
+
+	return node
+}
+
+func (p *Parser) convertLeftToParameters(left ast.Node) []ast.Node {
+	switch t := left.(type) {
+	case *ast.Identifier:
+		return []ast.Node{
+			&ast.Parameter{
+				Token: t.Token,
+				Name:  t.Value,
+			},
+		}
+	case *ast.Tuple:
+		values := []ast.Node{}
+		spread := false
+		for _, v := range t.Values {
+			s, hasSpread := v.(*ast.SpreadIn)
+			if hasSpread {
+				v = s.Target
+
+				if spread {
+					p.RegisterError(fmt.Sprintf("left-side assignments can have only one spread operator"), s.GetToken())
+					return nil
+				}
+
+				spread = true
+			}
+
+			t, ok := v.(*ast.Identifier)
+			if !ok {
+				p.RegisterError(fmt.Sprintf("invalid parameter '%s'", v.GetToken().Literal), v.GetToken())
+				return nil
+			}
+
+			values = append(values, &ast.Parameter{
+				Token:  t.Token,
+				Name:   t.Value,
+				Spread: hasSpread,
+			})
+
+		}
+		return values
+	case nil:
+		return []ast.Node{}
+	default:
+		p.RegisterError(fmt.Sprintf("invalid parameter '%s'", t.GetToken().Literal), t.GetToken())
+		return nil
+	}
 }
 
 func (p *Parser) parseInitializer() ast.Initializer {
@@ -824,6 +959,11 @@ func (p *Parser) parseInfixKeyword(left ast.Node) ast.Node {
 }
 
 func (p *Parser) parseInfixCall(left ast.Node) ast.Node {
+	cur := p.lexer.PeekToken()
+	if p.inCondition && cur.Is(tokens.Lbrace) {
+		return nil
+	}
+
 	node := &ast.Call{
 		Target: left,
 	}
@@ -838,7 +978,12 @@ func (p *Parser) parseInfixCall(left ast.Node) ast.Node {
 		p.lexer.EatToken()
 	}
 
-	cur := p.lexer.PeekToken()
+	// disable object creation in conditions
+	if p.inCondition {
+		return node
+	}
+
+	cur = p.lexer.PeekToken()
 	if cur.Is(tokens.Lbrace) {
 		node.Initializer = p.parseInitializer()
 	}

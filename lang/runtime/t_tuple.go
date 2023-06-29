@@ -42,7 +42,16 @@ type TupleDataType struct {
 }
 
 func (d *TupleDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
-	return Error.Create(s, "application error")
+	switch init := init.(type) {
+	case *ast.ListInitializer:
+		values := make([]*Instance, 0)
+		for _, value := range init.Values {
+			values = append(values, r.Eval(value, s))
+		}
+		return Tuple.Create(values...)
+	default:
+		return r.Throw(Error.Create(s, "invalid initializer for tuple"), s)
+	}
 }
 
 func (d *TupleDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {

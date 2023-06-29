@@ -27,6 +27,8 @@ func CreateRuntime() *Runtime {
 	r.Global.Set(Tuple.Type.GetName(), Constant(Type.Create(Tuple.Type)))
 	r.Global.Set(Type.Type.GetName(), Constant(Type.Create(Type.Type)))
 
+	r.Global.Set("Done", Constant(Iteration.DONE))
+
 	return r
 }
 
@@ -98,6 +100,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.Unwrapping:
 		result = r.EvalUnwrap(n, scope)
+
+	case *ast.If:
+		result = r.EvalIf(n, scope)
 	}
 
 	scope.PopNode()
@@ -539,4 +544,19 @@ func (r *Runtime) SolveMaybe(target *Instance, scope *Scope) *Instance {
 		target.Impl = maybe.Value.Impl
 		return Boolean.FALSE
 	}
+}
+
+func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
+	condition := r.Eval(node.Condition, scope)
+	if condition == nil {
+		return r.Throw(Error.Create(scope, "invalid condition"), scope)
+	}
+
+	if AsBool(condition) {
+		return r.Eval(node.TrueBody, scope)
+
+	} else if node.FalseBody != nil {
+		return r.Eval(node.FalseBody, scope)
+	}
+	return Boolean.FALSE
 }

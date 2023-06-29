@@ -31,7 +31,7 @@ func (t *ErrorInfo) Create(s *Scope, message string, a ...any) *Instance {
 	msg := fmt.Sprintf(message, a...)
 	return &Instance{
 		Type: t.Type,
-		Impl: ErrorDataImpl{
+		Impl: &ErrorDataImpl{
 			Properties: map[string]*Instance{
 				"message": String.Create(msg),
 				"trace":   String.Create(t.StackTrace(s)),
@@ -163,8 +163,8 @@ func (t *ErrorDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Insta
 }
 
 func (d *ErrorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	msg := AsString(args[0].Impl.(ErrorDataImpl).Properties["message"])
-	trace := AsString(args[0].Impl.(ErrorDataImpl).Properties["trace"])
+	msg := AsString(args[0].Impl.(*ErrorDataImpl).Properties["message"])
+	trace := AsString(args[0].Impl.(*ErrorDataImpl).Properties["trace"])
 	return String.Create("ERR! " + msg + "\n" + trace)
 }
 

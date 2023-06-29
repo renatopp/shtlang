@@ -13,6 +13,7 @@ var keywords = []string{
 	"true",
 	"false",
 	"if",
+	"else",
 	"for",
 	"while",
 	"break",
@@ -357,6 +358,7 @@ func (l *Lexer) parseNumber() *tokens.Token {
 		if c.Is('.') {
 			if dot {
 				l.RegisterError("unexpected '.'", c)
+				l.EatChar()
 				continue
 			}
 

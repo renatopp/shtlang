@@ -7,7 +7,7 @@ type FunctionDef struct {
 	Name   string
 	Params []Node
 	Body   Node
-	Maybe  bool
+	Scoped bool
 }
 
 func (p *FunctionDef) GetToken() *tokens.Token {

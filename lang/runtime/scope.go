@@ -11,7 +11,6 @@ type Scope struct {
 	Values map[string]*Reference
 
 	InAssignment bool
-	InExpression bool
 	InArgument   bool
 
 	nodeStack []ast.Node
