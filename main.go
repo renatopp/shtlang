@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 	"sht/lang"
-	"sht/lang/ast"
 	"sht/lang/runtime"
-	"strings"
+	"sht/lang/utils"
 )
 
 // var sample1 = `a++`
@@ -15,14 +14,11 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-let a = 1
-let c = 2222
-
-if a as b { 
-	c = b
-	asd
+fn hi(a, ...b, c) {
+	a, b, c
 }
 
+hi(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 `
 
 func main() {
@@ -65,9 +61,7 @@ func testParser(input []byte) {
 		return
 	}
 
-	tree.Traverse(0, func(level int, node ast.Node) {
-		fmt.Println(strings.Repeat("  ", level) + node.String())
-	})
+	utils.PrintAst(tree)
 }
 
 func testRuntime(input []byte) {

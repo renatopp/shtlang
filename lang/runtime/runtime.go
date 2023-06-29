@@ -330,34 +330,61 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 	return nil
 }
 
-func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
-	// idpool := []ast.Node{}
-	// expool := []*Instance{}
-
-	identifiers := node.Identifier.(*ast.Tuple)
-	values := r.Eval(node.Expression, scope)
-
-	if len(identifiers.Values) > 1 {
-		if values.Type != Tuple.Type {
-			return r.Throw(Error.Create(scope, "cannot unpack non-tuple type"), scope)
-		}
-		tupledValues := values.Impl.(*TupleDataImpl)
-		if len(identifiers.Values) != len(tupledValues.Values) {
-			return r.Throw(Error.Create(scope, "cannot unpack tuple of length %d into %d variables",
-				len(tupledValues.Values), len(identifiers.Values)), scope)
+func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *ast.Assignment, scope *Scope) *Instance {
+	switch id := left.(type) {
+	case *ast.Tuple:
+		if len(id.Values) == 1 {
+			return r.ResolveAssignment(id.Values[0], right, assignment, scope)
 		}
 
-		for i, _ := range identifiers.Values {
-			id := identifiers.Values[i].(*ast.Identifier).Value
-			exp := tupledValues.Values[i]
-			r.Assign(id, exp, node.Definition, node.Constant, scope)
+		leftLength := len(id.Values)
+		rightLength := AsNumber(right.Type.OnLen(r, scope, right))
+
+		j := 0
+		for i, lv := range id.Values {
+			lvspread, isSpread := lv.(*ast.SpreadIn)
+			if isSpread {
+				//              remainer of right side - remainer of left side
+				spreadAmount := (int(rightLength) - i) - (int(leftLength) - i - 1)
+				spreadItems := []*Instance{}
+
+				for k := 0; k < spreadAmount; k++ {
+					rv := right.Type.OnGetItem(r, scope, right, Number.Create(float64(j)))
+					spreadItems = append(spreadItems, rv)
+					j++
+				}
+
+				rv := List.Create(spreadItems...)
+				r.ResolveAssignment(lvspread.Target, rv, assignment, scope)
+
+			} else {
+				if j >= int(rightLength) {
+					return r.Throw(Error.Create(scope, "assignment right side has less elements than left side"), scope)
+				}
+
+				rv := right.Type.OnGetItem(r, scope, right, Number.Create(float64(j)))
+				r.ResolveAssignment(lv, rv, assignment, scope)
+				j++
+			}
 		}
 
-		return values
+		if j < int(rightLength) {
+			return r.Throw(Error.Create(scope, "assignment right side has more elements than left side"), scope)
+		}
+
+		return right
+
+	case *ast.Identifier:
+		return r.Assign(id.Value, right, assignment.Definition, assignment.Constant, scope)
+
+	default:
+		return r.Throw(Error.Create(scope, "cannot assign to non-identifier"), scope)
 	}
+}
 
-	name := identifiers.Values[0].(*ast.Identifier).Value
-	return r.Assign(name, values, node.Definition, node.Constant, scope)
+func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
+	right := r.Eval(node.Expression, scope)
+	return r.ResolveAssignment(node.Identifier, right, node, scope)
 }
 
 func (r *Runtime) Assign(name string, exp *Instance, def, cnst bool, scope *Scope) *Instance {
