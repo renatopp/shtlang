@@ -8,8 +8,8 @@ var iteratorDT = &IteratorDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Iterator",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
+		StaticFns:   map[string]Callable{},
+		InstanceFns: map[string]Callable{},
 	},
 }
 
@@ -76,7 +76,7 @@ func (d *IteratorDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Insta
 		return args[0]
 	}
 
-	_, ok := args[1].Impl.(Function)
+	_, ok := args[1].Impl.(Callable)
 	if !ok {
 		return r.Throw(Error.Create(s, "Expected function, %s given", args[0].Type.GetName()), s)
 	}

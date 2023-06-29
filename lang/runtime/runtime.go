@@ -19,7 +19,7 @@ func CreateRuntime() *Runtime {
 	r.Global.Set(Error.Type.GetName(), Constant(Type.Create(Error.Type)))
 	r.Global.Set(Iteration.Type.GetName(), Constant(Type.Create(Iteration.Type)))
 	r.Global.Set(Iterator.Type.GetName(), Constant(Type.Create(Iterator.Type)))
-	r.Global.Set(CustomFunction.Type.GetName(), Constant(Type.Create(CustomFunction.Type)))
+	r.Global.Set(Function.Type.GetName(), Constant(Type.Create(Function.Type)))
 	r.Global.Set(List.Type.GetName(), Constant(Type.Create(List.Type)))
 	r.Global.Set(Maybe.Type.GetName(), Constant(Type.Create(Maybe.Type)))
 	r.Global.Set(Number.Type.GetName(), Constant(Type.Create(Number.Type)))
@@ -425,7 +425,7 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 		params[i] = p
 	}
 
-	fn := CustomFunction.Create(name, params, node.Body, scope)
+	fn := Function.Create(name, params, node.Body, scope)
 
 	if !scope.InAssignment && !scope.InArgument && name != "" {
 		scope.Set(name, &Reference{

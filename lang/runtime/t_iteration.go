@@ -8,8 +8,8 @@ var iterationDT = &IterationDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Iteration",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
+		StaticFns:   map[string]Callable{},
+		InstanceFns: map[string]Callable{},
 	},
 }
 

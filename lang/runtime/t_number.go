@@ -10,8 +10,8 @@ var numberDT = &NumberDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Number",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
+		StaticFns:   map[string]Callable{},
+		InstanceFns: map[string]Callable{},
 	},
 }
 

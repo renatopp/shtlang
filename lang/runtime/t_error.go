@@ -11,8 +11,8 @@ var errorDT = &ErrorDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Error",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
+		StaticFns:   map[string]Callable{},
+		InstanceFns: map[string]Callable{},
 	},
 }
 
@@ -60,7 +60,7 @@ func (t *ErrorInfo) StackTrace(s *Scope) string {
 			trace.WriteString("<global>")
 		} else {
 			switch fn := fn.Value.Impl.(type) {
-			case *CustomFunctionDataImpl:
+			case *FunctionDataImpl:
 				trace.WriteString("<function " + fn.Name + ">")
 				// case *BuiltinFunctionDataImpl:
 				// 	trace.WriteString("<builtin " + fn.Name + ">")

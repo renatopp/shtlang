@@ -5,30 +5,30 @@ import (
 	"sht/lang/ast"
 )
 
-var customfunctionDT = &CustomFunctionDataType{
+var functionDT = &FunctionDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Function",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
+		StaticFns:   map[string]Callable{},
+		InstanceFns: map[string]Callable{},
 	},
 }
 
-var CustomFunction = &CustomFunctionInfo{
-	Type: customfunctionDT,
+var Function = &FunctionInfo{
+	Type: functionDT,
 }
 
 // ----------------------------------------------------------------------------
 // FUNCTION INFO
 // ----------------------------------------------------------------------------
-type CustomFunctionInfo struct {
+type FunctionInfo struct {
 	Type DataType
 }
 
-func (t *CustomFunctionInfo) Create(name string, params []*FunctionParam, body ast.Node, scope *Scope) *Instance {
+func (t *FunctionInfo) Create(name string, params []*FunctionParam, body ast.Node, scope *Scope) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: CustomFunctionDataImpl{
+		Impl: FunctionDataImpl{
 			ParentScope: scope,
 			Name:        name,
 			Params:      params,
@@ -37,31 +37,43 @@ func (t *CustomFunctionInfo) Create(name string, params []*FunctionParam, body a
 	}
 }
 
+func (t *FunctionInfo) CreateNative(name string, params []*FunctionParam, fn MetaFunction) *Instance {
+	return &Instance{
+		Type: t.Type,
+		Impl: FunctionDataImpl{
+			Name:     name,
+			Params:   params,
+			NativeFn: fn,
+		},
+	}
+}
+
 // ----------------------------------------------------------------------------
 // FUNCTION DATA TYPE
 // ----------------------------------------------------------------------------
-type CustomFunctionDataType struct {
+type FunctionDataType struct {
 	BaseDataType
 }
 
-func (d *CustomFunctionDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	name := args[0].Impl.(CustomFunctionDataImpl).Name
+func (d *FunctionDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	name := args[0].Impl.(FunctionDataImpl).Name
 	return String.Create(fmt.Sprintf("<function:%s>", name))
 }
 
-func (d *CustomFunctionDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	impl := args[0].Impl.(CustomFunctionDataImpl)
+func (d *FunctionDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	impl := args[0].Impl.(FunctionDataImpl)
 	return impl.Call(r, s, args[1:]...)
 }
 
 // ----------------------------------------------------------------------------
 // FUNCTION DATA IMPL
 // ----------------------------------------------------------------------------
-type CustomFunctionDataImpl struct {
+type FunctionDataImpl struct {
 	ParentScope *Scope
 	Name        string
 	Params      []*FunctionParam
 	Body        ast.Node
+	NativeFn    MetaFunction
 }
 
 type FunctionParam struct {
@@ -70,7 +82,11 @@ type FunctionParam struct {
 	Spread  bool
 }
 
-func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instance {
+func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	if d.NativeFn != nil {
+		return d.NativeFn(r, s, args...)
+	}
+
 	parentScope := d.ParentScope
 	if parentScope == nil {
 		parentScope = s
@@ -83,7 +99,7 @@ func (d *CustomFunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *
 	scope.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(AsNumber(depth.Value)+1)))
 	scope.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
 	scope.Set(SCOPE_FN_KEY, Constant(&Instance{
-		Type: CustomFunction.Type,
+		Type: Function.Type,
 		Impl: d,
 	}))
 

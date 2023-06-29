@@ -9,8 +9,8 @@ var Type = &TypeInfo{
 		BaseDataType: BaseDataType{
 			Name:        "Type",
 			Properties:  map[string]ast.Node{},
-			StaticFns:   map[string]Function{},
-			InstanceFns: map[string]Function{},
+			StaticFns:   map[string]Callable{},
+			InstanceFns: map[string]Callable{},
 		},
 	},
 }

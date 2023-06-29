@@ -7,9 +7,9 @@ type DataType interface {
 	Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance
 	GetProperty(name string) ast.Node
 	HasProperty(name string) bool
-	GetStaticFn(name string) Function
+	GetStaticFn(name string) Callable
 	HasStaticFn(name string) bool
-	GetInstanceFn(name string) Function
+	GetInstanceFn(name string) Callable
 	HasInstanceFn(name string) bool
 	OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance
@@ -46,8 +46,8 @@ type DataType interface {
 type BaseDataType struct {
 	Name        string
 	Properties  map[string]ast.Node
-	StaticFns   map[string]Function
-	InstanceFns map[string]Function
+	StaticFns   map[string]Callable
+	InstanceFns map[string]Callable
 }
 
 func (d *BaseDataType) GetName() string {
@@ -66,7 +66,7 @@ func (d *BaseDataType) HasProperty(name string) bool {
 	return ok
 }
 
-func (d *BaseDataType) GetStaticFn(name string) Function {
+func (d *BaseDataType) GetStaticFn(name string) Callable {
 	return d.StaticFns[name]
 }
 func (d *BaseDataType) HasStaticFn(name string) bool {
@@ -74,7 +74,7 @@ func (d *BaseDataType) HasStaticFn(name string) bool {
 	return ok
 }
 
-func (d *BaseDataType) GetInstanceFn(name string) Function {
+func (d *BaseDataType) GetInstanceFn(name string) Callable {
 	return d.InstanceFns[name]
 }
 func (d *BaseDataType) HasInstanceFn(name string) bool {

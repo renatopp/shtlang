@@ -15,11 +15,9 @@ const SCOPE_FN_KEY = "0_fn"
 
 type DataImpl interface{}
 
-type InternalFunction func(r *Runtime, s *Scope, args ...*Instance) *Instance
+type MetaFunction func(r *Runtime, s *Scope, args ...*Instance) *Instance
 
-type Function interface {
-	// GetName() string
-	// GetToken() tokens.Token
+type Callable interface {
 	Call(r *Runtime, s *Scope, args ...*Instance) *Instance
 }
 
@@ -91,6 +89,6 @@ func Id() string {
 	return string(b)
 }
 
-var DoneFn = BuiltinFunction.Create("done", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+var DoneFn = Function.CreateNative("done", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return Iteration.DONE
 })

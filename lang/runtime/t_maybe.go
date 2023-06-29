@@ -8,8 +8,8 @@ var maybeDT = &MaybeDataType{
 	BaseDataType: BaseDataType{
 		Name:        "Maybe",
 		Properties:  map[string]ast.Node{},
-		StaticFns:   map[string]Function{},
-		InstanceFns: map[string]Function{},
+		StaticFns:   map[string]Callable{},
+		InstanceFns: map[string]Callable{},
 	},
 }
 

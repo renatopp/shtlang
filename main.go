@@ -14,12 +14,10 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
+let a = 1
+let b = 2
 
-let f = (a, b) => {
-	a + b
-}
-
-f(1, 2)
+let c = a + b
 `
 
 func main() {
