@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"sht/lang/ast"
 )
 
@@ -437,23 +438,28 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 	hasDefault := false
 	for i, param := range node.Params {
 		param := param.(*ast.Parameter)
+
 		p := &FunctionParam{
 			Name:    param.Name,
 			Spread:  param.Spread,
-			Default: r.Eval(param.Default, nil),
+			Default: nil,
 		}
 
-		if p.Spread && p.Default != nil {
-			return r.Throw(
-				Error.Create(scope, "spread arguments cannot have default values: '%s'", p.Name),
-				scope,
-			)
+		if param.Default != nil {
+			p.Default = r.Eval(param.Default, nil)
 		}
 
 		if p.Spread {
+			if p.Default != nil {
+				return r.Throw(
+					Error.Create(scope, "spread arguments cannot have default values: '%s'", p.Name),
+					scope,
+				)
+			}
+
 			if hasSpread {
 				return r.Throw(
-					Error.Create(scope, "only one spread argument is allowed: '%s'", p.Name),
+					Error.Create(scope, "arguments can only have one spread argument: '%s'", p.Name),
 					scope,
 				)
 			}
@@ -462,14 +468,9 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 		}
 
 		if p.Default != nil {
-			if hasSpread {
-				return r.Throw(
-					Error.Create(scope, "default arguments cannot proceed spread arguments: '%s'", p.Name),
-					scope,
-				)
-			}
 			hasDefault = true
-		} else if hasDefault {
+
+		} else if hasDefault && !p.Spread {
 			return r.Throw(
 				Error.Create(scope, "default arguments must be at the end: '%s'", p.Name),
 				scope,
@@ -519,6 +520,10 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 		}
 
 		args = append(args, r.Eval(v, scope))
+	}
+
+	for _, v := range args {
+		fmt.Println(v.Repr())
 	}
 
 	if isType {

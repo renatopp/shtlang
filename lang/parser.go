@@ -490,38 +490,59 @@ func (p *Parser) parseFunctionDef() ast.Node {
 }
 
 func (p *Parser) parseParameters() []ast.Node {
+	braced := false
 	cur := p.lexer.PeekToken()
 	if cur.Is(tokens.Lparen) {
+		braced = true
 		p.lexer.EatToken()
 	}
 
 	params := []ast.Node{}
 
+	hasSpread := false
+	hasDefault := false
 	cur = p.lexer.PeekToken()
-	for !cur.Is(tokens.Rparen) {
+	for !cur.Is(tokens.Rparen) && !cur.Is(tokens.Colon) {
 		p.eatNewLines()
+
+		param := &ast.Parameter{}
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Spread) {
+			p.lexer.EatToken()
+			param.Spread = true
+
+			if hasSpread {
+				p.RegisterError(fmt.Sprintf("parameters can have only one spread operator"), cur)
+				return nil
+			}
+
+			hasSpread = true
+		}
 
 		if !p.Expect(tokens.Identifier) {
 			p.RegisterError(fmt.Sprintf("invalid parameter token '%s'", cur.Literal), cur)
 			return nil
 		}
 
-		p.lexer.EatToken()
-		param := &ast.Parameter{
-			Token: cur,
-			Name:  cur.Literal,
-		}
-
 		cur = p.lexer.PeekToken()
-		if cur.Is(tokens.Spread) {
-			p.lexer.EatToken()
-			param.Spread = true
-		}
+		param.Token = cur
+		param.Name = cur.Literal
+		p.lexer.EatToken()
 
 		cur = p.lexer.PeekToken()
 		if cur.Is(tokens.Assignment) && cur.Literal == "=" {
+			if param.Spread {
+				p.RegisterError(fmt.Sprintf("spread parameters can't have default values"), cur)
+				return nil
+			}
+
 			p.lexer.EatToken()
 			param.Default = p.parseLiteral()
+			hasDefault = true
+		} else if hasDefault && !param.Spread {
+			p.RegisterError(fmt.Sprintf("parameters with default values must be at the end of the list"), cur)
+			return nil
 		}
 
 		cur = p.lexer.PeekToken()
@@ -531,7 +552,7 @@ func (p *Parser) parseParameters() []ast.Node {
 
 		params = append(params, param)
 
-		if !p.Expect(tokens.Identifier, tokens.Rparen, tokens.Newline) {
+		if !p.Expect(tokens.Identifier, tokens.Rparen, tokens.Newline, tokens.Spread) {
 			p.RegisterError(fmt.Sprintf("invalid parameter token '%s'", cur.Literal), cur)
 			return nil
 		}
@@ -539,7 +560,12 @@ func (p *Parser) parseParameters() []ast.Node {
 		cur = p.lexer.PeekToken()
 	}
 
-	p.lexer.EatToken() // )
+	if braced {
+		if !p.Expect(tokens.Rparen) {
+			return nil
+		}
+		p.lexer.EatToken() // )
+	}
 	return params
 }
 
