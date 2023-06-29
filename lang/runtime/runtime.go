@@ -214,7 +214,6 @@ func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator, scope *Scope) *Inst
 }
 
 func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *Instance {
-
 	switch node.Operator {
 	case "+":
 		left := r.Eval(node.Left, scope)
@@ -315,6 +314,17 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 		r.SolveMaybe(left, scope)
 		return maybe.Value
+
+	case "as":
+		left := r.Eval(node.Left, scope)
+
+		id, ok := node.Right.(*ast.Identifier)
+		if !ok {
+			return r.Throw(Error.Create(scope, "'as' expression requires an identifier on the right side"), scope)
+		}
+
+		scope.Set(id.Value, Variable(left))
+		return left
 	}
 
 	return nil
@@ -580,16 +590,17 @@ func (r *Runtime) SolveMaybe(target *Instance, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
-	condition := r.Eval(node.Condition, scope)
+	newScope := CreateScope(scope, scope.Caller)
+	condition := r.Eval(node.Condition, newScope)
 	if condition == nil {
 		return r.Throw(Error.Create(scope, "invalid condition"), scope)
 	}
 
 	if AsBool(condition) {
-		return r.Eval(node.TrueBody, scope)
+		return r.Eval(node.TrueBody, newScope)
 
 	} else if node.FalseBody != nil {
-		return r.Eval(node.FalseBody, scope)
+		return r.Eval(node.FalseBody, newScope)
 	}
 	return Boolean.FALSE
 }

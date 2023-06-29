@@ -15,12 +15,13 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-let x = (1, 2, 3)
-fn main(a, b, c) {
-	a + b + c
-}
+let a = 1
+let c = 2222
 
-main(x...)
+if a as b { 
+	c = b
+	asd
+}
 
 `
 

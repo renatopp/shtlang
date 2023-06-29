@@ -57,7 +57,9 @@ func priorityOf(t *tokens.Token) int {
 
 	case t.Is(tokens.Keyword):
 		switch t.Literal {
-		case "as", "is", "in":
+		case "as":
+			return order.Calls
+		case "is", "in":
 			return order.Calls
 		}
 
@@ -318,9 +320,13 @@ func (p *Parser) parseIf() ast.Node {
 		node.TrueBody = p.parseReturn()
 	case "{":
 		node.TrueBody = p.parseBlock()
-		fallthrough
+	default:
+		p.RegisterError(fmt.Sprintf("invalid if body"), p.lexer.PeekToken())
+		return nil
+	}
 
-	case "else":
+	cur = p.lexer.PeekToken()
+	if cur.Literal == "else" {
 		p.lexer.EatToken()
 		p.eatNewLines()
 
@@ -336,10 +342,6 @@ func (p *Parser) parseIf() ast.Node {
 			p.RegisterError(fmt.Sprintf("invalid else body"), p.lexer.PeekToken())
 			return nil
 		}
-
-	default:
-		p.RegisterError(fmt.Sprintf("invalid if body"), p.lexer.PeekToken())
-		return nil
 	}
 
 	return node

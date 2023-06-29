@@ -21,9 +21,10 @@ const (
 	Mod            = 90
 	Unary          = 100
 	Exponentiation = 110
-	Spread         = 115
-	Indexing       = 120
-	Calls          = 130
-	Grouping       = 140
+	As             = 120
+	Spread         = 130
+	Indexing       = 140
+	Calls          = 150
+	Grouping       = 160
 	Highest        = 1000
 )
