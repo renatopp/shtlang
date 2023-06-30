@@ -416,7 +416,7 @@ func (p *Parser) assertAssignmentTargets(t ast.Node) (ast.Node, string) {
 
 	hasSpread := false
 	switch t := t.(type) {
-	case *ast.Identifier:
+	case *ast.Identifier, *ast.Indexing:
 		return t, ""
 
 	case *ast.Tuple:
@@ -438,6 +438,9 @@ func (p *Parser) assertAssignmentTargets(t ast.Node) (ast.Node, string) {
 
 	case *ast.SpreadIn:
 		return p.assertAssignmentTargets(t.Target)
+
+	case nil:
+		return t, "invalid left-side assignment"
 
 	default:
 		return t, fmt.Sprintf("invalid left-side assignment token '%s'", t.GetToken().Literal)

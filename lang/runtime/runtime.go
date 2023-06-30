@@ -377,6 +377,19 @@ func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *
 	case *ast.Identifier:
 		return r.Assign(id.Value, right, assignment.Definition, assignment.Constant, scope)
 
+	case *ast.Indexing:
+		target := r.Eval(id.Target, scope)
+		if target == nil {
+			return r.Throw(Error.Create(scope, "invalid assignment target"), scope)
+		}
+
+		if id.Values == nil || len(id.Values) == 0 {
+			return r.Throw(Error.Create(scope, "invalid assignment target"), scope)
+		}
+
+		idx := r.Eval(id.Values[0], scope)
+		return target.Type.OnSetItem(r, scope, target, idx, right)
+
 	default:
 		return r.Throw(Error.Create(scope, "cannot assign to non-identifier"), scope)
 	}

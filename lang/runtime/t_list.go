@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"sht/lang/ast"
 	"strings"
 )
@@ -160,32 +159,58 @@ func (t *ListDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Insta
 	size := len(this.Values)
 	idx0 := AsInteger(args[1])
 	idx1 := AsInteger(args[2])
-	if idx1 > size {
-		idx1 = size
-	} else if idx1 < 0 {
-		idx1 = -1
-	}
 	if idx0 > size {
 		idx0 = size
 	} else if idx1 < 0 {
 		idx0 = -1
 	}
-
-	values := make([]*Instance, 0)
-	dir := 1
-	if idx1 < idx0 {
-		dir = -1
+	if idx1 > size {
+		idx1 = size
+	} else if idx1 < 0 {
+		idx1 = -1
 	}
 
-	fmt.Println(idx0, idx1, dir)
-	for i := idx0; i != idx1; i += dir {
-		if i < 0 || i >= len(this.Values) {
-			continue
+	values := make([]*Instance, 0)
+
+	if idx0 > idx1 {
+		for i := idx0 - 1; i >= idx1; i-- {
+			if i < 0 || i >= len(this.Values) {
+				continue
+			}
+			values = append(values, this.Values[i])
 		}
-		values = append(values, this.Values[i])
+	} else if idx0 < idx1 {
+		for i := idx0; i < idx1; i++ {
+			if i < 0 || i >= len(this.Values) {
+				continue
+			}
+			values = append(values, this.Values[i])
+		}
 	}
 
 	return List.Create(values...)
+}
+
+func (t *ListDataType) OnSetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*ListDataImpl)
+
+	nargs := len(args)
+	if nargs != 3 {
+		return r.Throw(Error.Create(s, "setItem receives only one index, '%d' provided", nargs), s)
+	}
+
+	if !IsNumber(args[1]) {
+		return r.Throw(Error.Create(s, "index of a list must be a number, '%s' provided", args[1].Type.GetName()), s)
+	}
+
+	idx := AsInteger(args[1])
+	if idx >= len(this.Values) || idx < 0 {
+		return r.Throw(Error.Create(s, "list out of bounds for item '%d'", idx), s)
+	}
+
+	this.Values[idx] = args[2]
+
+	return args[2]
 }
 
 func (d *ListDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
