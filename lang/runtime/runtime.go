@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"sht/lang/ast"
 )
 
@@ -522,10 +521,6 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 		args = append(args, r.Eval(v, scope))
 	}
 
-	for _, v := range args {
-		fmt.Println(v.Repr())
-	}
-
 	if isType {
 		impl := target.Impl.(*TypeDataImpl)
 		value := impl.DataType.Instantiate(r, scope, node.Initializer)
@@ -623,6 +618,18 @@ func (r *Runtime) SolveMaybe(target *Instance, scope *Scope) *Instance {
 
 func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 	newScope := CreateScope(scope, scope.Caller)
+
+	ret := r.doEval(node, scope, newScope)
+
+	if newScope.HasInScope(RAISE_KEY) {
+		err, _ := newScope.GetInScope(RAISE_KEY)
+		scope.Set(RAISE_KEY, err)
+	}
+
+	return ret
+}
+
+func (r *Runtime) doEval(node *ast.If, scope *Scope, newScope *Scope) *Instance {
 	condition := r.Eval(node.Condition, newScope)
 	if condition == nil {
 		return r.Throw(Error.Create(scope, "invalid condition"), scope)
@@ -634,6 +641,7 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 	} else if node.FalseBody != nil {
 		return r.Eval(node.FalseBody, newScope)
 	}
+
 	return Boolean.FALSE
 }
 

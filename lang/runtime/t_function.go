@@ -103,50 +103,93 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 		Impl: d,
 	}))
 
-	tArgs := len(args)
-	// tParams := len(d.Params)
-	g := 0
-	for i, v := range d.Params {
-		if !v.Spread {
-			var value *Instance
-			if g >= tArgs {
-				if v.Default == nil {
-					return r.Throw(Error.Create(scope, "missing argument: '%s'", v.Name), scope)
-				}
-				value = v.Default
-			} else {
-				value = args[g]
+	// tArgs := len(args)
+	// // tParams := len(d.Params)
+	// g := 0
+	// for i, v := range d.Params {
+	// 	if !v.Spread {
+	// 		var value *Instance
+	// 		if g >= tArgs {
+	// 			if v.Default == nil {
+	// 				return r.Throw(Error.Create(scope, "missing argument: '%s'", v.Name), scope)
+	// 			}
+	// 			value = v.Default
+	// 		} else {
+	// 			value = args[g]
+	// 		}
+
+	// 		g++
+	// 		scope.Set(v.Name, &Reference{
+	// 			Value:    value,
+	// 			Constant: false,
+	// 		})
+	// 	} else {
+	// 		// TODO: Handle spread arguments
+	// 		return r.Throw(Error.Create(scope, "spread arguments are not supported yet: '%s'", v.Name), scope)
+
+	// 		if i == 0 {
+	// 		} // TODO: REMOVE
+
+	// 		// missing := tParams - i - 1
+
+	// 		// total := 0
+	// 		// sv := make([]*Instance, 0)
+	// 		// for j := i; j < (tArgs - missing); j++ {
+	// 		// 	t := args[j]
+	// 		// 	if t.Type() == obj.TList {
+	// 		// 		sv = append(sv, t.(*obj.List).Values...)
+	// 		// 	} else {
+	// 		// 		sv = append(sv, t)
+	// 		// 	}
+	// 		// 	total++
+	// 		// }
+
+	// 		// g += total
+	// 		// scope.Set(v.Name, &obj.List{Values: sv})
+	// 	}
+	// }
+
+	// res := r.Eval(d.Body, scope)
+
+	// if scope.HasInScope(RAISE_KEY) {
+	// 	err, _ := scope.GetInScope(RAISE_KEY)
+	// 	s.Set(RAISE_KEY, err)
+	// }
+
+	arguments := []*Instance{}
+	paramsLength := len(d.Params)
+	argsLength := len(args)
+
+	j := 0
+	for i, pv := range d.Params {
+		if pv.Spread {
+			spreadAmount := (argsLength - i) - (paramsLength - i - 1)
+			spreadItems := []*Instance{}
+
+			for k := 0; k < spreadAmount; k++ {
+				spreadItems = append(spreadItems, args[j])
+				j++
 			}
 
-			g++
-			scope.Set(v.Name, &Reference{
-				Value:    value,
-				Constant: false,
-			})
+			rv := List.Create(spreadItems...)
+			arguments = append(arguments, rv)
+
 		} else {
-			// TODO: Handle spread arguments
-			return r.Throw(Error.Create(scope, "spread arguments are not supported yet: '%s'", v.Name), scope)
-
-			if i == 0 {
-			} // TODO: REMOVE
-
-			// missing := tParams - i - 1
-
-			// total := 0
-			// sv := make([]*Instance, 0)
-			// for j := i; j < (tArgs - missing); j++ {
-			// 	t := args[j]
-			// 	if t.Type() == obj.TList {
-			// 		sv = append(sv, t.(*obj.List).Values...)
-			// 	} else {
-			// 		sv = append(sv, t)
-			// 	}
-			// 	total++
-			// }
-
-			// g += total
-			// scope.Set(v.Name, &obj.List{Values: sv})
+			if j >= argsLength {
+				if pv.Default == nil {
+					return r.Throw(Error.Create(scope, "missing arguments for parameter '%s'", pv.Name), scope)
+				} else {
+					arguments = append(arguments, pv.Default)
+				}
+			} else {
+				arguments = append(arguments, args[j])
+				j++
+			}
 		}
+	}
+
+	for i, pv := range d.Params {
+		scope.Set(pv.Name, Variable(arguments[i]))
 	}
 
 	res := r.Eval(d.Body, scope)
