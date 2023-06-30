@@ -22,6 +22,7 @@ const (
 	Unary          = 100
 	Exponentiation = 110
 	As             = 120
+	Access         = 125
 	Spread         = 130
 	Indexing       = 140
 	Calls          = 150

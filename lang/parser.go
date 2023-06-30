@@ -63,6 +63,9 @@ func priorityOf(t *tokens.Token) int {
 			return order.Calls
 		}
 
+	case t.Is(tokens.Dot):
+		return order.Access
+
 	case t.Is(tokens.Lparen), t.Is(tokens.Lbrace):
 		return order.Calls
 	case t.Is(tokens.Lbracket):
@@ -118,7 +121,7 @@ func CreateParser() *Parser {
 	p.infixFns[tokens.Lparen] = p.parseInfixCall
 	p.infixFns[tokens.Lbrace] = p.parseInfixCall
 	p.infixFns[tokens.Lbracket] = p.parseInfixBracket
-	// p.infixFns[tokens.Arrow] = p.parseInfixArrow
+	p.infixFns[tokens.Dot] = p.parseInfixDot
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -454,6 +457,12 @@ func (p *Parser) assertAssignmentTargets(t ast.Node) (ast.Node, string) {
 			if err != "" {
 				return r, err
 			}
+		}
+
+	case *ast.Access:
+		res, err := p.assertAssignmentTargets(t.Right)
+		if err != "" {
+			return res, err
 		}
 
 	case *ast.SpreadIn:
@@ -1064,6 +1073,25 @@ func (p *Parser) parseInfixBracket(left ast.Node) ast.Node {
 	p.Expect(tokens.Rbracket)
 	p.lexer.EatToken()
 	return node
+}
+
+func (p *Parser) parseInfixDot(left ast.Node) ast.Node {
+	p.lexer.EatToken()
+
+	if !p.Expect(tokens.Identifier) {
+		return nil
+	}
+
+	cur := p.lexer.PeekToken()
+	p.lexer.EatToken()
+	return &ast.Access{
+		Token: left.GetToken(),
+		Left:  left,
+		Right: &ast.Identifier{
+			Token: cur,
+			Value: cur.Literal,
+		},
+	}
 }
 
 // ----------------------------------------------------------------

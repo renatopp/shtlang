@@ -59,7 +59,12 @@ func (d *IteratorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Insta
 	this := args[0].Impl.(*IteratorDataImpl)
 	name := AsString(args[1])
 
-	value, has := this.Properties[name]
+	value, has := d.InstanceFns[name]
+	if has {
+		return value
+	}
+
+	value, has = this.Properties[name]
 	if !has {
 		return r.Throw(Error.NoProperty(s, d.Name, name), s)
 	}

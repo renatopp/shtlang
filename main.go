@@ -14,13 +14,15 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-fn onetwothree {
+fn onetwothree() {
 	yield 1
 	yield 2
 	yield 3
 }
 
-onetwothree
+onetwothree().next = fn() {}
+
+# name.channel().value = 1
 `
 
 func main() {

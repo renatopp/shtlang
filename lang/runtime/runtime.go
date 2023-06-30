@@ -113,6 +113,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.SpreadOut:
 		result = r.EvalSpreadOut(n, scope)
 
+	case *ast.Access:
+		result = r.EvalAccess(n, scope)
+
 	}
 
 	scope.PopNode()
@@ -421,6 +424,15 @@ func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *
 
 		idx := r.Eval(id.Values[0], scope)
 		return target.Type.OnSetItem(r, scope, target, idx, right)
+
+	case *ast.Access:
+		target := r.Eval(id.Left, scope)
+		if target == nil {
+			return r.Throw(Error.Create(scope, "invalid assignment target"), scope)
+		}
+
+		name := id.Right.(*ast.Identifier).Value
+		return target.Type.OnSet(r, scope, target, String.Create(name), right)
 
 	default:
 		return r.Throw(Error.Create(scope, "cannot assign to non-identifier"), scope)
@@ -770,4 +782,11 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 		v = fn(r, scope, iter)
 	}
 	up(nil, nil)
+}
+
+func (r *Runtime) EvalAccess(node *ast.Access, scope *Scope) *Instance {
+	left := r.Eval(node.Left, scope)
+	right := node.Right.(*ast.Identifier).Value
+
+	return left.Type.OnGet(r, scope, left, String.Create(right))
 }
