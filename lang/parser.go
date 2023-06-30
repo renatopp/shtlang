@@ -1122,24 +1122,24 @@ func (p *Parser) parseInfixPipe(left ast.Node) ast.Node {
 	// <funcname>[(<args>[, <args>]*)?]? [<arg>[,<args>]*]? [: <expression>)]?
 	// to <Type>
 
-	if !p.Expect(tokens.Identifier) {
-		return nil
-	}
+	// if !p.Expect(tokens.Identifier) {
+	// 	return nil
+	// }
 
-	cur := p.lexer.PeekToken()
-	pipeFn := &ast.Identifier{
-		Token: cur,
-		Value: cur.Literal,
-	}
+	// cur := p.lexer.PeekToken()
+	// pipeFn := &ast.Identifier{
+	// 	Token: cur,
+	// 	Value: cur.Literal,
+	// }
 
-	exp := p.parseExpressionTuple()
+	// exp := p.parseExpressionTuple()
 
-	cur := p.lexer.PeekToken()
-	if cur.Is(tokens.Colon) {
-		// exp is params
-	} else {
-		// exp is expression, fn is empty
-	}
+	// cur := p.lexer.PeekToken()
+	// if cur.Is(tokens.Colon) {
+	// 	// exp is params
+	// } else {
+	// 	// exp is expression, fn is empty
+	// }
 
 	// cur := p.lexer.PeekToken()
 	// p.lexer.EatToken()
