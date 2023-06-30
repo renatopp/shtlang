@@ -423,12 +423,31 @@ func (p *Parser) parseAssignment(left ast.Node) ast.Node {
 		p.RegisterError(fmt.Sprintf("expected expression, got %s instead", p.lexer.PeekToken()), ass)
 	}
 
+	def := false
+	if ass.Literal == ":=" {
+		def = true
+	}
+
+	switch ass.Literal {
+	case "+=", "-=", "*=", "/=", "//=":
+		if len(ids.Values) > 1 {
+			p.RegisterError(fmt.Sprintf("composite assignment must have only a single left identifier"), ass)
+		}
+
+		exp = &ast.BinaryOperator{
+			Token:    ass,
+			Operator: ass.Literal[:len(ass.Literal)-1],
+			Left:     ids.Values[0],
+			Right:    exp,
+		}
+	}
+
 	return &ast.Assignment{
 		Token:      ass,
 		Identifier: ids,
 		Literal:    ass.Literal,
 		Expression: exp,
-		Definition: false,
+		Definition: def,
 	}
 }
 

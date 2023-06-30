@@ -563,6 +563,9 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 	}
 
 	args := []*Instance{target}
+	if target.MemberOf != nil {
+		args = append(args, target.MemberOf)
+	}
 	for _, v := range node.Arguments {
 		if spread, ok := v.(*ast.SpreadOut); ok {
 			var e *Instance
@@ -788,5 +791,7 @@ func (r *Runtime) EvalAccess(node *ast.Access, scope *Scope) *Instance {
 	left := r.Eval(node.Left, scope)
 	right := node.Right.(*ast.Identifier).Value
 
-	return left.Type.OnGet(r, scope, left, String.Create(right))
+	res := left.Type.OnGet(r, scope, left, String.Create(right))
+	res.MemberOf = left
+	return res
 }

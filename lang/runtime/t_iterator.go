@@ -33,7 +33,7 @@ func (t *IteratorInfo) Create(nextFn *Instance) *Instance {
 		Type: t.Type,
 		Impl: &IteratorDataImpl{
 			Properties: map[string]*Instance{
-				"finished": Boolean.FALSE,
+				"done": Boolean.FALSE,
 			},
 			Next: nextFn,
 		},
@@ -94,8 +94,8 @@ func (d *IteratorDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *In
 
 func (d *IteratorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	this := args[0].Impl.(*IteratorDataImpl)
-	if AsBool(this.finished()) {
-		return String.Create("<Iterator:finished>")
+	if AsBool(this.done()) {
+		return String.Create("<Iterator:done>")
 	} else {
 		return String.Create("<Iterator>")
 	}
@@ -109,12 +109,14 @@ type IteratorDataImpl struct {
 	Next       *Instance
 }
 
-func (impl *IteratorDataImpl) finished() *Instance {
-	return impl.Properties["finished"]
+func (impl *IteratorDataImpl) done() *Instance {
+	return impl.Properties["done"]
 }
 
 var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IteratorDataImpl)
+	// args[0] => function
+	// args[1] => this (the iterator object)
+	this := args[1].Impl.(*IteratorDataImpl)
 	nextFn := this.Next.Impl.(*FunctionDataImpl)
 	ret := nextFn.Call(r, s)
 
@@ -123,7 +125,7 @@ var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Ru
 	}
 
 	if ret == Iteration.DONE {
-		this.Properties["finished"] = Boolean.TRUE
+		this.Properties["done"] = Boolean.TRUE
 	}
 
 	return ret

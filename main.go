@@ -20,9 +20,6 @@ fn onetwothree() {
 	yield 3
 }
 
-onetwothree().next = fn() {}
-
-# name.channel().value = 1
 `
 
 func main() {

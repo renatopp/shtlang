@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"sht/lang/ast"
 )
 
@@ -68,7 +67,7 @@ func (d *FunctionDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Inst
 
 func (d *FunctionDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	impl := args[0].Impl.(*FunctionDataImpl)
-	return impl.Call(r, s, args[1:]...)
+	return impl.Call(r, s, args...)
 }
 
 // ----------------------------------------------------------------------------
@@ -147,7 +146,6 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 	if d.Generator {
 		iter := Iterator.Create(Function.CreateNative("generator", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
 			res := r.Eval(d.Body, scope)
-			fmt.Println("generator called", res.Repr())
 
 			if err, ok := scope.GetInScope(RAISE_KEY); ok {
 				s.Set(RAISE_KEY, err)

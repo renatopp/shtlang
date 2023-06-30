@@ -20,7 +20,7 @@ var keywords = []string{
 	"continue",
 	"return",
 	"fn",
-	"let",
+	// "let",
 	"const",
 	"as",
 	"data",
@@ -228,7 +228,8 @@ func (l *Lexer) isCompositeAssignment(a rune, b rune) bool {
 	case a == '+' && b == '=',
 		a == '-' && b == '=',
 		a == '*' && b == '=',
-		a == '/' && b == '=':
+		a == '/' && b == '=',
+		a == ':' && b == '=':
 		return true
 	default:
 		return false

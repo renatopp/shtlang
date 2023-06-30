@@ -1,8 +1,9 @@
 package runtime
 
 type Instance struct {
-	Type DataType
-	Impl DataImpl
+	Type     DataType
+	Impl     DataImpl
+	MemberOf *Instance
 }
 
 func (i *Instance) Repr() string {

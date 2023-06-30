@@ -20,9 +20,9 @@ var Iteration = &IterationInfo{
 		Type: iterationDT,
 		Impl: &IterationDataImpl{
 			Properties: map[string]*Instance{
-				"values": Tuple.Create(Boolean.FALSE),
-				"done":   Boolean.TRUE,
-				"error":  Boolean.TRUE,
+				"value": Tuple.Create(Boolean.FALSE),
+				"done":  Boolean.TRUE,
+				"error": Boolean.TRUE,
 			},
 		},
 	},
