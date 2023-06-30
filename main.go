@@ -20,6 +20,18 @@ fn onetwothree() {
 	yield 3
 }
 
+fn piped(next, f) {
+	v := next()
+
+	if v.done {
+		yield f()
+	} else {
+		yield v.value
+	}
+}
+
+onetwothree() | piped(999, => 1)
+
 `
 
 func main() {

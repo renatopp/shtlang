@@ -63,9 +63,10 @@ func priorityOf(t *tokens.Token) int {
 			return order.Calls
 		}
 
+	case t.Is(tokens.Pipe):
+		return order.Pipe
 	case t.Is(tokens.Dot):
 		return order.Access
-
 	case t.Is(tokens.Lparen), t.Is(tokens.Lbrace):
 		return order.Calls
 	case t.Is(tokens.Lbracket):
@@ -122,6 +123,7 @@ func CreateParser() *Parser {
 	p.infixFns[tokens.Lbrace] = p.parseInfixCall
 	p.infixFns[tokens.Lbracket] = p.parseInfixBracket
 	p.infixFns[tokens.Dot] = p.parseInfixDot
+	p.infixFns[tokens.Pipe] = p.parseInfixPipe
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -1111,6 +1113,44 @@ func (p *Parser) parseInfixDot(left ast.Node) ast.Node {
 			Value: cur.Literal,
 		},
 	}
+}
+
+func (p *Parser) parseInfixPipe(left ast.Node) ast.Node {
+	p.lexer.EatToken()
+	return nil
+
+	// <funcname>[(<args>[, <args>]*)?]? [<arg>[,<args>]*]? [: <expression>)]?
+	// to <Type>
+
+	if !p.Expect(tokens.Identifier) {
+		return nil
+	}
+
+	cur := p.lexer.PeekToken()
+	pipeFn := &ast.Identifier{
+		Token: cur,
+		Value: cur.Literal,
+	}
+
+	exp := p.parseExpressionTuple()
+
+	cur := p.lexer.PeekToken()
+	if cur.Is(tokens.Colon) {
+		// exp is params
+	} else {
+		// exp is expression, fn is empty
+	}
+
+	// cur := p.lexer.PeekToken()
+	// p.lexer.EatToken()
+	// return &ast.Pipe{
+	// 	Token: left.GetToken(),
+	// 	Left:  left,
+	// 	Right: &ast.Identifier{
+	// 		Token: cur,
+	// 		Value: cur.Literal,
+	// 	},
+	// }
 }
 
 // ----------------------------------------------------------------
