@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"sht/lang/ast"
 	"strings"
 )
@@ -29,6 +30,9 @@ func (t *ListInfo) Create(values ...*Instance) *Instance {
 	return &Instance{
 		Type: t.Type,
 		Impl: &ListDataImpl{
+			Properties: map[string]*Instance{
+				"default": ThrowFn,
+			},
 			Values: values,
 		},
 	}
@@ -71,6 +75,11 @@ func (d *ListDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 }
 
 func (d *ListDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*ListDataImpl)
+	if len(args) > 1 {
+		this.Properties["default"] = args[1]
+	}
+
 	return args[0]
 }
 
@@ -87,6 +96,31 @@ func (d *ListDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance
 			return Iteration.Create(this.Values[cur-1])
 		}),
 	)
+}
+
+func (d *ListDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*IterationDataImpl)
+	name := AsString(args[1])
+
+	_, has := this.Properties[name]
+	if !has {
+		return r.Throw(Error.NoProperty(s, d.Name, name), s)
+	}
+
+	this.Properties[name] = args[2]
+	return args[2]
+}
+
+func (d *ListDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*IterationDataImpl)
+	name := AsString(args[1])
+
+	value, has := this.Properties[name]
+	if !has {
+		return r.Throw(Error.NoProperty(s, d.Name, name), s)
+	}
+
+	return value
 }
 
 func (d *ListDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
@@ -106,36 +140,49 @@ func (t *ListDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Insta
 		return r.Throw(Error.Create(s, "index of a list must be a number, '%s' provided", args[2].Type.GetName()), s)
 	}
 
-	if nargs > 3 {
-		return r.Throw(Error.Create(s, "list indexing accepts only 1 or 2 parameters, %d given", nargs-1), s)
-	}
-
-	if nargs == 2 {
-		return this.Values[AsInteger(args[1])]
-	}
-
 	if nargs == 1 {
 		return List.Create(this.Values...)
 	}
 
+	if nargs == 2 {
+		idx := AsInteger(args[1])
+		if idx >= len(this.Values) || idx < 0 {
+			fn := this.default_()
+			return fn.Type.OnCall(r, s, fn, String.Createf("list out of bounds for item '%d'", idx))
+		}
+		return this.Values[idx]
+	}
+
+	if nargs > 3 {
+		return r.Throw(Error.Create(s, "list indexing accepts only 1 or 2 parameters, %d given", nargs-1), s)
+	}
+
 	size := len(this.Values)
 	idx0 := AsInteger(args[1])
-	if idx0 < 0 || idx0 > size-1 {
-		return r.Throw(Error.Create(s, "first index '%d' of list slicing out of bounds", idx0), s)
-	}
-
 	idx1 := AsInteger(args[2])
-	if idx1 < 0 || idx1 > size {
-		return r.Throw(Error.Create(s, "second index '%d' of list slicing out of bounds", idx0), s)
+	if idx1 > size {
+		idx1 = size
+	} else if idx1 < 0 {
+		idx1 = -1
 	}
-
-	if idx1 <= idx0 {
-		return r.Throw(Error.Create(s, "second index '%d' of list slicing must be greater than the first '%d'", idx1, idx0), s)
+	if idx0 > size {
+		idx0 = size
+	} else if idx1 < 0 {
+		idx0 = -1
 	}
 
 	values := make([]*Instance, 0)
-	for _, v := range this.Values[idx0:idx1] {
-		values = append(values, v)
+	dir := 1
+	if idx1 < idx0 {
+		dir = -1
+	}
+
+	fmt.Println(idx0, idx1, dir)
+	for i := idx0; i != idx1; i += dir {
+		if i < 0 || i >= len(this.Values) {
+			continue
+		}
+		values = append(values, this.Values[i])
 	}
 
 	return List.Create(values...)
@@ -154,12 +201,16 @@ func (d *ListDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance
 	}
 
 	return String.Create("[" + strings.Join(values, ", ") + "]")
-
 }
 
 // ----------------------------------------------------------------------------
 // LIST DATA IMPL
 // ----------------------------------------------------------------------------
 type ListDataImpl struct {
-	Values []*Instance
+	Properties map[string]*Instance
+	Values     []*Instance
+}
+
+func (impl *ListDataImpl) default_() *Instance {
+	return impl.Properties["default"]
 }

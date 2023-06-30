@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"sht/lang/ast"
 )
 
@@ -38,6 +39,15 @@ func (t *StringInfo) Create(value string) *Instance {
 		Type: t.Type,
 		Impl: StringDataImpl{
 			Value: value,
+		},
+	}
+}
+
+func (t *StringInfo) Createf(value string, v ...any) *Instance {
+	return &Instance{
+		Type: t.Type,
+		Impl: StringDataImpl{
+			Value: fmt.Sprintf(value, v...),
 		},
 	}
 }

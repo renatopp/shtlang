@@ -96,3 +96,9 @@ func Id() string {
 var DoneFn = Function.CreateNative("done", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return Iteration.DONE
 })
+
+var ThrowFn = Function.CreateNative("throw", []*FunctionParam{
+	{Name: "message"},
+}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return r.Throw(Error.Create(s, AsString(args[0])), s)
+})

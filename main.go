@@ -14,6 +14,10 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
+let nums = List(=> 0){ 1, 2, 3 }
+
+nums[0, 2]
+
 `
 
 func main() {
