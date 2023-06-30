@@ -22,6 +22,7 @@ var Iteration = &IterationInfo{
 			Properties: map[string]*Instance{
 				"values": Tuple.Create(Boolean.FALSE),
 				"done":   Boolean.TRUE,
+				"error":  Boolean.TRUE,
 			},
 		},
 	},
@@ -43,6 +44,20 @@ func (t *IterationInfo) Create(values ...*Instance) *Instance {
 			Properties: map[string]*Instance{
 				"value": Tuple.Create(values...),
 				"done":  Boolean.FALSE,
+				"error": Boolean.FALSE,
+			},
+		},
+	}
+}
+
+func (t *IterationInfo) Error(values ...*Instance) *Instance {
+	return &Instance{
+		Type: t.Type,
+		Impl: &IterationDataImpl{
+			Properties: map[string]*Instance{
+				"value": Tuple.Create(values...),
+				"done":  Boolean.TRUE,
+				"error": Boolean.TRUE,
 			},
 		},
 	}
@@ -62,6 +77,7 @@ func (d *IterationDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializ
 			Properties: map[string]*Instance{
 				"value": Boolean.FALSE,
 				"done":  Boolean.TRUE,
+				"error": Boolean.FALSE,
 			},
 		},
 	}
@@ -133,4 +149,8 @@ func (impl *IterationDataImpl) value() *Instance {
 
 func (impl *IterationDataImpl) done() *Instance {
 	return impl.Properties["done"]
+}
+
+func (impl *IterationDataImpl) error() *Instance {
+	return impl.Properties["error"]
 }

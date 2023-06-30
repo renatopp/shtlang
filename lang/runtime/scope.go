@@ -9,6 +9,7 @@ type Scope struct {
 	Parent *Scope
 	Caller *Scope
 	Values map[string]*Reference
+	State  ExecutionState
 
 	InAssignment bool
 	InArgument   bool
@@ -20,8 +21,18 @@ func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s := &Scope{}
 	s.Parent = parent
 	s.Caller = caller
-	s.Values = make(map[string]*Reference)
+	s.Values = map[string]*Reference{}
 	s.nodeStack = make([]ast.Node, 0)
+	s.State = nil
+
+	if parent != nil {
+		depth, _ := parent.GetInScope(SCOPE_DEPTH_KEY)
+		s.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(AsNumber(depth.Value)+1)))
+	} else {
+		s.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(0)))
+	}
+	s.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
+
 	return s
 }
 

@@ -86,7 +86,12 @@ type Parser struct {
 	postfixFns map[tokens.Type]postfixFn
 	errors     []string
 
+	// for and if conditions
 	inCondition bool
+
+	// function content control
+	hasReturn bool
+	hasYield  bool
 }
 
 func CreateParser() *Parser {
@@ -223,6 +228,9 @@ func (p *Parser) parseStatement() ast.Node {
 		p.lexer.EatToken()
 		node = nil
 
+	} else if cur.Is(tokens.Lbrace) {
+		node = p.parseBlock()
+
 	} else if cur.Is(tokens.Keyword) &&
 		cur.Literal == "return" ||
 		cur.Literal == "raise" ||
@@ -268,21 +276,33 @@ func (p *Parser) parseReturn() ast.Node {
 	cur := p.lexer.PeekToken()
 	p.lexer.EatToken()
 
-	exp := p.parseSingleExpression(order.Lowest)
+	exp := p.parseExpressionTuple()
 
 	switch cur.Literal {
 	case "return":
+		if p.hasYield {
+			p.RegisterError(fmt.Sprintf("can't have return and yield in the same function"), cur)
+		}
+		p.hasReturn = true
+
 		return &ast.Return{
 			Token:      cur,
 			Expression: exp,
 		}
-	case "raise":
-		return &ast.Raise{
+
+	case "yield":
+		if p.hasReturn {
+			p.RegisterError(fmt.Sprintf("can't have return and yield in the same function"), cur)
+		}
+		p.hasYield = true
+
+		return &ast.Yield{
 			Token:      cur,
 			Expression: exp,
 		}
-	case "yield":
-		return &ast.Yield{
+
+	case "raise":
+		return &ast.Raise{
 			Token:      cur,
 			Expression: exp,
 		}
@@ -485,9 +505,20 @@ func (p *Parser) parseFunctionDef() ast.Node {
 		return nil
 	}
 
+	hr := p.hasReturn
+	hy := p.hasYield
+	p.hasReturn = false
+	p.hasYield = false
 	if cur.Is(tokens.Lbrace) {
 		fn.Body = p.parseBlock()
 	}
+
+	if p.hasYield {
+		fn.Generator = true
+	}
+
+	p.hasReturn = hr
+	p.hasYield = hy
 
 	return fn
 }

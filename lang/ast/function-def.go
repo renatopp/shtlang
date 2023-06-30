@@ -3,11 +3,12 @@ package ast
 import "sht/lang/tokens"
 
 type FunctionDef struct {
-	Token  *tokens.Token
-	Name   string
-	Params []Node
-	Body   Node
-	Scoped bool
+	Token     *tokens.Token
+	Scoped    bool
+	Generator bool
+	Name      string
+	Params    []Node
+	Body      Node
 }
 
 func (p *FunctionDef) GetToken() *tokens.Token {

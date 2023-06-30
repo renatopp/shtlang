@@ -95,6 +95,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.Raise:
 		result = r.EvalRaise(n, scope)
 
+	case *ast.Yield:
+		result = r.EvalYield(n, scope)
+
 	case *ast.Indexing:
 		result = r.EvalIndexing(n, scope)
 
@@ -136,15 +139,44 @@ func (r *Runtime) Throw(err *Instance, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
+
+	var newScope *Scope
+	var currentStatement int
+	if scope.State != nil {
+		state := scope.State.(*BlockState)
+		currentStatement = state.Current
+		newScope = state.Scope
+	} else {
+		newScope = CreateScope(scope, scope.Caller)
+		currentStatement = 0
+	}
+
 	var result *Instance
-	for _, stmt := range node.Statements {
-		result = r.Eval(stmt, scope)
-		if err, ok := scope.Get(RAISE_KEY); ok {
+	for i := currentStatement; i < len(node.Statements); i++ {
+		stmt := node.Statements[i]
+		result = r.Eval(stmt, newScope)
+		if err, ok := newScope.Get(RAISE_KEY); ok {
+			scope.Set(RAISE_KEY, err)
 			result = err.Value
 			break
-		}
 
-		if _, ok := scope.Get(RETURN_KEY); ok {
+		} else if v, ok := newScope.Get(RETURN_KEY); ok {
+			scope.Set(RETURN_KEY, v)
+			break
+
+		} else if v, ok := newScope.Get(YIELD_KEY); ok {
+
+			cur := i
+			if newScope.HasInScope(JUST_YIELDED_KEY) {
+				cur += 1
+			}
+			scope.State = &BlockState{
+				Scope:   newScope,
+				Current: cur,
+			}
+			newScope.Delete(YIELD_KEY)
+			newScope.Delete(JUST_YIELDED_KEY)
+			scope.Set(YIELD_KEY, v)
 			break
 		}
 	}
@@ -497,6 +529,8 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 	}
 
 	fn := Function.Create(name, params, node.Body, scope)
+	impl := fn.Impl.(*FunctionDataImpl)
+	impl.Generator = node.Generator
 
 	if !scope.InAssignment && !scope.InArgument && name != "" {
 		scope.Set(name, &Reference{
@@ -554,11 +588,7 @@ func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {
 		exp = Boolean.FALSE
 	}
 
-	scope.Set(RETURN_KEY, &Reference{
-		Value:    exp,
-		Constant: true,
-	})
-
+	scope.Set(RETURN_KEY, Constant(exp))
 	return exp
 }
 
@@ -575,6 +605,17 @@ func (r *Runtime) EvalRaise(node *ast.Raise, scope *Scope) *Instance {
 			AsString(exp.Type.OnString(r, scope, exp)),
 		), scope)
 	}
+}
+
+func (r *Runtime) EvalYield(node *ast.Yield, scope *Scope) *Instance {
+	exp := r.Eval(node.Expression, scope)
+	if exp == nil {
+		exp = Boolean.FALSE
+	}
+
+	scope.Set(YIELD_KEY, Constant(exp))
+	scope.Set(JUST_YIELDED_KEY, Constant(Boolean.TRUE))
+	return exp
 }
 
 func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
@@ -634,32 +675,62 @@ func (r *Runtime) SolveMaybe(target *Instance, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
-	newScope := CreateScope(scope, scope.Caller)
 
-	ret := r.doEval(node, scope, newScope)
+	var newScope *Scope
+	var condition *bool
+	if scope.State != nil {
+		state := scope.State.(*IfState)
+		condition = &state.Condition
+		newScope = state.Scope
+	} else {
+		newScope = CreateScope(scope, scope.Caller)
+		condition = nil
+	}
+
+	if condition == nil {
+		c := r.Eval(node.Condition, newScope)
+		if c == nil {
+			return r.Throw(Error.Create(scope, "invalid condition"), scope)
+		}
+
+		t := true
+		f := false
+		if AsBool(c) {
+			condition = &t
+		} else {
+			condition = &f
+		}
+	}
+
+	var ret *Instance
+	if *condition {
+		ret = r.Eval(node.TrueBody, newScope)
+
+	} else if node.FalseBody != nil {
+		ret = r.Eval(node.FalseBody, newScope)
+	}
 
 	if newScope.HasInScope(RAISE_KEY) {
 		err, _ := newScope.GetInScope(RAISE_KEY)
 		scope.Set(RAISE_KEY, err)
+
+	} else if newScope.HasInScope(RETURN_KEY) {
+		err, _ := newScope.GetInScope(RETURN_KEY)
+		scope.Set(RETURN_KEY, err)
+
+	} else if newScope.HasInScope(YIELD_KEY) {
+		v, _ := newScope.GetInScope(YIELD_KEY)
+
+		scope.State = &IfState{
+			Scope:     newScope,
+			Condition: *condition,
+		}
+		newScope.Delete(YIELD_KEY)
+		newScope.Delete(JUST_YIELDED_KEY)
+		scope.Set(YIELD_KEY, v)
 	}
 
 	return ret
-}
-
-func (r *Runtime) doEval(node *ast.If, scope *Scope, newScope *Scope) *Instance {
-	condition := r.Eval(node.Condition, newScope)
-	if condition == nil {
-		return r.Throw(Error.Create(scope, "invalid condition"), scope)
-	}
-
-	if AsBool(condition) {
-		return r.Eval(node.TrueBody, newScope)
-
-	} else if node.FalseBody != nil {
-		return r.Eval(node.FalseBody, newScope)
-	}
-
-	return Boolean.FALSE
 }
 
 func (r *Runtime) EvalSpreadOut(node *ast.SpreadOut, scope *Scope) *Instance {

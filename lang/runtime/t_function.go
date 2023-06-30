@@ -33,6 +33,7 @@ func (t *FunctionInfo) Create(name string, params []*FunctionParam, body ast.Nod
 			Name:        name,
 			Params:      params,
 			Body:        body,
+			Generator:   false,
 		},
 	}
 }
@@ -41,9 +42,10 @@ func (t *FunctionInfo) CreateNative(name string, params []*FunctionParam, fn Met
 	return &Instance{
 		Type: t.Type,
 		Impl: &FunctionDataImpl{
-			Name:     name,
-			Params:   params,
-			NativeFn: fn,
+			Name:      name,
+			Params:    params,
+			NativeFn:  fn,
+			Generator: false,
 		},
 	}
 }
@@ -74,6 +76,7 @@ type FunctionDataImpl struct {
 	Params      []*FunctionParam
 	Body        ast.Node
 	NativeFn    MetaFunction
+	Generator   bool
 }
 
 type FunctionParam struct {
@@ -92,69 +95,12 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 		parentScope = s
 	}
 
-	depth, _ := parentScope.GetInScope(SCOPE_DEPTH_KEY)
-
 	scope := CreateScope(parentScope, s)
 	scope.Set(SCOPE_NAME_KEY, Constant(String.Create(d.Name)))
-	scope.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(AsNumber(depth.Value)+1)))
-	scope.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
 	scope.Set(SCOPE_FN_KEY, Constant(&Instance{
 		Type: Function.Type,
 		Impl: d,
 	}))
-
-	// tArgs := len(args)
-	// // tParams := len(d.Params)
-	// g := 0
-	// for i, v := range d.Params {
-	// 	if !v.Spread {
-	// 		var value *Instance
-	// 		if g >= tArgs {
-	// 			if v.Default == nil {
-	// 				return r.Throw(Error.Create(scope, "missing argument: '%s'", v.Name), scope)
-	// 			}
-	// 			value = v.Default
-	// 		} else {
-	// 			value = args[g]
-	// 		}
-
-	// 		g++
-	// 		scope.Set(v.Name, &Reference{
-	// 			Value:    value,
-	// 			Constant: false,
-	// 		})
-	// 	} else {
-	// 		// TODO: Handle spread arguments
-	// 		return r.Throw(Error.Create(scope, "spread arguments are not supported yet: '%s'", v.Name), scope)
-
-	// 		if i == 0 {
-	// 		} // TODO: REMOVE
-
-	// 		// missing := tParams - i - 1
-
-	// 		// total := 0
-	// 		// sv := make([]*Instance, 0)
-	// 		// for j := i; j < (tArgs - missing); j++ {
-	// 		// 	t := args[j]
-	// 		// 	if t.Type() == obj.TList {
-	// 		// 		sv = append(sv, t.(*obj.List).Values...)
-	// 		// 	} else {
-	// 		// 		sv = append(sv, t)
-	// 		// 	}
-	// 		// 	total++
-	// 		// }
-
-	// 		// g += total
-	// 		// scope.Set(v.Name, &obj.List{Values: sv})
-	// 	}
-	// }
-
-	// res := r.Eval(d.Body, scope)
-
-	// if scope.HasInScope(RAISE_KEY) {
-	// 	err, _ := scope.GetInScope(RAISE_KEY)
-	// 	s.Set(RAISE_KEY, err)
-	// }
 
 	arguments := []*Instance{}
 	paramsLength := len(d.Params)
@@ -194,12 +140,35 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 		}
 	}
 
-	res := r.Eval(d.Body, scope)
+	if d.Generator {
+		iter := Iterator.Create(Function.CreateNative("generator", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			res := r.Eval(d.Body, scope)
+			fmt.Println("generator called", res.Repr())
 
-	if scope.HasInScope(RAISE_KEY) {
-		err, _ := scope.GetInScope(RAISE_KEY)
-		s.Set(RAISE_KEY, err)
+			if err, ok := scope.GetInScope(RAISE_KEY); ok {
+				s.Set(RAISE_KEY, err)
+				return Iteration.Error(err.Value)
+
+			} else if _, ok := scope.GetInScope(YIELD_KEY); ok {
+				scope.Delete(YIELD_KEY)
+				scope.Delete(JUST_YIELDED_KEY)
+				return Iteration.Create(res)
+
+			} else {
+				return Iteration.DONE
+			}
+		}))
+
+		return iter
+
+	} else {
+		res := r.Eval(d.Body, scope)
+
+		if scope.HasInScope(RAISE_KEY) {
+			err, _ := scope.GetInScope(RAISE_KEY)
+			s.Set(RAISE_KEY, err)
+		}
+
+		return res
 	}
-
-	return res
 }

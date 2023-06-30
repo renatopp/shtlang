@@ -51,6 +51,10 @@ func (d *IteratorDataType) Instantiate(r *Runtime, s *Scope, init ast.Initialize
 	return Iterator.Create(DoneFn)
 }
 
+func (d *IteratorDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return args[0]
+}
+
 func (d *IteratorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	this := args[0].Impl.(*IteratorDataImpl)
 	name := AsString(args[1])
