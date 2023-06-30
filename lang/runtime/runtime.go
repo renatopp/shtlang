@@ -388,6 +388,10 @@ func (r *Runtime) EvalAssignment(node *ast.Assignment, scope *Scope) *Instance {
 }
 
 func (r *Runtime) Assign(name string, exp *Instance, def, cnst bool, scope *Scope) *Instance {
+	if name == "_" {
+		return exp
+	}
+
 	if def && scope.HasInScope(name) {
 		return r.Throw(Error.DuplicatedDefinition(scope, name), scope)
 	}

@@ -189,7 +189,9 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 	}
 
 	for i, pv := range d.Params {
-		scope.Set(pv.Name, Variable(arguments[i]))
+		if pv.Name != "_" {
+			scope.Set(pv.Name, Variable(arguments[i]))
+		}
 	}
 
 	res := r.Eval(d.Body, scope)

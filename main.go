@@ -13,12 +13,7 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-fn hi(a=3232, ...b, c=3) {
-	a, b, c
-}
 
-hi(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-hi()
 `
 
 func main() {
