@@ -129,11 +129,15 @@ func (d *IterationDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *I
 
 func (d *IterationDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	this := args[0].Impl.(*IterationDataImpl)
-	if AsBool(this.Properties["done"]) {
-		return String.Create("Iteration<done>")
+	if AsBool(this.error()) {
+		return String.Create("<Iteration:error>")
 	}
 
-	return String.Create("Iteration")
+	if AsBool(this.done()) {
+		return String.Create("<Iteration:done>")
+	}
+
+	return String.Create("<Iteration>")
 }
 
 // ----------------------------------------------------------------------------

@@ -78,7 +78,7 @@ func (d *IteratorDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Insta
 	}
 
 	this := args[0].Impl.(*IteratorDataImpl)
-	this.Properties["next"] = args[1]
+	this.Next = args[1]
 
 	return args[0]
 }
@@ -88,7 +88,12 @@ func (d *IteratorDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *In
 }
 
 func (d *IteratorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return String.Create("Iterator")
+	this := args[0].Impl.(*IteratorDataImpl)
+	if AsBool(this.finished()) {
+		return String.Create("<Iterator:finished>")
+	} else {
+		return String.Create("<Iterator>")
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -97,6 +102,10 @@ func (d *IteratorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Inst
 type IteratorDataImpl struct {
 	Properties map[string]*Instance
 	Next       *Instance
+}
+
+func (impl *IteratorDataImpl) finished() *Instance {
+	return impl.Properties["finished"]
 }
 
 var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {

@@ -49,9 +49,9 @@ func (d *MaybeDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	maybe := args[0].Impl.(*MaybeDataImpl)
 
 	if maybe.Error != nil {
-		return String.Create("Maybe<error>")
+		return String.Create("<Maybe:error>")
 	} else {
-		return String.Create("Maybe<value>")
+		return String.Create("<Maybe:value>")
 	}
 }
 

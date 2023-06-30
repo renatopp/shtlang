@@ -57,9 +57,13 @@ type FunctionDataType struct {
 	BaseDataType
 }
 
+func (d *FunctionDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, args[0])
+}
+
 func (d *FunctionDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	name := args[0].Impl.(*FunctionDataImpl).Name
-	return String.Create(fmt.Sprintf("<function:%s>", name))
+	return String.Createf("<Function:%s>", name)
 }
 
 func (d *FunctionDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {

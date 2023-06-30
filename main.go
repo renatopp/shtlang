@@ -14,13 +14,13 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-fn a() {
-	
+fn onetwothree {
+	yield 1
+	yield 2
+	yield 3
 }
 
-let i = a()
-i...
-
+onetwothree
 `
 
 func main() {

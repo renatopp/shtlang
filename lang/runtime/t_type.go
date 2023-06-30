@@ -46,7 +46,7 @@ type TypeDataType struct {
 // }
 
 func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return String.Create(args[0].Type.GetName())
+	return String.Createf("<Type:%s>", args[0].Type.GetName())
 }
 
 // ----------------------------------------------------------------------------
