@@ -314,6 +314,9 @@ func (l *Lexer) parseWhitespaces() *tokens.Token {
 	}
 
 	if nl {
+		if l.PeekChar().Is('|') {
+			return nil
+		}
 		return tokens.CreateToken(tokens.Newline, "\n", first.Line, first.Column)
 	}
 

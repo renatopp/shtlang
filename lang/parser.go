@@ -616,8 +616,8 @@ func (p *Parser) parseParameters() []ast.Node {
 
 		params = append(params, param)
 
-		if !p.Expect(tokens.Identifier, tokens.Rparen, tokens.Newline, tokens.Spread) {
-			p.RegisterError(fmt.Sprintf("invalid parameter token '%s'", cur.Literal), cur)
+		if !p.Expect(tokens.Identifier, tokens.Rparen, tokens.Newline, tokens.Spread, tokens.Colon) {
+			p.RegisterError(fmt.Sprintf("invalid end of parameter token '%s'", cur.Literal), cur)
 			return nil
 		}
 
@@ -1116,41 +1116,71 @@ func (p *Parser) parseInfixDot(left ast.Node) ast.Node {
 }
 
 func (p *Parser) parseInfixPipe(left ast.Node) ast.Node {
+	cur := p.lexer.PeekToken()
 	p.lexer.EatToken()
-	return nil
 
-	// <funcname>[(<args>[, <args>]*)?]? [<arg>[,<args>]*]? [: <expression>)]?
-	// to <Type>
+	pipe := &ast.Pipe{
+		Token: cur,
+		Left:  left,
+	}
 
-	// if !p.Expect(tokens.Identifier) {
-	// 	return nil
-	// }
+	if !p.Expect(tokens.Identifier) {
+		return nil
+	}
 
-	// cur := p.lexer.PeekToken()
-	// pipeFn := &ast.Identifier{
-	// 	Token: cur,
-	// 	Value: cur.Literal,
-	// }
+	cur = p.lexer.PeekToken()
+	p.lexer.EatToken()
+	pipeFn := &ast.Call{
+		Target: &ast.Identifier{
+			Token: cur,
+			Value: cur.Literal,
+		},
+		Arguments: []ast.Node{},
+	}
 
-	// exp := p.parseExpressionTuple()
+	if p.lexer.PeekToken().Is(tokens.Lparen) {
+		p.lexer.EatToken()
+		pipeFn.Arguments = p.parseExpressionList()
 
-	// cur := p.lexer.PeekToken()
-	// if cur.Is(tokens.Colon) {
-	// 	// exp is params
-	// } else {
-	// 	// exp is expression, fn is empty
-	// }
+		if !p.Expect(tokens.Rparen) {
+			return nil
+		}
+		p.lexer.EatToken()
+	}
+	pipe.PipeFn = pipeFn
 
-	// cur := p.lexer.PeekToken()
-	// p.lexer.EatToken()
-	// return &ast.Pipe{
-	// 	Token: left.GetToken(),
-	// 	Left:  left,
-	// 	Right: &ast.Identifier{
-	// 		Token: cur,
-	// 		Value: cur.Literal,
-	// 	},
-	// }
+	cur = p.lexer.PeekToken()
+	if cur.Is(tokens.Identifier) || cur.Is(tokens.Colon) {
+		argFn := &ast.FunctionDef{
+			Token:     cur,
+			Scoped:    false,
+			Generator: false,
+			Name:      "Piped Function",
+		}
+
+		if !cur.Is(tokens.Colon) {
+			argFn.Params = p.parseParameters()
+		}
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Colon) {
+			p.lexer.EatToken()
+
+			cur = p.lexer.PeekToken()
+			if cur.Is(tokens.Lbrace) {
+				argFn.Body = p.parseBlock()
+			} else {
+				argFn.Body = p.parseExpressionTuple()
+			}
+		}
+
+		if argFn.Body != nil {
+			pipe.ArgFn = argFn
+		}
+		cur = p.lexer.PeekToken()
+	}
+
+	return pipe
 }
 
 // ----------------------------------------------------------------

@@ -13,25 +13,10 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-
-fn onetwothree() {
-	yield 1
-	yield 2
-	yield 3
+onetwothree()
+| all(x) x: {
+	fiaosdf
 }
-
-fn piped(next, f) {
-	v := next()
-
-	if v.done {
-		yield f()
-	} else {
-		yield v.value
-	}
-}
-
-onetwothree() | piped(999, => 1)
-
 `
 
 func main() {
