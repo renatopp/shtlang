@@ -59,8 +59,10 @@ func priorityOf(t *tokens.Token) int {
 		switch t.Literal {
 		case "as":
 			return order.Calls
-		case "is", "in":
-			return order.Calls
+		case "is":
+			return order.Is
+		case "in":
+			return order.In
 		}
 
 	case t.Is(tokens.Pipe):
@@ -437,6 +439,17 @@ func (p *Parser) parseAssignment(left ast.Node) ast.Node {
 	p.lexer.EatToken()
 
 	exp := p.parseExpressionTuple()
+
+	cur := p.lexer.PeekToken()
+	nxt := p.lexer.PeekTokenN(1)
+
+	if cur.Is(tokens.Pipe) || cur.Is(tokens.Newline) && nxt.Is(tokens.Pipe) {
+		if cur.Is(tokens.Newline) {
+			p.eatNewLines()
+		}
+
+		exp = p.parsePipe(exp)
+	}
 
 	if exp == nil {
 		p.RegisterError(fmt.Sprintf("expected expression, got %s instead", p.lexer.PeekToken()), ass)

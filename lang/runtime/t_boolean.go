@@ -94,6 +94,21 @@ func (d *BooleanDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Insta
 	return String.Create("false")
 }
 
+func (d *BooleanDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	cur := 0
+	this := args[0].Impl.(BooleanDataImpl)
+	return Iterator.Create(
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			if cur >= 1 {
+				return Iteration.DONE
+			}
+
+			cur++
+			return Iteration.Create(Boolean.Create(this.Value))
+		}),
+	)
+}
+
 func (d *BooleanDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	v := AsBool(args[0])
 	return Boolean.Create(!v)

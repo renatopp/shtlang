@@ -25,6 +25,8 @@ type DataType interface {
 	OnString(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance
+	OnIn(r *Runtime, s *Scope, args ...*Instance) *Instance
+	OnIs(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnPipe(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance
@@ -130,6 +132,12 @@ func (d *BaseDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance
 }
 func (d *BaseDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, "To", args[0]), s)
+}
+func (d *BaseDataType) OnIn(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return r.Throw(Error.InvalidAction(s, "In", args[0]), s)
+}
+func (d *BaseDataType) OnIs(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return r.Throw(Error.InvalidAction(s, "In", args[0]), s)
 }
 func (d *BaseDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, "Iter", args[0]), s)

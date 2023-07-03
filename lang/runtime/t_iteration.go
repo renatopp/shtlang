@@ -159,6 +159,10 @@ func (d *IterationDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Ins
 	return String.Create("<Iteration>")
 }
 
+func (d *IterationDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return args[0]
+}
+
 // ----------------------------------------------------------------------------
 // ITERATION DATA IMPL
 // ----------------------------------------------------------------------------

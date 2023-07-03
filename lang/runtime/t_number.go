@@ -102,6 +102,21 @@ func (d *NumberDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instan
 	return String.Create(fmt.Sprintf("%f", v))
 }
 
+func (d *NumberDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	cur := 0
+	this := args[0].Impl.(NumberDataImpl)
+	return Iterator.Create(
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			if cur >= 1 {
+				return Iteration.DONE
+			}
+
+			cur++
+			return Iteration.Create(Number.Create(this.Value))
+		}),
+	)
+}
+
 func (d *NumberDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	if args[0].Type != args[1].Type {
 		return r.Throw(Error.IncompatibleTypeOperation(s, "+", args[0], args[1]), s)

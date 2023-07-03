@@ -104,6 +104,22 @@ func (d *StringDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	return String.Create(AsString(args[0]) + AsString(args[1]))
 }
 
+func (d *StringDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	cur := 0
+	this := args[0].Impl.(StringDataImpl)
+	return Iterator.Create(
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			if cur >= len(this.Value) {
+				return Iteration.DONE
+			}
+
+			val := Iteration.Create(String.Create(this.Value[cur : cur+1]))
+			cur++
+			return val
+		}),
+	)
+}
+
 func (d *StringDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return args[0]
 }
@@ -111,6 +127,7 @@ func (d *StringDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instan
 func (d *StringDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return args[0]
 }
+
 func (d *StringDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	this := AsString(args[0])
 

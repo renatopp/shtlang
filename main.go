@@ -13,15 +13,14 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-fn onetwothree {
-	yield 1
-	yield 2
-	yield 3
+fn euler1(n) {
+	range(3, n)
+	| filter n: n%3 == 0 or n%5 == 0 
+  | sum
 }
 
-onetwothree()
-| filter x : x % 2 == 1
-| reduce acc, x: x + acc
+euler1(1000) | to Number # 233168
+
 `
 
 func main() {

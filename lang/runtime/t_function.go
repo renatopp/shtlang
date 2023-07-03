@@ -62,6 +62,12 @@ type FunctionDataType struct {
 	BaseDataType
 }
 
+func (d *FunctionDataType) OnIs(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0]
+	other := args[1]
+	return this.Type.OnCall(r, s, this, other)
+}
+
 func (d *FunctionDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return d.OnRepr(r, s, args[0])
 }

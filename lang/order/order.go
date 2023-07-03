@@ -5,12 +5,14 @@ const (
 	Pipe           = -100
 	Comma          = -10
 	Concat         = -5
+	Postfix        = 0
 	Unwrapping     = 5
 	Arrow          = 10
 	Assign         = 20
 	Tuple          = 25
 	Conditional    = 30
-	Postfix        = 0
+	Is             = 35
+	In             = 35
 	Or             = 40
 	And            = 50
 	Not            = 60

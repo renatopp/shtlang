@@ -45,6 +45,11 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("each", Constant(b_each))
 	r.Global.Set("filter", Constant(b_filter))
 	r.Global.Set("reduce", Constant(b_reduce))
+	r.Global.Set("sum", Constant(b_sum))
+
+	r.Global.Set("range", Constant(b_range))
+
+	r.Global.Set("print", Constant(b_print))
 
 	return r
 }
@@ -269,60 +274,184 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 	switch node.Operator {
 	case "+":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnAdd(r, scope, left, right)
+
 	case "-":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnSub(r, scope, left, right)
+
 	case "*":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnMul(r, scope, left, right)
+
 	case "/":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnDiv(r, scope, left, right)
+
 	case "//":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnIntDiv(r, scope, left, right)
+
 	case "%":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnMod(r, scope, left, right)
+
 	case "**":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnPow(r, scope, left, right)
+
 	case "==":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnEq(r, scope, left, right)
+
 	case "!=":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnNeq(r, scope, left, right)
+
 	case ">":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnGt(r, scope, left, right)
+
 	case "<":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnLt(r, scope, left, right)
+
 	case ">=":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnGte(r, scope, left, right)
+
 	case "<=":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		return left.Type.OnLte(r, scope, left, right)
 
 	case "and", "or", "nand", "nor", "xor", "nxor":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		lt := AsBool(left)
 		rt := AsBool(right)
 
@@ -344,13 +473,25 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "..":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
 		lt := AsString(left)
 		rt := AsString(right)
 		return String.Create(lt + rt)
 
 	case "??":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
 		if left.Type != Maybe.Type && left.Type != Error.Type {
 			return left
 		}
@@ -369,6 +510,9 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "as":
 		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
 
 		id, ok := node.Right.(*ast.Identifier)
 		if !ok {
@@ -377,6 +521,32 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 		scope.Set(id.Value, Variable(left))
 		return left
+
+	case "is":
+		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
+		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
+		return right.Type.OnIs(r, scope, right, left)
+
+	case "in":
+		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+
+		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
+		return right.Type.OnIn(r, scope, right, left)
 	}
 
 	return nil
