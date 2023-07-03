@@ -123,7 +123,7 @@ func CreateParser() *Parser {
 	p.infixFns[tokens.Lbrace] = p.parseInfixCall
 	p.infixFns[tokens.Lbracket] = p.parseInfixBracket
 	p.infixFns[tokens.Dot] = p.parseInfixDot
-	p.infixFns[tokens.Pipe] = p.parseInfixPipe
+	// p.infixFns[tokens.Pipe] = p.parseInfixPipe
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -256,13 +256,29 @@ func (p *Parser) parseStatement() ast.Node {
 
 	} else {
 		node = p.parseExpressionTuple()
+
 		if node == nil {
 			p.RegisterError(fmt.Sprintf("invalid token '%s'", cur.Literal), cur)
 			node = nil
+
 		} else {
 			cur = p.lexer.PeekToken()
+			nxt := p.lexer.PeekTokenN(1)
 			if cur.Is(tokens.Assignment) {
 				node = p.parseAssignment(node)
+
+			} else if cur.Is(tokens.Pipe) || nxt.Is(tokens.Pipe) {
+				p.eatNewLines()
+				cur = p.lexer.PeekToken()
+				for cur.Is(tokens.Pipe) {
+					node = p.parseInfixPipe(node)
+
+					cur = p.lexer.PeekToken()
+					if cur.Is(tokens.Newline) {
+						p.eatNewLines()
+					}
+					cur = p.lexer.PeekToken()
+				}
 			}
 
 			cur = p.lexer.PeekToken()

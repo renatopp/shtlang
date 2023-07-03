@@ -857,10 +857,6 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 				values = append(values, err)
 			} else if v != nil {
 				t := v.Impl.(*TupleDataImpl)
-				fmt.Printf("t: %v\n", v.Repr())
-				for _, a := range t.Values {
-					fmt.Printf("   a: %v\n", a.Repr())
-				}
 				values = append(values, t.Values...)
 			}
 		})

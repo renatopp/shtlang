@@ -41,7 +41,9 @@ fn map(iter, func) {
 }
 
 
-onetwothree() | map x: (x, x+1) | map x: x
+onetwothree()
+| map x: x, x+1
+| map x, y: x, y
 `
 
 func main() {

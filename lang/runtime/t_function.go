@@ -117,6 +117,18 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 	}))
 
 	args = args[1:]
+
+	if len(args) > 0 && d.Piped && args[0].Type == Tuple.Type {
+		newargs := []*Instance{}
+		for _, arg := range args[0].Impl.(*TupleDataImpl).Values {
+			newargs = append(newargs, arg)
+		}
+		for _, arg := range args[1:] {
+			newargs = append(newargs, arg)
+		}
+		args = newargs
+	}
+
 	arguments := []*Instance{}
 	paramsLength := len(d.Params)
 	argsLength := len(args)
