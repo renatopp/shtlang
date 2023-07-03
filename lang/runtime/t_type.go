@@ -19,7 +19,8 @@ var Type = &TypeInfo{
 // TYPE INFO
 // ----------------------------------------------------------------------------
 type TypeInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 }
 
 func (t *TypeInfo) Create(dataType DataType) *Instance {
@@ -29,6 +30,11 @@ func (t *TypeInfo) Create(dataType DataType) *Instance {
 			DataType: dataType,
 		},
 	}
+}
+
+func (t *TypeInfo) Setup() {
+	t.TypeInstance = Type.Create(Type.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
 }
 
 // ----------------------------------------------------------------------------
@@ -45,6 +51,11 @@ type TypeDataType struct {
 // 	return instance
 // }
 
+func (d *TypeDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	this := args[0].Impl.(*TypeDataImpl)
+	return this.DataType.OnTo(r, s, args[1:]...)
+}
+
 func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return String.Createf("<Type:%s>", args[0].Type.GetName())
 }
@@ -53,5 +64,6 @@ func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance
 // TYPE DATA IMPL
 // ----------------------------------------------------------------------------
 type TypeDataImpl struct {
-	DataType DataType
+	DataType     DataType
+	TypeInstance *Instance
 }

@@ -22,7 +22,8 @@ var List = &ListInfo{
 // LIST INFO
 // ----------------------------------------------------------------------------
 type ListInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 }
 
 func (t *ListInfo) Create(values ...*Instance) *Instance {
@@ -35,6 +36,11 @@ func (t *ListInfo) Create(values ...*Instance) *Instance {
 			Values: values,
 		},
 	}
+}
+
+func (t *ListInfo) Setup() {
+	t.TypeInstance = Type.Create(List.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
 }
 
 // ----------------------------------------------------------------------------
@@ -70,6 +76,27 @@ func (d *ListDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 		return List.Create(values...)
 	default:
 		return r.Throw(Error.Create(s, "invalid initializer for list"), s)
+	}
+}
+
+func (d *ListDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	iter := args[0].Impl.(*IteratorDataImpl)
+	next := iter.next()
+	values := []*Instance{}
+	for {
+
+		tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+
+		if tion.error() == Boolean.TRUE {
+			return List.Create()
+
+		} else if tion.done() == Boolean.TRUE {
+			return List.Create(values...)
+
+		} else {
+			tuple := tion.value().Impl.(*TupleDataImpl)
+			values = append(values, tuple.Values[0])
+		}
 	}
 }
 

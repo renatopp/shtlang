@@ -21,17 +21,33 @@ var Maybe = &MaybeInfo{
 // MAYBE INFO
 // ----------------------------------------------------------------------------
 type MaybeInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 }
 
-func (t *MaybeInfo) Create() *Instance {
+func (t *MaybeInfo) Create(value *Instance) *Instance {
+	return &Instance{
+		Type: t.Type,
+		Impl: &MaybeDataImpl{
+			Value: value,
+			Error: nil,
+		},
+	}
+}
+
+func (t *MaybeInfo) CreateError(err *Instance) *Instance {
 	return &Instance{
 		Type: t.Type,
 		Impl: &MaybeDataImpl{
 			Value: nil,
-			Error: nil,
+			Error: err,
 		},
 	}
+}
+
+func (t *MaybeInfo) Setup() {
+	t.TypeInstance = Type.Create(Maybe.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
 }
 
 // ----------------------------------------------------------------------------

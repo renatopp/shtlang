@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"sht/lang/ast"
 )
 
@@ -12,26 +11,40 @@ type Runtime struct {
 func CreateRuntime() *Runtime {
 	r := &Runtime{}
 
+	Boolean.Setup()
+	Error.Setup()
+	Iteration.Setup()
 	Iterator.Setup()
+	Function.Setup()
+	List.Setup()
+	Maybe.Setup()
+	Number.Setup()
+	String.Setup()
+	Tuple.Setup()
+	Type.Setup()
 
 	r.Global = CreateScope(nil, nil)
 	r.Global.Set(SCOPE_NAME_KEY, Constant(String.Create("Global")))
 	r.Global.Set(SCOPE_DEPTH_KEY, Constant(Number.ZERO))
 	r.Global.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
 
-	r.Global.Set(Boolean.Type.GetName(), Constant(Type.Create(Boolean.Type)))
-	r.Global.Set(Error.Type.GetName(), Constant(Type.Create(Error.Type)))
-	r.Global.Set(Iteration.Type.GetName(), Constant(Type.Create(Iteration.Type)))
-	r.Global.Set(Iterator.Type.GetName(), Constant(Type.Create(Iterator.Type)))
-	r.Global.Set(Function.Type.GetName(), Constant(Type.Create(Function.Type)))
-	r.Global.Set(List.Type.GetName(), Constant(Type.Create(List.Type)))
-	r.Global.Set(Maybe.Type.GetName(), Constant(Type.Create(Maybe.Type)))
-	r.Global.Set(Number.Type.GetName(), Constant(Type.Create(Number.Type)))
-	r.Global.Set(String.Type.GetName(), Constant(Type.Create(String.Type)))
-	r.Global.Set(Tuple.Type.GetName(), Constant(Type.Create(Tuple.Type)))
-	r.Global.Set(Type.Type.GetName(), Constant(Type.Create(Type.Type)))
+	r.Global.Set(Boolean.Type.GetName(), Constant(Boolean.TypeInstance))
+	r.Global.Set(Error.Type.GetName(), Constant(Error.TypeInstance))
+	r.Global.Set(Iteration.Type.GetName(), Constant(Iteration.TypeInstance))
+	r.Global.Set(Iterator.Type.GetName(), Constant(Iterator.TypeInstance))
+	r.Global.Set(Function.Type.GetName(), Constant(Function.TypeInstance))
+	r.Global.Set(List.Type.GetName(), Constant(List.TypeInstance))
+	r.Global.Set(Maybe.Type.GetName(), Constant(Maybe.TypeInstance))
+	r.Global.Set(Number.Type.GetName(), Constant(Number.TypeInstance))
+	r.Global.Set(String.Type.GetName(), Constant(String.TypeInstance))
+	r.Global.Set(Tuple.Type.GetName(), Constant(Tuple.TypeInstance))
+	r.Global.Set(Type.Type.GetName(), Constant(Type.TypeInstance))
 
 	r.Global.Set("Done", Constant(Iteration.DONE))
+	r.Global.Set("map", Constant(b_map))
+	r.Global.Set("each", Constant(b_each))
+	r.Global.Set("filter", Constant(b_filter))
+	r.Global.Set("reduce", Constant(b_reduce))
 
 	return r
 }
@@ -656,18 +669,14 @@ func (r *Runtime) EvalWrapping(node *ast.Wrapping, scope *Scope) *Instance {
 		return exp
 	}
 
-	maybe := Maybe.Create()
-	impl := maybe.Impl.(*MaybeDataImpl)
 	err, ok := scope.GetInScope(RAISE_KEY)
 
 	if ok {
 		scope.Delete(RAISE_KEY)
-		impl.Error = err.Value
+		return Maybe.CreateError(err.Value)
 	} else {
-		impl.Value = exp
+		return Maybe.Create(exp)
 	}
-
-	return maybe
 }
 
 func (r *Runtime) EvalUnwrap(node *ast.Unwrapping, scope *Scope) *Instance {
@@ -779,15 +788,23 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 		up(nil, r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope))
 	}
 
+	if scope.HasInScope(RAISE_KEY) {
+		up(nil, Boolean.TRUE)
+		return
+	}
+
 	impl := iter.Type.GetInstanceFn("next")
 	fn := AsFunction(impl)
 
 	v := fn(r, scope, impl, iter)
-	it := v.Impl.(*IterationDataImpl)
-	for v != Iteration.DONE && it.error() != nil {
+	if scope.HasInScope(RAISE_KEY) {
+		up(nil, Boolean.TRUE)
+		return
+	}
 
+	it := v.Impl.(*IterationDataImpl)
+	for v != Iteration.DONE {
 		if scope.HasInScope(RAISE_KEY) {
-			fmt.Println(it.error())
 			up(nil, it.error())
 			return
 		}
@@ -811,7 +828,12 @@ func (r *Runtime) EvalAccess(node *ast.Access, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
+	if scope.PipeCounter != 0 && node.To != nil {
+		return r.Throw(Error.Create(scope, "'to' expression can only be used at the end of a pipe"), scope)
+	}
+
 	scope.PipeCounter += 1
+
 	left := r.Eval(node.Left, scope)
 	if left.Type != Iterator.Type {
 		left = left.Type.OnIter(r, scope, left)
@@ -820,8 +842,15 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 		}
 	}
 
+	if node.To != nil {
+		to := r.Eval(node.To, scope)
+		scope.PipeCounter -= 1
+		return to.Type.OnTo(r, scope, to, left)
+	}
+
 	var pipeFn *Instance
 	pipeArgs := []*Instance{}
+	addArgs := []*Instance{}
 	switch t := node.PipeFn.(type) {
 	case *ast.Identifier:
 		pipeFn = r.Eval(t, scope)
@@ -833,8 +862,12 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 		pipeArgs = append(pipeArgs, pipeFn)
 		pipeArgs = append(pipeArgs, left)
 		for _, v := range t.Arguments {
-			pipeArgs = append(pipeArgs, r.Eval(v, scope))
+			addArgs = append(addArgs, r.Eval(v, scope))
 		}
+	}
+
+	if pipeFn.Type == Error.Type {
+		return r.Throw(Error.Create(scope, "invalid pipe function"), scope)
 	}
 
 	var argFn *Instance
@@ -844,7 +877,13 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 			return r.Throw(Error.Create(scope, "cannot use non-function as argument function"), scope)
 		}
 		argFn.Impl.(*FunctionDataImpl).Piped = true
-		pipeArgs = append(pipeArgs, argFn)
+	} else {
+		argFn = Boolean.FALSE
+	}
+	pipeArgs = append(pipeArgs, argFn)
+
+	for _, v := range addArgs {
+		pipeArgs = append(pipeArgs, v)
 	}
 
 	pipe := pipeFn.Type.OnPipe(r, scope, pipeArgs...)

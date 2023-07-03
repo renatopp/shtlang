@@ -12,27 +12,31 @@ import (
 var keywords = []string{
 	"true",
 	"false",
+
 	"if",
 	"else",
 	"for",
 	"while",
 	"break",
 	"continue",
+
 	"return",
-	"fn",
-	// "let",
-	"const",
-	"as",
-	"data",
 	"raise",
 	"yield",
+
 	"on",
+	"fn",
+	"data",
+
 	"module",
 	"use",
 	"async",
 	"await",
+
+	"as",
 	"is",
 	"in",
+	"to",
 }
 
 var operators = []string{

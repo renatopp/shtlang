@@ -1,0 +1,25 @@
+{
+  "name": "sht",
+  "displayName": "SHT",
+  "description": "Syntax highlight for your SHT code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.79.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "sht",
+      "aliases": ["SHT", "sht"],
+      "extensions": [".sht"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "sht",
+      "scopeName": "source.sht",
+      "path": "./syntaxes/sht.tmLanguage.json"
+    }]
+  }
+}

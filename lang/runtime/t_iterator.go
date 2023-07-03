@@ -21,10 +21,13 @@ var Iterator = &IteratorInfo{
 // ITERATOR INFO
 // ----------------------------------------------------------------------------
 type IteratorInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 }
 
 func (t *IteratorInfo) Setup() {
+	t.TypeInstance = Type.Create(Iterator.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
 	t.Type.SetInstanceFn("next", Iterator_Next)
 }
 
@@ -111,6 +114,10 @@ type IteratorDataImpl struct {
 
 func (impl *IteratorDataImpl) done() *Instance {
 	return impl.Properties["done"]
+}
+
+func (impl *IteratorDataImpl) next() *Instance {
+	return Iterator.Type.GetInstanceFn("next")
 }
 
 var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {

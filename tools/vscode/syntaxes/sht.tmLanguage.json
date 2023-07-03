@@ -1,0 +1,164 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "SHT",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#strings" },
+    {
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b",
+      "name": "variable.other.sht"
+    },
+    {
+      "match": "=|\\+=|-=|\\*=|/=|%=|:=|//=",
+      "name": "keyword.operator.assignment"
+    },
+    {
+      "begin": "\\b(if)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.if"
+        }
+      },
+      "end": "(\\{)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.block.begin"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(else if)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.elseif"
+        }
+      },
+      "end": "(\\{)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.block.begin"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    {
+      "begin": "\\b(else)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.else"
+        }
+      },
+      "end": "(\\{)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.block.begin"
+        }
+      }
+    },
+    {
+      "match": "\\b(return|raise|yield)\\b",
+      "name": "keyword.control.return-raise-yield"
+    },
+    {
+      "begin": "\\b(for)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.for"
+        }
+      },
+      "end": "(\\{)",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.block.begin"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    {
+			"comment": "Function declarations",
+			"match": "^(\\fn\\b)(?:\\s+(\\([^\\)]+\\)\\s+)?(\\w+)(?=\\())?",
+			"captures": {
+				"1": {
+					"name": "keyword.function.go"
+				},
+				"2": {
+					"patterns": [
+						{
+							"include": "#brackets"
+						},
+						{
+							"include": "#operators"
+						}
+					]
+				},
+				"3": {
+					"patterns": [
+						{
+							"match": "\\d\\w*",
+							"name": "invalid.illegal.identifier.go"
+						},
+						{
+							"match": "\\w+",
+							"name": "entity.name.function.go"
+						}
+					]
+				}
+			}
+		},
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.sht",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.sht",
+          "match": "\\b(if|else|for|return|raise|yield|in|as|to|is|break|continue|fn|data|module|async|await)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.single.sht",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        {
+          "name": "constant.character.escape.sht",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "expression": {
+        "patterns": [
+            {
+                "include": "#identifier"
+            },
+            {
+                "match": "[\\w]+",
+                "name": "variable"
+            }
+        ]
+    }
+  },
+  "scopeName": "source.sht"
+}

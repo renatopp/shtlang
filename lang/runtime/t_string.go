@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"sht/lang/ast"
+	"strings"
 )
 
 var stringDT = &StringDataType{
@@ -29,7 +30,8 @@ var String = &StringInfo{
 // STRING INFO
 // ----------------------------------------------------------------------------
 type StringInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 
 	EMPTY *Instance
 }
@@ -52,11 +54,41 @@ func (t *StringInfo) Createf(value string, v ...any) *Instance {
 	}
 }
 
+func (t *StringInfo) Setup() {
+	t.TypeInstance = Type.Create(String.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
+}
+
 // ----------------------------------------------------------------------------
 // STRING DATA TYPE
 // ----------------------------------------------------------------------------
 type StringDataType struct {
 	BaseDataType
+}
+
+func (d *StringDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	iter := args[0].Impl.(*IteratorDataImpl)
+	next := iter.next()
+	values := []*Instance{}
+	for {
+
+		tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+
+		if tion.error() == Boolean.TRUE {
+			return List.Create()
+
+		} else if tion.done() == Boolean.TRUE {
+			builder := strings.Builder{}
+			for _, value := range values {
+				builder.WriteString(AsString(value))
+			}
+			return String.Create(builder.String())
+
+		} else {
+			tuple := tion.value().Impl.(*TupleDataImpl)
+			values = append(values, tuple.Values[0])
+		}
+	}
 }
 
 func (d *StringDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {

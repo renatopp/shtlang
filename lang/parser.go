@@ -123,7 +123,6 @@ func CreateParser() *Parser {
 	p.infixFns[tokens.Lbrace] = p.parseInfixCall
 	p.infixFns[tokens.Lbracket] = p.parseInfixBracket
 	p.infixFns[tokens.Dot] = p.parseInfixDot
-	// p.infixFns[tokens.Pipe] = p.parseInfixPipe
 
 	p.postfixFns[tokens.Operator] = p.parsePostfixOperator
 	p.postfixFns[tokens.Bang] = p.parsePostfixOperator
@@ -271,7 +270,7 @@ func (p *Parser) parseStatement() ast.Node {
 				p.eatNewLines()
 				cur = p.lexer.PeekToken()
 				for cur.Is(tokens.Pipe) {
-					node = p.parseInfixPipe(node)
+					node = p.parsePipe(node)
 
 					cur = p.lexer.PeekToken()
 					if cur.Is(tokens.Newline) {
@@ -279,13 +278,15 @@ func (p *Parser) parseStatement() ast.Node {
 					}
 					cur = p.lexer.PeekToken()
 				}
+
+			} else {
+				cur = p.lexer.PeekToken()
+				if !isEndOfStatement(cur) {
+					p.RegisterError(fmt.Sprintf("unexpected token '%s'", cur.Literal), cur)
+					node = nil
+				}
 			}
 
-			cur = p.lexer.PeekToken()
-			if !isEndOfStatement(cur) {
-				p.RegisterError(fmt.Sprintf("unexpected token '%s'", cur.Literal), cur)
-				node = nil
-			}
 		}
 
 	}
@@ -937,6 +938,95 @@ func (p *Parser) parseInitializer() ast.Initializer {
 	return initializer
 }
 
+func (p *Parser) parsePipe(left ast.Node) ast.Node {
+	cur := p.lexer.PeekToken()
+	p.lexer.EatToken()
+
+	pipe := &ast.Pipe{
+		Token: cur,
+		Left:  left,
+	}
+
+	cur = p.lexer.PeekToken()
+	if !p.Expect(tokens.Identifier, tokens.Keyword) {
+		return nil
+	}
+
+	if cur.Is(tokens.Keyword) {
+		if cur.Literal != "to" {
+			p.RegisterError(fmt.Sprintf("invalid pipe keyword '%s'", cur.Literal), cur)
+			return nil
+		}
+
+		p.lexer.EatToken()
+		if !p.Expect(tokens.Identifier) {
+			return nil
+		}
+
+		cur = p.lexer.PeekToken()
+		pipe.To = &ast.Identifier{
+			Token: cur,
+			Value: cur.Literal,
+		}
+		p.lexer.EatToken()
+		return pipe
+	}
+
+	cur = p.lexer.PeekToken()
+	p.lexer.EatToken()
+	pipeFn := &ast.Call{
+		Target: &ast.Identifier{
+			Token: cur,
+			Value: cur.Literal,
+		},
+		Arguments: []ast.Node{},
+	}
+
+	if p.lexer.PeekToken().Is(tokens.Lparen) {
+		p.lexer.EatToken()
+		pipeFn.Arguments = p.parseExpressionList()
+
+		if !p.Expect(tokens.Rparen) {
+			return nil
+		}
+		p.lexer.EatToken()
+	}
+	pipe.PipeFn = pipeFn
+
+	cur = p.lexer.PeekToken()
+	if cur.Is(tokens.Identifier) || cur.Is(tokens.Colon) {
+		argFn := &ast.FunctionDef{
+			Token:     cur,
+			Scoped:    false,
+			Generator: false,
+			Name:      "Piped Function",
+		}
+
+		if !cur.Is(tokens.Colon) {
+			argFn.Params = p.parseParameters()
+		}
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Colon) {
+			p.lexer.EatToken()
+
+			cur = p.lexer.PeekToken()
+			if cur.Is(tokens.Lbrace) {
+				argFn.Body = p.parseBlock()
+			} else {
+				argFn.Body = p.parseExpressionTuple()
+			}
+		}
+
+		if argFn.Body != nil {
+			pipe.ArgFn = argFn
+		}
+		cur = p.lexer.PeekToken()
+	}
+
+	return pipe
+}
+
 // ----------------------------------------------------------------
 // Prefix Functions
 // ----------------------------------------------------------------
@@ -1129,74 +1219,6 @@ func (p *Parser) parseInfixDot(left ast.Node) ast.Node {
 			Value: cur.Literal,
 		},
 	}
-}
-
-func (p *Parser) parseInfixPipe(left ast.Node) ast.Node {
-	cur := p.lexer.PeekToken()
-	p.lexer.EatToken()
-
-	pipe := &ast.Pipe{
-		Token: cur,
-		Left:  left,
-	}
-
-	if !p.Expect(tokens.Identifier) {
-		return nil
-	}
-
-	cur = p.lexer.PeekToken()
-	p.lexer.EatToken()
-	pipeFn := &ast.Call{
-		Target: &ast.Identifier{
-			Token: cur,
-			Value: cur.Literal,
-		},
-		Arguments: []ast.Node{},
-	}
-
-	if p.lexer.PeekToken().Is(tokens.Lparen) {
-		p.lexer.EatToken()
-		pipeFn.Arguments = p.parseExpressionList()
-
-		if !p.Expect(tokens.Rparen) {
-			return nil
-		}
-		p.lexer.EatToken()
-	}
-	pipe.PipeFn = pipeFn
-
-	cur = p.lexer.PeekToken()
-	if cur.Is(tokens.Identifier) || cur.Is(tokens.Colon) {
-		argFn := &ast.FunctionDef{
-			Token:     cur,
-			Scoped:    false,
-			Generator: false,
-			Name:      "Piped Function",
-		}
-
-		if !cur.Is(tokens.Colon) {
-			argFn.Params = p.parseParameters()
-		}
-
-		cur = p.lexer.PeekToken()
-		if cur.Is(tokens.Colon) {
-			p.lexer.EatToken()
-
-			cur = p.lexer.PeekToken()
-			if cur.Is(tokens.Lbrace) {
-				argFn.Body = p.parseBlock()
-			} else {
-				argFn.Body = p.parseExpressionTuple()
-			}
-		}
-
-		if argFn.Body != nil {
-			pipe.ArgFn = argFn
-		}
-		cur = p.lexer.PeekToken()
-	}
-
-	return pipe
 }
 
 // ----------------------------------------------------------------

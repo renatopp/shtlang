@@ -22,7 +22,7 @@ var Iteration = &IterationInfo{
 			Properties: map[string]*Instance{
 				"value": Tuple.Create(Boolean.FALSE),
 				"done":  Boolean.TRUE,
-				"error": Boolean.TRUE,
+				"error": Boolean.FALSE,
 			},
 		},
 	},
@@ -32,7 +32,8 @@ var Iteration = &IterationInfo{
 // ITERATION INFO
 // ----------------------------------------------------------------------------
 type IterationInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 
 	DONE *Instance
 }
@@ -43,6 +44,19 @@ func (t *IterationInfo) Create(values ...*Instance) *Instance {
 		Impl: &IterationDataImpl{
 			Properties: map[string]*Instance{
 				"value": Tuple.Create(values...),
+				"done":  Boolean.FALSE,
+				"error": Boolean.FALSE,
+			},
+		},
+	}
+}
+
+func (t *IterationInfo) CreateAsTuple(tuple *Instance) *Instance {
+	return &Instance{
+		Type: t.Type,
+		Impl: &IterationDataImpl{
+			Properties: map[string]*Instance{
+				"value": tuple,
 				"done":  Boolean.FALSE,
 				"error": Boolean.FALSE,
 			},
@@ -61,6 +75,11 @@ func (t *IterationInfo) Error(values ...*Instance) *Instance {
 			},
 		},
 	}
+}
+
+func (t *IterationInfo) Setup() {
+	t.TypeInstance = Type.Create(Iteration.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
 }
 
 // ----------------------------------------------------------------------------

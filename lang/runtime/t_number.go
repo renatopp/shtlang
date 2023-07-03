@@ -36,7 +36,8 @@ var Number = &NumberInfo{
 // NUMBER INFO
 // ----------------------------------------------------------------------------
 type NumberInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 
 	ZERO *Instance
 	ONE  *Instance
@@ -51,11 +52,36 @@ func (t *NumberInfo) Create(value float64) *Instance {
 	}
 }
 
+func (t *NumberInfo) Setup() {
+	t.TypeInstance = Type.Create(Number.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
+}
+
 // ----------------------------------------------------------------------------
 // NUMBER DATA TYPE
 // ----------------------------------------------------------------------------
 type NumberDataType struct {
 	BaseDataType
+}
+
+func (d *NumberDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	iter := args[0].Impl.(*IteratorDataImpl)
+	next := iter.next()
+	tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+
+	if tion.error() == Boolean.TRUE {
+		return Number.ZERO
+
+	} else if tion.done() == Boolean.TRUE {
+		return r.Throw(Error.Create(s, "The iteration has been finished"), s)
+
+	} else {
+		tuple := tion.value().Impl.(*TupleDataImpl)
+		if tuple.Values[0].Type != Number.Type {
+			return r.Throw(Error.Create(s, "Cannot convert to number"), s)
+		}
+		return Number.Create(AsNumber(tuple.Values[0]))
+	}
 }
 
 func (d *NumberDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {

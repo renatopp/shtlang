@@ -19,31 +19,9 @@ fn onetwothree {
 	yield 3
 }
 
-fn map(iter, func) {
-	val := iter.next()
-	if val.done {
-		yield done
-	}
-	yield func(val.value...)
-
-	val = iter.next()
-	if val.done {
-		yield done
-	}
-	yield func(val.value...)
-
-	val = iter.next()
-	if val.done {
-		yield done
-	}
-
-	yield func(val.value...)
-}
-
-
 onetwothree()
-| map x: x, x+1
-| map x, y: x, y
+| filter x : x % 2 == 1
+| reduce acc, x: x + acc
 `
 
 func main() {

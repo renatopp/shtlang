@@ -21,7 +21,8 @@ var Function = &FunctionInfo{
 // FUNCTION INFO
 // ----------------------------------------------------------------------------
 type FunctionInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 }
 
 func (t *FunctionInfo) Create(name string, params []*FunctionParam, body ast.Node, scope *Scope) *Instance {
@@ -47,6 +48,11 @@ func (t *FunctionInfo) CreateNative(name string, params []*FunctionParam, fn Met
 			Generator: false,
 		},
 	}
+}
+
+func (t *FunctionInfo) Setup() {
+	t.TypeInstance = Type.Create(Function.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
 }
 
 // ----------------------------------------------------------------------------

@@ -24,7 +24,8 @@ var Error = &ErrorInfo{
 // ERROR INFO
 // ----------------------------------------------------------------------------
 type ErrorInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 }
 
 func (t *ErrorInfo) Create(s *Scope, message string, a ...any) *Instance {
@@ -38,6 +39,11 @@ func (t *ErrorInfo) Create(s *Scope, message string, a ...any) *Instance {
 			},
 		},
 	}
+}
+
+func (t *ErrorInfo) Setup() {
+	t.TypeInstance = Type.Create(Error.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
 }
 
 func (t *ErrorInfo) StackTrace(s *Scope) string {

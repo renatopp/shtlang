@@ -34,7 +34,8 @@ var Boolean = &BooleanInfo{
 // BOOLEAN INFO
 // ----------------------------------------------------------------------------
 type BooleanInfo struct {
-	Type DataType
+	Type         DataType
+	TypeInstance *Instance
 
 	TRUE  *Instance
 	FALSE *Instance
@@ -49,11 +50,31 @@ func (t *BooleanInfo) Create(value bool) *Instance {
 	}
 }
 
+func (t *BooleanInfo) Setup() {
+	t.TypeInstance = Type.Create(Boolean.Type)
+	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
+}
+
 // ----------------------------------------------------------------------------
 // BOOLEAN DATA TYPE
 // ----------------------------------------------------------------------------
 type BooleanDataType struct {
 	BaseDataType
+}
+
+func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	iter := args[0].Impl.(*IteratorDataImpl)
+	next := iter.next()
+	tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+
+	if tion.error() == Boolean.TRUE {
+		return Boolean.FALSE
+	} else if tion.done() == Boolean.TRUE {
+		return r.Throw(Error.Create(s, "The iteration has been finished"), s)
+	} else {
+		tuple := tion.value().Impl.(*TupleDataImpl)
+		return Boolean.Create(AsBool(tuple.Values[0]))
+	}
 }
 
 func (d *BooleanDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
