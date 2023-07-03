@@ -70,6 +70,11 @@ func (d *FunctionDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Inst
 	return impl.Call(r, s, args...)
 }
 
+func (d *FunctionDataType) OnPipe(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	impl := args[0].Impl.(*FunctionDataImpl)
+	return impl.Call(r, s, args...)
+}
+
 // ----------------------------------------------------------------------------
 // FUNCTION DATA IMPL
 // ----------------------------------------------------------------------------
@@ -80,6 +85,7 @@ type FunctionDataImpl struct {
 	Body        ast.Node
 	NativeFn    MetaFunction
 	Generator   bool
+	Piped       bool
 }
 
 type FunctionParam struct {
@@ -89,7 +95,12 @@ type FunctionParam struct {
 }
 
 func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	// fmt.Printf("\"FunctionDataImpl.Call\": %v\n", d.Name)
+	// for i, i2 := range args {
+	// 	fmt.Printf("    %d i2: %v\n", i, i2.Repr())
+	// }
 	if d.NativeFn != nil {
+		// fmt.Printf("    d.NativeFn: %v\n", d.Name)
 		return d.NativeFn(r, s, args...)
 	}
 
@@ -105,6 +116,7 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 		Impl: d,
 	}))
 
+	args = args[1:]
 	arguments := []*Instance{}
 	paramsLength := len(d.Params)
 	argsLength := len(args)

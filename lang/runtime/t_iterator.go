@@ -117,8 +117,7 @@ var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Ru
 	// args[0] => function
 	// args[1] => this (the iterator object)
 	this := args[1].Impl.(*IteratorDataImpl)
-	nextFn := this.Next.Impl.(*FunctionDataImpl)
-	ret := nextFn.Call(r, s)
+	ret := this.Next.Type.OnCall(r, s, this.Next, args[1])
 
 	if ret.Type != Iteration.Type {
 		return r.Throw(Error.Create(s, "Expected Iteration, %s given", ret.Type.GetName()), s)

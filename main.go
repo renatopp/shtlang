@@ -13,10 +13,35 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-onetwothree()
-| all(x) x: {
-	fiaosdf
+fn onetwothree {
+	yield 1
+	yield 2
+	yield 3
 }
+
+fn map(iter, func) {
+	val := iter.next()
+	if val.done {
+		yield done
+	}
+	yield func(val.value...)
+
+	val = iter.next()
+	if val.done {
+		yield done
+	}
+	yield func(val.value...)
+
+	val = iter.next()
+	if val.done {
+		yield done
+	}
+
+	yield func(val.value...)
+}
+
+
+onetwothree() | map x: (x, x+1) | map x: x
 `
 
 func main() {

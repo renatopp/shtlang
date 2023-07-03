@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"sht/lang/ast"
 )
 
@@ -115,6 +116,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.Access:
 		result = r.EvalAccess(n, scope)
+
+	case *ast.Pipe:
+		result = r.EvalPipe(n, scope)
 
 	}
 
@@ -775,15 +779,25 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 		up(nil, r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope))
 	}
 
-	// impl := iter.Impl.(*IteratorDataImpl)
-	fn := AsFunction(iter.Type.GetInstanceFn("next"))
+	impl := iter.Type.GetInstanceFn("next")
+	fn := AsFunction(impl)
 
-	v := fn(r, scope, iter)
-	for v != Iteration.DONE {
-		ret := v.Impl.(*IterationDataImpl)
-		up(ret.value(), nil)
-		v = fn(r, scope, iter)
+	v := fn(r, scope, impl, iter)
+	it := v.Impl.(*IterationDataImpl)
+	for v != Iteration.DONE && it.error() != nil {
+
+		if scope.HasInScope(RAISE_KEY) {
+			fmt.Println(it.error())
+			up(nil, it.error())
+			return
+		}
+
+		up(it.value(), nil)
+		v = fn(r, scope, impl, iter)
+		it = v.Impl.(*IterationDataImpl)
+
 	}
+
 	up(nil, nil)
 }
 
@@ -794,4 +808,65 @@ func (r *Runtime) EvalAccess(node *ast.Access, scope *Scope) *Instance {
 	res := left.Type.OnGet(r, scope, left, String.Create(right))
 	res.MemberOf = left
 	return res
+}
+
+func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
+	scope.PipeCounter += 1
+	left := r.Eval(node.Left, scope)
+	if left.Type != Iterator.Type {
+		left = left.Type.OnIter(r, scope, left)
+		if left.Type != Iterator.Type {
+			return r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope)
+		}
+	}
+
+	var pipeFn *Instance
+	pipeArgs := []*Instance{}
+	switch t := node.PipeFn.(type) {
+	case *ast.Identifier:
+		pipeFn = r.Eval(t, scope)
+		pipeArgs = append(pipeArgs, pipeFn)
+		pipeArgs = append(pipeArgs, left)
+
+	case *ast.Call:
+		pipeFn = r.Eval(t.Target, scope)
+		pipeArgs = append(pipeArgs, pipeFn)
+		pipeArgs = append(pipeArgs, left)
+		for _, v := range t.Arguments {
+			pipeArgs = append(pipeArgs, r.Eval(v, scope))
+		}
+	}
+
+	var argFn *Instance
+	if node.ArgFn != nil {
+		argFn = r.Eval(node.ArgFn, scope)
+		if argFn.Type != Function.Type {
+			return r.Throw(Error.Create(scope, "cannot use non-function as argument function"), scope)
+		}
+		argFn.Impl.(*FunctionDataImpl).Piped = true
+		pipeArgs = append(pipeArgs, argFn)
+	}
+
+	pipe := pipeFn.Type.OnPipe(r, scope, pipeArgs...)
+
+	scope.PipeCounter -= 1
+	if scope.PipeCounter == 0 {
+		values := []*Instance{}
+		r.ResolveIterator(pipe, scope, func(v *Instance, err *Instance) {
+			if err != nil {
+				values = append(values, err)
+			} else if v != nil {
+				t := v.Impl.(*TupleDataImpl)
+				fmt.Printf("t: %v\n", v.Repr())
+				for _, a := range t.Values {
+					fmt.Printf("   a: %v\n", a.Repr())
+				}
+				values = append(values, t.Values...)
+			}
+		})
+
+		return List.Create(values...)
+	}
+
+	return pipe
 }

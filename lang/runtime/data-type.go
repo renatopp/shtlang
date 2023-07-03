@@ -26,6 +26,7 @@ type DataType interface {
 	OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance
+	OnPipe(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnSub(r *Runtime, s *Scope, args ...*Instance) *Instance
 	OnMul(r *Runtime, s *Scope, args ...*Instance) *Instance
@@ -132,6 +133,9 @@ func (d *BaseDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
 }
 func (d *BaseDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, "Iter", args[0]), s)
+}
+func (d *BaseDataType) OnPipe(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return r.Throw(Error.InvalidAction(s, "Pipe", args[0]), s)
 }
 func (d *BaseDataType) OnBang(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, "Bang", args[0]), s)

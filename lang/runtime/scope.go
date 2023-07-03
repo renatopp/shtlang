@@ -13,6 +13,7 @@ type Scope struct {
 
 	InAssignment bool
 	InArgument   bool
+	PipeCounter  int
 
 	nodeStack []ast.Node
 }
@@ -22,6 +23,7 @@ func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s.Parent = parent
 	s.Caller = caller
 	s.Values = map[string]*Reference{}
+	s.PipeCounter = 0
 	s.nodeStack = make([]ast.Node, 0)
 	s.State = nil
 
