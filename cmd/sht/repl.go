@@ -3,11 +3,13 @@ package repl
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"sht/lang"
 	"sht/lang/runtime"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -65,7 +67,7 @@ type model struct {
 	width  int
 	height int
 
-	prompt   textinput.Model
+	prompt   textarea.Model
 	viewport viewport.Model
 	spinner  spinner.Model
 
@@ -81,10 +83,11 @@ type model struct {
 
 func Start(r *runtime.Runtime) {
 	fmt.Print("\033[H\033[2J") // Clear screen
-
-	prompt := textinput.NewModel()
+	prompt := textarea.New()
 	prompt.Placeholder = promptPlaceholder
 	prompt.Prompt = promptChar
+	prompt.SetHeight(1)
+	prompt.ShowLineNumbers = false
 	prompt.Focus()
 
 	viewport := viewport.Model{}
@@ -117,12 +120,11 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return m, m.onKey(msg)
 	case tea.WindowSizeMsg:
-		return m, m.onResize(msg)
+		return m, m.onResize()
 	case spinner.TickMsg:
 		return m, m.onTick(msg)
 	}
@@ -143,7 +145,7 @@ func (m *model) View() string {
 	)
 }
 
-func (m *model) onResize(msg tea.WindowSizeMsg) tea.Cmd {
+func (m *model) onResize() tea.Cmd {
 	var cmd tea.Cmd
 
 	w, h, _ := term.GetSize(0)
@@ -159,7 +161,8 @@ func (m *model) onResize(msg tea.WindowSizeMsg) tea.Cmd {
 	m.viewport.YPosition = 0
 	m.viewport.Width = m.width
 	m.viewport.Height = m.height - rh
-	m.prompt.Width = m.width
+	// m.prompt.Width = m.width
+	m.prompt.SetWidth(m.width - 5)
 
 	return cmd
 }
@@ -170,19 +173,30 @@ func (m *model) onTick(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
+var doubleNewLines, _ = regexp.Compile(`\n\n`)
+
 func (m *model) onKey(msg tea.KeyMsg) tea.Cmd {
 	var cmd tea.Cmd
 
 	switch msg.Type {
 	case tea.KeyEnter:
 
-		return m.onCommand(m.prompt.Value())
+		val := m.prompt.Value()
+		if areBracketsBalanced(val) || doubleNewLines.MatchString(val) {
+			return m.onCommand(val)
+		}
+
 	case tea.KeyCtrlC:
 		return tea.Quit
 
+	case tea.KeyCtrlUp:
+		return m.onHistory(1)
+
+	case tea.KeyCtrlDown:
+		return m.onHistory(1)
+
 	case tea.KeyShiftDown:
-		m.viewport, cmd = m.viewport.Update(tea.KeyMsg{Type: tea.KeyDown})
-		return cmd
+		return m.onHistory(-1)
 
 	case tea.KeyShiftUp:
 		m.viewport, cmd = m.viewport.Update(tea.KeyMsg{Type: tea.KeyUp})
@@ -194,15 +208,18 @@ func (m *model) onKey(msg tea.KeyMsg) tea.Cmd {
 			return m.onHistory(-1)
 		}
 
-	case tea.KeyUp:
-		return m.onHistory(1)
-
-	case tea.KeyDown:
-		return m.onHistory(-1)
 	}
 
 	m.cursor = -1
+	add := 1
+	if msg.Type == tea.KeyEnter {
+		add += 1
+	} else if msg.Type == tea.KeyBackspace {
+		add -= 1
+	}
+	m.prompt.SetHeight(strings.Count(m.prompt.Value(), "\n") + add)
 	m.prompt, cmd = m.prompt.Update(msg)
+	m.onResize()
 
 	return cmd
 }
@@ -241,6 +258,9 @@ func (m *model) onCommand(cmd string) tea.Cmd {
 	m.prompt.SetValue("")
 	m.buffer = ""
 	m.cursor = -1
+	m.prompt.SetHeight(1)
+	m.onResize()
+	m.prompt, _ = m.prompt.Update(tea.KeyLeft)
 
 	if cmd == "exit" {
 		return tea.Quit

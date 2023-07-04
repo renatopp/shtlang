@@ -3,6 +3,7 @@ package ast
 import "sht/lang/tokens"
 
 type Block struct {
+	Unscoped   bool
 	Statements []Node
 }
 

@@ -55,7 +55,7 @@ func CreateRuntime() *Runtime {
 }
 
 func (r *Runtime) Run(node ast.Node) string {
-	instance := r.Eval(node, nil)
+	instance := r.Eval(node, r.Global)
 
 	delete(r.Global.Values, RAISE_KEY)
 	return instance.Repr()
@@ -155,22 +155,21 @@ func (r *Runtime) Throw(err *Instance, scope *Scope) *Instance {
 		return e.Value
 	}
 
-	scope.Set(RAISE_KEY, &Reference{
-		Value:    err,
-		Constant: true,
-	})
+	scope.Set(RAISE_KEY, Constant(err))
 
 	return err
 }
 
 func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
-
 	var newScope *Scope
 	var currentStatement int
 	if scope.State != nil {
 		state := scope.State.(*BlockState)
 		currentStatement = state.Current
 		newScope = state.Scope
+	} else if node.Unscoped {
+		newScope = scope
+		currentStatement = 0
 	} else {
 		newScope = CreateScope(scope, scope.Caller)
 		currentStatement = 0

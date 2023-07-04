@@ -144,6 +144,7 @@ func Parse(input []byte) (ast.Node, error) {
 func (p *Parser) Parse(input []byte) (ast.Node, error) {
 	p.lexer = CreateLexer(input)
 	p.root = p.parseBlock()
+	p.root.(*ast.Block).Unscoped = true
 	p.Expect(tokens.Eof)
 
 	return p.root, p.GetError()
@@ -1115,7 +1116,9 @@ func (p *Parser) parsePrefixOperator() ast.Node {
 
 func (p *Parser) parsePrefixParenthesis() ast.Node {
 	p.lexer.EatToken()
+	p.eatNewLines()
 	e := p.parseSingleExpression(order.Lowest)
+	p.eatNewLines()
 	p.Expect(tokens.Rparen, tokens.Comma)
 
 	if p.lexer.PeekToken().Is(tokens.Comma) {
