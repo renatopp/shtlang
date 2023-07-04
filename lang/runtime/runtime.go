@@ -191,6 +191,7 @@ func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
 	}
 
 	var result *Instance
+	// fmt.Println("BLOCK STATE", currentStatement)
 	for i := currentStatement; i < len(node.Statements); i++ {
 		stmt := node.Statements[i]
 		result = r.Eval(stmt, newScope)
@@ -935,10 +936,12 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 	var newScope *Scope
 	var condition *bool
 	if scope.State != nil {
+		// fmt.Println("IF STATE")
 		state := scope.State.(*IfState)
 		condition = &state.Condition
 		newScope = state.Scope
 	} else {
+		// fmt.Println("IF NO STATE")
 		newScope = CreateScope(scope, scope.Caller)
 		condition = nil
 	}

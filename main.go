@@ -13,11 +13,7 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-a := List { 1, 2, 3 }
 
-pipe a as i { 
-	print(i)
-}
 
 `
 
