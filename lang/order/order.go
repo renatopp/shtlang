@@ -24,6 +24,7 @@ const (
 	Mod            = 90
 	Unary          = 100
 	Exponentiation = 110
+	To             = 115
 	As             = 120
 	Access         = 125
 	Spread         = 130

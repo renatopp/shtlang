@@ -14,7 +14,7 @@ import (
 var sample1 = `a?`
 var sample2 = `
 fn euler1(n) {
-	range(3, n)
+	return range(3, n)
 	| filter n: n%3 == 0 or n%5 == 0 
   | sum
 }

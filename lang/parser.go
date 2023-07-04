@@ -63,6 +63,8 @@ func priorityOf(t *tokens.Token) int {
 			return order.Is
 		case "in":
 			return order.In
+		case "to":
+			return order.To
 		}
 
 	case t.Is(tokens.Pipe):
@@ -301,6 +303,7 @@ func (p *Parser) parseReturn() ast.Node {
 	p.lexer.EatToken()
 
 	exp := p.parseExpressionTuple()
+	exp = p.checkPipe(exp)
 
 	switch cur.Literal {
 	case "return":
@@ -439,17 +442,7 @@ func (p *Parser) parseAssignment(left ast.Node) ast.Node {
 	p.lexer.EatToken()
 
 	exp := p.parseExpressionTuple()
-
-	cur := p.lexer.PeekToken()
-	nxt := p.lexer.PeekTokenN(1)
-
-	if cur.Is(tokens.Pipe) || cur.Is(tokens.Newline) && nxt.Is(tokens.Pipe) {
-		if cur.Is(tokens.Newline) {
-			p.eatNewLines()
-		}
-
-		exp = p.parsePipe(exp)
-	}
+	exp = p.checkPipe(exp)
 
 	if exp == nil {
 		p.RegisterError(fmt.Sprintf("expected expression, got %s instead", p.lexer.PeekToken()), ass)
@@ -949,6 +942,22 @@ func (p *Parser) parseInitializer() ast.Initializer {
 	p.lexer.EatToken()
 
 	return initializer
+}
+
+func (p *Parser) checkPipe(left ast.Node) ast.Node {
+	cur := p.lexer.PeekToken()
+	nxt := p.lexer.PeekTokenN(1)
+	for cur.Is(tokens.Pipe) || cur.Is(tokens.Newline) && nxt.Is(tokens.Pipe) {
+		if cur.Is(tokens.Newline) {
+			p.eatNewLines()
+		}
+
+		left = p.parsePipe(left)
+		cur = p.lexer.PeekToken()
+		nxt = p.lexer.PeekTokenN(1)
+	}
+
+	return left
 }
 
 func (p *Parser) parsePipe(left ast.Node) ast.Node {

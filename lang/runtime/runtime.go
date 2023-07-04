@@ -547,6 +547,20 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 		}
 
 		return right.Type.OnIn(r, scope, right, left)
+
+	case "to":
+		left := r.Eval(node.Left, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return left
+		}
+		iter := left.Type.OnIter(r, scope, left)
+
+		right := r.Eval(node.Right, scope)
+		if scope.HasInScope(RAISE_KEY) {
+			return right
+		}
+
+		return right.Type.OnTo(r, scope, right, iter)
 	}
 
 	return nil
