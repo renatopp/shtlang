@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"sht/lang/ast"
+	"strings"
 )
 
 type Scope struct {
@@ -81,6 +82,16 @@ func (s *Scope) HasInScope(name string) bool {
 	}
 
 	return false
+}
+
+func (s *Scope) Clear() {
+	for k := range s.Values {
+		special := strings.HasPrefix(k, "0_")
+
+		if !special {
+			s.Delete(k)
+		}
+	}
 }
 
 func (s *Scope) Delete(name string) {

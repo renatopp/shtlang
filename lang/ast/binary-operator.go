@@ -26,6 +26,10 @@ func (p *BinaryOperator) Children() []Node {
 
 func (p *BinaryOperator) Traverse(level int, fn tfunc) {
 	fn(level, p)
-	p.Left.Traverse(level+1, fn)
-	p.Right.Traverse(level+1, fn)
+	if p.Left != nil {
+		p.Left.Traverse(level+1, fn)
+	}
+	if p.Right != nil {
+		p.Right.Traverse(level+1, fn)
+	}
 }

@@ -47,8 +47,8 @@ func priorityOf(t *tokens.Token) int {
 			return order.And
 		case "or", "xor", "nor", "nxor":
 			return order.Or
-		case "++", "--":
-			return order.Postfix
+		// case "++", "--":
+		// 	return order.Postfix
 		case "..":
 			return order.Concat
 		case "??":
@@ -247,13 +247,16 @@ func (p *Parser) parseStatement() ast.Node {
 		node = p.parseReturn()
 
 	} else if cur.Is(tokens.Keyword) && cur.Literal == "for" {
-		// parse for
+		node = p.parseFor()
 
 	} else if cur.Is(tokens.Keyword) && cur.Literal == "if" {
 		node = p.parseIf()
 
-	} else if cur.Is(tokens.Keyword) && (cur.Literal == "let" || cur.Literal == "const") {
-		node = p.parseDeclaration()
+		// } else if cur.Is(tokens.Keyword) && (cur.Literal == "let" || cur.Literal == "const") {
+		// 	node = p.parseDeclaration()
+
+	} else if cur.Is(tokens.Keyword) && (cur.Literal == "continue" || cur.Literal == "break") {
+		node = p.parseForControl()
 
 	} else if cur.Is(tokens.Arrow) {
 		node = p.checkArrowDef(nil)
@@ -340,6 +343,54 @@ func (p *Parser) parseReturn() ast.Node {
 	}
 }
 
+func (p *Parser) parseForControl() ast.Node {
+	cur := p.lexer.PeekToken()
+	p.lexer.EatToken()
+
+	switch cur.Literal {
+	case "continue":
+		return &ast.Continue{
+			Token: cur,
+		}
+
+	case "break":
+		return &ast.Break{
+			Token: cur,
+		}
+
+	default:
+		p.RegisterError(fmt.Sprintf("invalid for control token '%s'", cur.Literal), cur)
+		return nil
+	}
+}
+
+func (p *Parser) parseFor() ast.Node {
+	p.lexer.EatToken()
+
+	ini := p.lexer.PeekToken()
+
+	var node *ast.For
+	p.inCondition = true
+	exp := p.parseSingleExpression(order.Lowest)
+	p.inCondition = false
+	if exp == nil {
+		exp = &ast.Boolean{Token: ini, Value: true} // for true {}
+	}
+
+	if !p.Expect(tokens.Lbrace) {
+		return nil
+	}
+
+	node = &ast.For{
+		Token:     ini,
+		Condition: exp,
+	}
+
+	p.eatNewLines()
+	node.Body = p.parseBlock()
+	return node
+}
+
 func (p *Parser) parseIf() ast.Node {
 	p.lexer.EatToken()
 
@@ -366,6 +417,8 @@ func (p *Parser) parseIf() ast.Node {
 	switch cur.Literal {
 	case "return", "raise", "yield":
 		node.TrueBody = p.parseReturn()
+	case "continue", "break":
+		node.TrueBody = p.parseForControl()
 	case "{":
 		node.TrueBody = p.parseBlock()
 	default:
@@ -382,6 +435,8 @@ func (p *Parser) parseIf() ast.Node {
 		switch cur.Literal {
 		case "return", "raise", "yield":
 			node.FalseBody = p.parseReturn()
+		case "continue", "break":
+			node.FalseBody = p.parseForControl()
 		case "if":
 			node.FalseBody = p.parseIf()
 		case "{":
@@ -394,6 +449,119 @@ func (p *Parser) parseIf() ast.Node {
 
 	return node
 }
+
+// func (p *Parser) parseLeftAssignment(acceptMembers, acceptIndexing bool) ast.Node {
+// 	args := make([]ast.Node, 0)
+// 	forceTuple := false
+
+// 	for {
+// 		p.eatNewLines()
+
+// 		cur := p.lexer.PeekToken()
+// 		switch {
+// 		case cur.Is(tokens.Identifier):
+// 			arg := p.parsePrefixIdentifier()
+// 			args = append(args, arg)
+// 			p.lexer.EatToken()
+
+// 		case cur.Is(tokens.Comma):
+// 			forceTuple = true
+// 			p.lexer.EatToken()
+
+// 		case cur.Is(tokens.Lparen):
+// 			p.lexer.EatToken()
+// 			arg := p.parseLeftAssignment(acceptMembers, acceptIndexing)
+// 			args = append(args, arg)
+
+// 			p.eatNewLines()
+// 			if !p.Expect(tokens.Rparen) {
+// 				return nil
+// 			}
+// 			p.lexer.EatToken()
+
+// 		case cur.Is(tokens.Spread):
+// 			p.lexer.EatToken()
+// 			arg := p.parseLeftAssignment(acceptMembers, acceptIndexing)
+// 			arg = &ast.SpreadIn{Target: arg, Token: cur}
+// 			args = append(args, arg)
+
+// 		case cur.Is(tokens.Lbracket) && acceptIndexing:
+// 			if !acceptIndexing {
+// 				p.RegisterError(fmt.Sprintf("invalid left-side assignment. Expression does not accept indexing."), cur)
+// 				return nil
+// 			}
+
+// 			p.lexer.EatToken()
+// 			if len(args) == 0 {
+// 				p.RegisterError(fmt.Sprintf("invalid left-side assignment. Indexing without target."), cur)
+// 				return nil
+// 			}
+// 			prv := args[len(args)-1]
+// 			arg := p.parseExpressionList()
+// 			idx := &ast.Indexing{
+// 				Token:  cur,
+// 				Target: prv,
+// 				Values: arg,
+// 			}
+// 			args[len(args)-1] = idx
+
+// 			p.eatNewLines()
+// 			if !p.Expect(tokens.Rbracket) {
+// 				return nil
+// 			}
+// 			p.lexer.EatToken()
+
+// 		case cur.Is(tokens.Dot):
+// 			if !acceptMembers {
+// 				p.RegisterError(fmt.Sprintf("invalid left-side assignment. Expression does not accept accessing."), cur)
+// 				return nil
+// 			}
+
+// 			p.lexer.EatToken()
+// 			if len(args) == 0 {
+// 				p.RegisterError(fmt.Sprintf("invalid left-side assignment. Accessing member without target."), cur)
+// 				return nil
+// 			}
+
+// 			prv := args[len(args)-1]
+// 			p.eatNewLines()
+// 			right := p.parsePrefixIdentifier()
+
+// 			tgt := prv
+// 			t, ok := tgt.(*ast.Access)
+// 			for ok {
+// 				tgt = t.Right
+// 				t, ok = tgt.(*ast.Access)
+// 			}
+
+// 			arg := &ast.Access{
+// 				Token: cur,
+// 				Left:  tgt,
+// 				Right: right,
+// 			}
+// 			args[len(args)-1] = arg
+
+// 			p.eatNewLines()
+// 			if !p.Expect(tokens.Rbracket) {
+// 				return nil
+// 			}
+// 			p.lexer.EatToken()
+// 		}
+// 	}
+
+// 	if len(args) == 0 {
+// 		return nil
+
+// 	} else if len(args) == 1 {
+// 		return args[0]
+
+// 	} else {
+// 		return &ast.Tuple{
+// 			Token:  p.lexer.PeekToken(),
+// 			Values: args,
+// 		}
+// 	}
+// }
 
 func (p *Parser) parseDeclaration() ast.Node {
 	cur := p.lexer.PeekToken()

@@ -94,6 +94,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.BinaryOperator:
 		result = r.EvalBinaryOperator(n, scope)
 
+	case *ast.PostfixOperator:
+		result = r.EvalPostfixOperator(n, scope)
+
 	case *ast.Assignment:
 		scope.InAssignment = true
 		result = r.EvalAssignment(n, scope)
@@ -107,6 +110,12 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.Call:
 		result = r.EvalCall(n, scope)
+
+	case *ast.Continue:
+		result = r.EvalContinue(n, scope)
+
+	case *ast.Break:
+		result = r.EvalBreak(n, scope)
 
 	case *ast.Return:
 		result = r.EvalReturn(n, scope)
@@ -128,6 +137,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.If:
 		result = r.EvalIf(n, scope)
+
+	case *ast.For:
+		result = r.EvalFor(n, scope)
 
 	case *ast.SpreadOut:
 		result = r.EvalSpreadOut(n, scope)
@@ -182,6 +194,14 @@ func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
 		if err, ok := newScope.Get(RAISE_KEY); ok {
 			scope.Set(RAISE_KEY, err)
 			result = err.Value
+			break
+
+		} else if v, ok := newScope.Get(CONTINUE_KEY); ok {
+			scope.Set(CONTINUE_KEY, v)
+			break
+
+		} else if v, ok := newScope.Get(BREAK_KEY); ok {
+			scope.Set(BREAK_KEY, v)
 			break
 
 		} else if v, ok := newScope.Get(RETURN_KEY); ok {
@@ -565,6 +585,19 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 	return nil
 }
 
+func (r *Runtime) EvalPostfixOperator(node *ast.PostfixOperator, scope *Scope) *Instance {
+	left := r.Eval(node.Left, scope)
+
+	switch node.Operator {
+	case "++":
+		return left.Type.OnPostInc(r, scope, left)
+	case "--":
+		return left.Type.OnPostDec(r, scope, left)
+	}
+
+	return nil
+}
+
 func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *ast.Assignment, scope *Scope) *Instance {
 	switch id := left.(type) {
 	case *ast.Tuple:
@@ -797,6 +830,16 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 	}
 }
 
+func (r *Runtime) EvalContinue(node *ast.Continue, scope *Scope) *Instance {
+	scope.Set(CONTINUE_KEY, Constant(Boolean.TRUE))
+	return Boolean.TRUE
+}
+
+func (r *Runtime) EvalBreak(node *ast.Break, scope *Scope) *Instance {
+	scope.Set(BREAK_KEY, Constant(Boolean.TRUE))
+	return Boolean.TRUE
+}
+
 func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {
 	exp := r.Eval(node.Expression, scope)
 	if exp == nil {
@@ -886,7 +929,6 @@ func (r *Runtime) SolveMaybe(target *Instance, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
-
 	var newScope *Scope
 	var condition *bool
 	if scope.State != nil {
@@ -921,7 +963,15 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 		ret = r.Eval(node.FalseBody, newScope)
 	}
 
-	if newScope.HasInScope(RAISE_KEY) {
+	if newScope.HasInScope(CONTINUE_KEY) {
+		err, _ := newScope.GetInScope(CONTINUE_KEY)
+		scope.Set(CONTINUE_KEY, err)
+
+	} else if newScope.HasInScope(BREAK_KEY) {
+		err, _ := newScope.GetInScope(BREAK_KEY)
+		scope.Set(BREAK_KEY, err)
+
+	} else if newScope.HasInScope(RAISE_KEY) {
 		err, _ := newScope.GetInScope(RAISE_KEY)
 		scope.Set(RAISE_KEY, err)
 
@@ -942,6 +992,143 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 	}
 
 	return ret
+}
+
+func (r *Runtime) EvalFor(node *ast.For, scope *Scope) *Instance {
+	return r.EvalForCondition(node, scope)
+}
+
+// func (r *Runtime) EvalForIn(node *ast.For, scope *Scope) *Instance {
+// 	var newScope *Scope
+// 	var iterator *Instance
+// 	if scope.State != nil {
+// 		state := scope.State.(*ForState)
+// 		newScope = state.Scope
+// 		iterator = state.Iterator
+// 	} else {
+// 		newScope = CreateScope(scope, scope.Caller)
+// 		iter := r.Eval(node.Iterator, newScope)
+// 		if iter == nil {
+// 			return r.Throw(Error.Create(scope, "invalid iterator"), scope)
+// 		}
+
+// 		iterator = iter.Type.OnIter(r, newScope, iter)
+// 	}
+
+// 	if iterator == nil {
+// 		return r.Throw(Error.Create(scope, "invalid iterator"), scope)
+// 	}
+
+// 	iter := iterator.Impl.(*IteratorDataImpl)
+// 	for {
+// 		newScope.Clear()
+
+// 		fn := iter.next()
+// 		i_iteration := fn.Type.OnCall(r, newScope, fn, iterator)
+// 		iteration := i_iteration.Impl.(*IterationDataImpl)
+
+// 		if iteration.done() == Boolean.TRUE || iteration.error() == Boolean.TRUE {
+// 			break
+// 		}
+
+// 		r.ResolveAssignment(node.Identifier, iteration.value(), &ast.Assignment{Definition: true, Constant: false}, newScope)
+// 		r.Eval(node.Body, newScope)
+
+// 		// execute block, if return evalCondition = true
+// 		if newScope.HasInScope(BREAK_KEY) {
+// 			newScope.Delete(BREAK_KEY)
+// 			break
+
+// 		} else if newScope.HasInScope(CONTINUE_KEY) {
+// 			newScope.Delete(CONTINUE_KEY)
+// 			continue
+
+// 		} else if newScope.HasInScope(RAISE_KEY) {
+// 			err, _ := newScope.GetInScope(RAISE_KEY)
+// 			scope.Set(RAISE_KEY, err)
+// 			break
+
+// 		} else if newScope.HasInScope(RETURN_KEY) {
+// 			err, _ := newScope.GetInScope(RETURN_KEY)
+// 			scope.Set(RETURN_KEY, err)
+// 			break
+
+// 		} else if newScope.HasInScope(YIELD_KEY) {
+// 			v, _ := newScope.GetInScope(YIELD_KEY)
+
+// 			scope.State = &ForState{
+// 				Scope: newScope,
+// 			}
+// 			newScope.Delete(YIELD_KEY)
+// 			newScope.Delete(JUST_YIELDED_KEY)
+// 			scope.Set(YIELD_KEY, v)
+// 			break
+// 		}
+// 	}
+
+// 	return Boolean.FALSE
+// }
+
+func (r *Runtime) EvalForCondition(node *ast.For, scope *Scope) *Instance {
+	var newScope *Scope
+	var evalCondition bool
+	if scope.State != nil {
+		state := scope.State.(*ForState)
+		newScope = state.Scope
+		evalCondition = false
+	} else {
+		newScope = CreateScope(scope, scope.Caller)
+		evalCondition = true
+	}
+
+	for {
+		if evalCondition {
+			c := r.Eval(node.Condition, newScope)
+			if c == nil {
+				return r.Throw(Error.Create(scope, "invalid condition"), scope)
+			}
+
+			if !AsBool(c) {
+				break
+			}
+		}
+
+		evalCondition = true
+		r.Eval(node.Body, newScope)
+
+		// execute block, if return evalCondition = true
+		if newScope.HasInScope(BREAK_KEY) {
+			newScope.Delete(BREAK_KEY)
+			break
+
+		} else if newScope.HasInScope(CONTINUE_KEY) {
+			newScope.Delete(CONTINUE_KEY)
+			continue
+
+		} else if newScope.HasInScope(RAISE_KEY) {
+			err, _ := newScope.GetInScope(RAISE_KEY)
+			scope.Set(RAISE_KEY, err)
+			break
+
+		} else if newScope.HasInScope(RETURN_KEY) {
+			err, _ := newScope.GetInScope(RETURN_KEY)
+			scope.Set(RETURN_KEY, err)
+			break
+
+		} else if newScope.HasInScope(YIELD_KEY) {
+			v, _ := newScope.GetInScope(YIELD_KEY)
+
+			scope.State = &ForState{
+				Scope: newScope,
+			}
+			newScope.Delete(YIELD_KEY)
+			newScope.Delete(JUST_YIELDED_KEY)
+			scope.Set(YIELD_KEY, v)
+			break
+		}
+	}
+
+	return Boolean.FALSE
 }
 
 func (r *Runtime) EvalSpreadOut(node *ast.SpreadOut, scope *Scope) *Instance {

@@ -219,19 +219,19 @@ func (d *NumberDataType) OnLte(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	return Boolean.Create(AsNumber(args[0]) <= AsNumber(args[1]))
 }
 
-func (d *NumberDataType) OnPostInc(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	impl := args[0].Impl.(NumberDataImpl)
-	old := impl.Value
-	impl.Value += 1
-	return Number.Create(old)
-}
+// func (d *NumberDataType) OnPostInc(r *Runtime, s *Scope, args ...*Instance) *Instance {
+// 	impl := args[0].Impl.(NumberDataImpl)
+// 	old := impl.Value
+// 	impl.Value += 1
+// 	return Number.Create(old)
+// }
 
-func (d *NumberDataType) OnPostDec(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	impl := args[0].Impl.(NumberDataImpl)
-	old := impl.Value
-	impl.Value -= 1
-	return Number.Create(old)
-}
+// func (d *NumberDataType) OnPostDec(r *Runtime, s *Scope, args ...*Instance) *Instance {
+// 	impl := args[0].Impl.(NumberDataImpl)
+// 	old := impl.Value
+// 	impl.Value -= 1
+// 	return Number.Create(old)
+// }
 
 func (d *NumberDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return Boolean.Create(!AsBool(args[0]))

@@ -13,24 +13,12 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-fn euler1(n) {
-	return range(3, n)
-	| filter n: n%3 == 0 or n%5 == 0 
-  | sum
+a := List { 1, 2, 3 }
+
+pipe a as abc { 
+
 }
 
-print('Euler 1:')
-print(euler1(1000) | to Number) # 233168
-
-fn euler3(n, i=2) {
-	if i**2 > n return n
-	if n%i > 0 return euler3(n, i+1)
-  return euler3(n//i, i)
-}
-
-print('Euler 3:')
-print(euler3(600851475143))
-0
 `
 
 func main() {
@@ -90,5 +78,5 @@ func testRuntime(input []byte) {
 		return
 	}
 
-	fmt.Println(res)
+	fmt.Println("<<<", res)
 }

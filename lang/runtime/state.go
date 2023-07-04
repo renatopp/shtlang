@@ -11,3 +11,7 @@ type IfState struct {
 	Condition bool
 	Scope     *Scope
 }
+
+type ForState struct {
+	Scope *Scope
+}
