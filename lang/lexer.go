@@ -16,7 +16,7 @@ var keywords = []string{
 	"if",
 	"else",
 	"for",
-	"while",
+	"pipe",
 	"break",
 	"continue",
 

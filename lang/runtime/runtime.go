@@ -150,6 +150,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 	case *ast.Pipe:
 		result = r.EvalPipe(n, scope)
 
+	case *ast.PipeLoop:
+		result = r.EvalPipeLoop(n, scope)
+
 	}
 
 	scope.PopNode()
@@ -995,81 +998,6 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalFor(node *ast.For, scope *Scope) *Instance {
-	return r.EvalForCondition(node, scope)
-}
-
-// func (r *Runtime) EvalForIn(node *ast.For, scope *Scope) *Instance {
-// 	var newScope *Scope
-// 	var iterator *Instance
-// 	if scope.State != nil {
-// 		state := scope.State.(*ForState)
-// 		newScope = state.Scope
-// 		iterator = state.Iterator
-// 	} else {
-// 		newScope = CreateScope(scope, scope.Caller)
-// 		iter := r.Eval(node.Iterator, newScope)
-// 		if iter == nil {
-// 			return r.Throw(Error.Create(scope, "invalid iterator"), scope)
-// 		}
-
-// 		iterator = iter.Type.OnIter(r, newScope, iter)
-// 	}
-
-// 	if iterator == nil {
-// 		return r.Throw(Error.Create(scope, "invalid iterator"), scope)
-// 	}
-
-// 	iter := iterator.Impl.(*IteratorDataImpl)
-// 	for {
-// 		newScope.Clear()
-
-// 		fn := iter.next()
-// 		i_iteration := fn.Type.OnCall(r, newScope, fn, iterator)
-// 		iteration := i_iteration.Impl.(*IterationDataImpl)
-
-// 		if iteration.done() == Boolean.TRUE || iteration.error() == Boolean.TRUE {
-// 			break
-// 		}
-
-// 		r.ResolveAssignment(node.Identifier, iteration.value(), &ast.Assignment{Definition: true, Constant: false}, newScope)
-// 		r.Eval(node.Body, newScope)
-
-// 		// execute block, if return evalCondition = true
-// 		if newScope.HasInScope(BREAK_KEY) {
-// 			newScope.Delete(BREAK_KEY)
-// 			break
-
-// 		} else if newScope.HasInScope(CONTINUE_KEY) {
-// 			newScope.Delete(CONTINUE_KEY)
-// 			continue
-
-// 		} else if newScope.HasInScope(RAISE_KEY) {
-// 			err, _ := newScope.GetInScope(RAISE_KEY)
-// 			scope.Set(RAISE_KEY, err)
-// 			break
-
-// 		} else if newScope.HasInScope(RETURN_KEY) {
-// 			err, _ := newScope.GetInScope(RETURN_KEY)
-// 			scope.Set(RETURN_KEY, err)
-// 			break
-
-// 		} else if newScope.HasInScope(YIELD_KEY) {
-// 			v, _ := newScope.GetInScope(YIELD_KEY)
-
-// 			scope.State = &ForState{
-// 				Scope: newScope,
-// 			}
-// 			newScope.Delete(YIELD_KEY)
-// 			newScope.Delete(JUST_YIELDED_KEY)
-// 			scope.Set(YIELD_KEY, v)
-// 			break
-// 		}
-// 	}
-
-// 	return Boolean.FALSE
-// }
-
-func (r *Runtime) EvalForCondition(node *ast.For, scope *Scope) *Instance {
 	var newScope *Scope
 	var evalCondition bool
 	if scope.State != nil {
@@ -1083,6 +1011,8 @@ func (r *Runtime) EvalForCondition(node *ast.For, scope *Scope) *Instance {
 
 	for {
 		if evalCondition {
+			newScope.Clear()
+
 			c := r.Eval(node.Condition, newScope)
 			if c == nil {
 				return r.Throw(Error.Create(scope, "invalid condition"), scope)
@@ -1274,4 +1204,92 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 	}
 
 	return pipe
+}
+
+func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
+	var newScope *Scope
+	var evalCondition bool
+	var i_iterator *Instance
+	if scope.State != nil {
+		state := scope.State.(*PipeLoopState)
+		newScope = state.Scope
+		i_iterator = state.Iterator
+		evalCondition = false
+	} else {
+		newScope = CreateScope(scope, scope.Caller)
+		i_eval := r.Eval(node.Iterator, newScope)
+		if i_eval == nil {
+			return r.Throw(Error.Create(scope, "invalid iterator"), scope)
+		}
+
+		i_iterator = i_eval.Type.OnIter(r, scope, i_eval)
+		evalCondition = true
+	}
+
+	iterator := i_iterator.Impl.(*IteratorDataImpl)
+	for {
+		if evalCondition {
+			newScope.Clear()
+
+			i_next := iterator.next()
+			i_iteration := i_next.Type.OnCall(r, scope, i_next, i_iterator)
+			iteration := i_iteration.Impl.(*IterationDataImpl)
+
+			if iteration.done() == Boolean.TRUE || iteration.error() == Boolean.TRUE {
+				break
+			}
+
+			i_value := iteration.value()
+			value := i_value.Impl.(*TupleDataImpl)
+
+			asTuple, isTuple := node.Assignment.(*ast.Tuple)
+			if !isTuple {
+				asTuple = &ast.Tuple{
+					Values: []ast.Node{node.Assignment},
+				}
+			} else {
+				r.Throw(Error.Create(scope, "tuple assignment not implement yet"), scope)
+			}
+
+			r.ResolveAssignment(asTuple, value.Values[0], &ast.Assignment{
+				Definition: true,
+				Constant:   false,
+			}, newScope)
+		}
+
+		r.Eval(node.Body, newScope)
+
+		// execute block, if return evalCondition = true
+		if newScope.HasInScope(BREAK_KEY) {
+			newScope.Delete(BREAK_KEY)
+			break
+
+		} else if newScope.HasInScope(CONTINUE_KEY) {
+			newScope.Delete(CONTINUE_KEY)
+			continue
+
+		} else if newScope.HasInScope(RAISE_KEY) {
+			err, _ := newScope.GetInScope(RAISE_KEY)
+			scope.Set(RAISE_KEY, err)
+			break
+
+		} else if newScope.HasInScope(RETURN_KEY) {
+			err, _ := newScope.GetInScope(RETURN_KEY)
+			scope.Set(RETURN_KEY, err)
+			break
+
+		} else if newScope.HasInScope(YIELD_KEY) {
+			v, _ := newScope.GetInScope(YIELD_KEY)
+
+			scope.State = &ForState{
+				Scope: newScope,
+			}
+			newScope.Delete(YIELD_KEY)
+			newScope.Delete(JUST_YIELDED_KEY)
+			scope.Set(YIELD_KEY, v)
+			break
+		}
+	}
+
+	return Boolean.FALSE
 }

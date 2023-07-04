@@ -96,6 +96,7 @@ type Parser struct {
 
 	// for and if conditions
 	inCondition bool
+	inPipeLoop  bool
 
 	// function content control
 	hasReturn bool
@@ -246,6 +247,9 @@ func (p *Parser) parseStatement() ast.Node {
 		cur.Literal == "yield" {
 		node = p.parseReturn()
 
+	} else if cur.Is(tokens.Keyword) && cur.Literal == "pipe" {
+		node = p.parsePipeLoop()
+
 	} else if cur.Is(tokens.Keyword) && cur.Literal == "for" {
 		node = p.parseFor()
 
@@ -362,6 +366,55 @@ func (p *Parser) parseForControl() ast.Node {
 		p.RegisterError(fmt.Sprintf("invalid for control token '%s'", cur.Literal), cur)
 		return nil
 	}
+}
+
+func (p *Parser) parsePipeLoop() ast.Node {
+	ini := p.lexer.PeekToken()
+	p.lexer.EatToken()
+
+	p.eatNewLines()
+
+	pipe := &ast.PipeLoop{
+		Token: ini,
+	}
+
+	p.inPipeLoop = true
+	pipe.Iterator = p.parseSingleExpression(order.Lowest)
+	p.inPipeLoop = false
+
+	if pipe.Iterator == nil {
+		p.RegisterError(fmt.Sprintf("invalid pipe loop expression, missing iterator part."), ini)
+		return nil
+	}
+
+	p.eatNewLines()
+	cur := p.lexer.PeekToken()
+	if !cur.Is(tokens.Keyword) || cur.Literal != "as" {
+		p.RegisterError(fmt.Sprintf("expecting 'as' token in pipe loop expression, received '%s'.", cur.Literal), cur)
+		return nil
+	}
+	p.lexer.EatToken()
+
+	p.inCondition = true
+	p.inPipeLoop = true
+	pipe.Assignment = p.parseExpressionTuple()
+	p.inCondition = false
+	p.inPipeLoop = false
+
+	_, err := p.assertAssignmentTargets(pipe.Assignment)
+	if err != "" {
+		p.RegisterError("invalid pipe loop assignment: "+err, ini)
+	}
+
+	p.eatNewLines()
+	cur = p.lexer.PeekToken()
+	if !p.Expect(tokens.Lbrace) {
+		return nil
+	}
+
+	p.eatNewLines()
+	pipe.Body = p.parseBlock()
+	return pipe
 }
 
 func (p *Parser) parseFor() ast.Node {
@@ -919,6 +972,10 @@ repeat_infix:
 	for {
 		// fmt.Println("for infix", priority, priorityOf(cur), cur)
 		for !isEndOfExpression(cur) && priority < priorityOf(cur) {
+			if cur.Is(tokens.Keyword) && cur.Literal == "as" && p.inPipeLoop {
+				return left
+			}
+
 			infixFn := p.infixFns[cur.Type]
 			// fmt.Println("checking infix", left, infixFn, cur)
 			if infixFn == nil {

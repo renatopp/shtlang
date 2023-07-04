@@ -15,3 +15,8 @@ type IfState struct {
 type ForState struct {
 	Scope *Scope
 }
+
+type PipeLoopState struct {
+	Scope    *Scope
+	Iterator *Instance
+}
