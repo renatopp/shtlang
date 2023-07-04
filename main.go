@@ -19,8 +19,18 @@ fn euler1(n) {
   | sum
 }
 
-euler1(1000) | to Number # 233168
+print('Euler 1:')
+print(euler1(1000) | to Number) # 233168
 
+fn euler3(n, i=2) {
+	if i**2 > n return n
+	if n%i > 0 return euler3(n, i+1)
+  return euler3(n//i, i)
+}
+
+print('Euler 3:')
+print(euler3(600851475143))
+0
 `
 
 func main() {

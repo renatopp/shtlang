@@ -2,9 +2,9 @@ package order
 
 const (
 	Lowest         = -1000
+	Concat         = -150
 	Pipe           = -100
 	Comma          = -10
-	Concat         = -5
 	Postfix        = 0
 	Unwrapping     = 5
 	Arrow          = 10

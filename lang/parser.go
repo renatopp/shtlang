@@ -716,7 +716,7 @@ func (p *Parser) parseExpressionList() []ast.Node {
 	for !cur.Is(tokens.Rparen) {
 		p.eatNewLines()
 
-		arg := p.parseSingleExpression(order.Lowest)
+		arg := p.checkPipe(p.parseSingleExpression(order.Lowest))
 		if arg == nil {
 			break
 		}
