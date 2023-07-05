@@ -1045,7 +1045,7 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 	}
 
 	if scope.IsInterruptedAs(FlowRaise) {
-		up(nil, Boolean.TRUE)
+		up(nil, scope.Interruption.Value)
 		return
 	}
 
@@ -1054,7 +1054,7 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 
 	v := fn(r, scope, impl, iter)
 	if scope.IsInterruptedAs(FlowRaise) {
-		up(nil, Boolean.TRUE)
+		up(nil, scope.Interruption.Value)
 		return
 	}
 
@@ -1068,7 +1068,6 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 		up(it.value(), nil)
 		v = fn(r, scope, impl, iter)
 		it = v.Impl.(*IterationDataImpl)
-
 	}
 
 	up(nil, nil)
@@ -1149,12 +1148,16 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 		values := []*Instance{}
 		r.ResolveIterator(pipe, scope, func(v *Instance, err *Instance) {
 			if err != nil {
-				values = append(values, err)
+				// error_ = err
 			} else if v != nil {
 				t := v.Impl.(*TupleDataImpl)
 				values = append(values, t.Values...)
 			}
 		})
+
+		if scope.IsInterruptedAs(FlowRaise) {
+			return nil
+		}
 
 		return List.Create(values...)
 	}
@@ -1232,7 +1235,6 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 				Iterator: i_iterator,
 			}
 			return newScope.Propagate()
-			break
 		}
 	}
 

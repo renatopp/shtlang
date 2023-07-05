@@ -33,7 +33,7 @@ fn fibx(n) {
 	}
 }
 
-fibx(47) | to List
+'renato' | sum
 `
 
 func main() {

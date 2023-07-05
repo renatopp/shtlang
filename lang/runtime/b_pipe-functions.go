@@ -200,7 +200,7 @@ var b_sum = Function.CreateNative("sum",
 
 		iter := args[1]
 		next := args[1].Impl.(*IteratorDataImpl).next()
-		total := 0.0
+		total := Number.Create(0.0)
 
 		finished := false
 
@@ -219,11 +219,11 @@ var b_sum = Function.CreateNative("sum",
 
 					} else if iteration.done() == Boolean.TRUE {
 						finished = true
-						return Iteration.Create(Number.Create(total))
+						return Iteration.Create(total)
 
 					} else {
 						values := iteration.value().Impl.(*TupleDataImpl)
-						total += AsNumber(values.Values[0])
+						total = total.Type.OnAdd(r, s, total, values.Values[0])
 					}
 				}
 			}),
