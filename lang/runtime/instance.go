@@ -7,10 +7,86 @@ type Instance struct {
 	MemberOf *Instance
 }
 
+func (i *Instance) IsBoolean() bool {
+	return i.Type == Boolean.Type
+}
+func (i *Instance) AsBoolean() *BooleanDataImpl {
+	return i.Impl.(*BooleanDataImpl)
+}
+
+func (i *Instance) IsNumber() bool {
+	return i.Type == Number.Type
+}
+func (i *Instance) AsNumber() *NumberDataImpl {
+	return i.Impl.(*NumberDataImpl)
+}
+
+func (i *Instance) IsString() bool {
+	return i.Type == String.Type
+}
+func (i *Instance) AsString() *StringDataImpl {
+	return i.Impl.(*StringDataImpl)
+}
+
+func (i *Instance) IsTuple() bool {
+	return i.Type == Tuple.Type
+}
+func (i *Instance) AsTuple() *TupleDataImpl {
+	return i.Impl.(*TupleDataImpl)
+}
+
+func (i *Instance) IsList() bool {
+	return i.Type == List.Type
+}
+func (i *Instance) AsList() *ListDataImpl {
+	return i.Impl.(*ListDataImpl)
+}
+
+func (i *Instance) IsType() bool {
+	return i.Type == Type.Type
+}
+func (i *Instance) AsType() *TypeDataImpl {
+	return i.Impl.(*TypeDataImpl)
+}
+
+func (i *Instance) IsMaybe() bool {
+	return i.Type == Maybe.Type
+}
+func (i *Instance) AsMaybe() *MaybeDataImpl {
+	return i.Impl.(*MaybeDataImpl)
+}
+
+func (i *Instance) IsIterator() bool {
+	return i.Type == Iterator.Type
+}
+func (i *Instance) AsIterator() *IteratorDataImpl {
+	return i.Impl.(*IteratorDataImpl)
+}
+
+func (i *Instance) IsFunction() bool {
+	return i.Type == Function.Type
+}
+func (i *Instance) AsFunction() *FunctionDataImpl {
+	return i.Impl.(*FunctionDataImpl)
+}
+
+func (i *Instance) IsError() bool {
+	return i.Type == Error.Type
+}
+func (i *Instance) AsError() *ErrorDataImpl {
+	return i.Impl.(*ErrorDataImpl)
+}
+
+func (i *Instance) IsIteration() bool {
+	return i.Type == Iteration.Type
+}
+func (i *Instance) AsIteration() *IterationDataImpl {
+	return i.Impl.(*IterationDataImpl)
+}
+
 func (i *Instance) Repr() string {
 	return AsString(i.Type.OnRepr(nil, nil, i))
 }
-
 func (i *Instance) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return i.Type.OnLen(r, s, i, args...)
 }

@@ -20,13 +20,13 @@ var Number = &NumberInfo{
 
 	ZERO: &Instance{
 		Type: numberDT,
-		Impl: NumberDataImpl{
+		Impl: &NumberDataImpl{
 			Value: 0,
 		},
 	},
 	ONE: &Instance{
 		Type: numberDT,
-		Impl: NumberDataImpl{
+		Impl: &NumberDataImpl{
 			Value: 1,
 		},
 	},
@@ -46,7 +46,7 @@ type NumberInfo struct {
 func (t *NumberInfo) Create(value float64) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: NumberDataImpl{
+		Impl: &NumberDataImpl{
 			Value: value,
 		},
 	}
@@ -104,7 +104,7 @@ func (d *NumberDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*I
 
 func (d *NumberDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	cur := 0
-	this := self.Impl.(NumberDataImpl)
+	this := self.Impl.(*NumberDataImpl)
 	return Iterator.Create(
 		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			if cur >= 1 {

@@ -20,7 +20,7 @@ var String = &StringInfo{
 
 	EMPTY: &Instance{
 		Type: stringDT,
-		Impl: StringDataImpl{
+		Impl: &StringDataImpl{
 			Value: "",
 		},
 	},
@@ -39,7 +39,7 @@ type StringInfo struct {
 func (t *StringInfo) Create(value string) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: StringDataImpl{
+		Impl: &StringDataImpl{
 			Value: value,
 		},
 	}
@@ -48,7 +48,7 @@ func (t *StringInfo) Create(value string) *Instance {
 func (t *StringInfo) Createf(value string, v ...any) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: StringDataImpl{
+		Impl: &StringDataImpl{
 			Value: fmt.Sprintf(value, v...),
 		},
 	}
@@ -106,7 +106,7 @@ func (d *StringDataType) OnAdd(r *Runtime, s *Scope, self *Instance, args ...*In
 
 func (d *StringDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	cur := 0
-	this := self.Impl.(StringDataImpl)
+	this := self.Impl.(*StringDataImpl)
 	return Iterator.Create(
 		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			if cur >= len(this.Value) {

@@ -18,13 +18,13 @@ var Boolean = &BooleanInfo{
 
 	TRUE: &Instance{
 		Type: booleanDT,
-		Impl: BooleanDataImpl{
+		Impl: &BooleanDataImpl{
 			Value: true,
 		},
 	},
 	FALSE: &Instance{
 		Type: booleanDT,
-		Impl: BooleanDataImpl{
+		Impl: &BooleanDataImpl{
 			Value: false,
 		},
 	},
@@ -44,7 +44,7 @@ type BooleanInfo struct {
 func (t *BooleanInfo) Create(value bool) *Instance {
 	return &Instance{
 		Type: t.Type,
-		Impl: BooleanDataImpl{
+		Impl: &BooleanDataImpl{
 			Value: value,
 		},
 	}
@@ -96,7 +96,7 @@ func (d *BooleanDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*
 
 func (d *BooleanDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	cur := 0
-	this := self.Impl.(BooleanDataImpl)
+	this := self.Impl.(*BooleanDataImpl)
 	return Iterator.Create(
 		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			if cur >= 1 {

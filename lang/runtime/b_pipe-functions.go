@@ -23,16 +23,16 @@ var b_map = Function.CreateNative("map",
 		return Iterator.Create(
 			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 				ret := next.OnCall(r, s, iter)
-				iteration := ret.Impl.(*IterationDataImpl)
+				iteration := ret.AsIteration()
 
-				if iteration.error() == Boolean.TRUE {
+				if AsBool(iteration.error()) {
 					return ret
 
-				} else if iteration.done() == Boolean.TRUE {
+				} else if AsBool(iteration.done()) {
 					return Iteration.DONE
 
 				} else {
-					values := iteration.value().Impl.(*TupleDataImpl)
+					values := iteration.value().AsTuple()
 					ret := fn.OnCall(r, s, values.Values...)
 					return Iteration.Create(ret)
 				}

@@ -66,16 +66,23 @@ l[0], l[1] = l[1], l[0]
 print(l)
 
 
-fn change(a, b) {
-	a = 44
-	b = a
+# fn change(a, b) {
+# 	a = 44
+# 	b = a
+# 
+# print(a, b)
+# }
 
-	print(a, b)
-}
+# print(a, b)
+# change(a, b)
+# print(a, b)
+# 
 
-print(a, b)
-change(a, b)
-print(a, b)
+# s := 'hello'
+# p := s
+# s += ' world'
+# print(s)
+# print(p)
 
 `
 
