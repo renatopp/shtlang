@@ -75,7 +75,8 @@ func (d *StringDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Ins
 		tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
 
 		if tion.error() == Boolean.TRUE {
-			return List.Create()
+			tuple := tion.value().AsTuple()
+			return r.Throw(tuple.Values[0], s)
 
 		} else if tion.done() == Boolean.TRUE {
 			builder := strings.Builder{}

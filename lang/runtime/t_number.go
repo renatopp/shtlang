@@ -70,7 +70,8 @@ func (d *NumberDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Ins
 	tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
 
 	if tion.error() == Boolean.TRUE {
-		return Number.ZERO
+		tuple := tion.value().AsTuple()
+		return r.Throw(tuple.Values[0], s)
 
 	} else if tion.done() == Boolean.TRUE {
 		return r.Throw(Error.Create(s, "The iteration has been finished"), s)

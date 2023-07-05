@@ -68,11 +68,14 @@ func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*In
 	tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
 
 	if tion.error() == Boolean.TRUE {
-		return Boolean.FALSE
+		tuple := tion.value().AsTuple()
+		return r.Throw(tuple.Values[0], s)
+
 	} else if tion.done() == Boolean.TRUE {
 		return r.Throw(Error.Create(s, "The iteration has been finished"), s)
+
 	} else {
-		tuple := tion.value().Impl.(*TupleDataImpl)
+		tuple := tion.value().AsTuple()
 		return Boolean.Create(AsBool(tuple.Values[0]))
 	}
 }

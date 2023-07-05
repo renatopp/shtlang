@@ -14,76 +14,14 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-fn fib(n) {
-	a, b, i := 0, 1, 2
-
-	if n > a yield a
-	if n > b yield b
-
-	for i <= n {
-		a, b = b, a + b	
-		yield b
-		i += 1
-	}
-}
-
-fn fibx(n) {
-	pipe fib(n) as x {
-		yield x
-	}
+fn fun {
+	yield 1
+	yield 2
+	yield 3
 }
 
 
-i := -1
-fib(10)
-| map x : {
-	i += 1
-	return (i, x)
-}
-| each x, y : print(x, y)
-| reduce(List { 0, 0 }) acc, val : List { acc[0] + val[0], acc[1] + val[1] }
-| map x : x[1]
-| each x : print(x)
-| to Boolean
-
-pipe fibx(10) as i {
-	print(i)
-}
-
-ret := aasdf?
-print(ret)
-print(ret!)
-
-
-a := 1
-b := a
-
-a += 4
-print(a, b)
-
-l := List { 1, 2, 3 }
-l[0], l[1] = l[1], l[0]
-print(l)
-
-
-# fn change(a, b) {
-# 	a = 44
-# 	b = a
-# 
-# print(a, b)
-# }
-
-# print(a, b)
-# change(a, b)
-# print(a, b)
-# 
-
-# s := 'hello'
-# p := s
-# s += ' world'
-# print(s)
-# print(p)
-
+fun() | to String
 `
 
 func main() {

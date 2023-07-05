@@ -123,11 +123,25 @@ func (impl *IteratorDataImpl) next() *Instance {
 var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	// self => function
 	// args[0] => this (the iterator object)
-	this := args[0].Impl.(*IteratorDataImpl)
+	this := args[0].AsIterator()
+	if this.Properties["done"] == Boolean.TRUE {
+		return Iteration.DONE
+	}
+
 	ret := this.Next.OnCall(r, s, args[0])
 
 	if ret.Type != Iteration.Type {
-		return r.Throw(Error.Create(s, "Expected Iteration, %s given", ret.Type.GetName()), s)
+		this.Properties["done"] = Boolean.TRUE
+		return Iteration.Error(Error.Create(s, "Expected iteration, %s given", ret.Type.GetName()))
+	}
+
+	if s.IsInterruptedAs(FlowRaise) {
+		this.Properties["done"] = Boolean.TRUE
+		return Iteration.Error(s.Interruption.Value)
+	}
+
+	if AsBool(ret.AsIteration().error()) {
+		this.Properties["done"] = Boolean.TRUE
 	}
 
 	if ret == Iteration.DONE {

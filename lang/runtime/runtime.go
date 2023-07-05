@@ -1029,6 +1029,7 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 	iter := target.OnIter(r, scope)
 	if iter.Type != Iterator.Type {
 		up(nil, r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope))
+		return
 	}
 
 	if scope.IsInterruptedAs(FlowRaise) {
@@ -1047,9 +1048,9 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 
 	it := v.Impl.(*IterationDataImpl)
 	for v != Iteration.DONE {
-		if scope.IsInterruptedAs(FlowRaise) {
-			up(nil, it.error())
-			return
+		if AsBool(v.AsIteration().error()) {
+			tuple := v.AsIteration().value().AsTuple()
+			up(nil, tuple.Values[0])
 		}
 
 		up(it.value(), nil)
@@ -1131,14 +1132,19 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 	scope.PipeCounter -= 1
 	if scope.PipeCounter == 0 {
 		values := []*Instance{}
+		var e *Instance
 		r.ResolveIterator(pipe, scope, func(v *Instance, err *Instance) {
 			if err != nil {
-				// error_ = err
+				e = err
 			} else if v != nil {
 				t := v.Impl.(*TupleDataImpl)
 				values = append(values, t.Values...)
 			}
 		})
+
+		if e != nil {
+			return e
+		}
 
 		if scope.IsInterruptedAs(FlowRaise) {
 			return nil

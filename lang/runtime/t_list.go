@@ -84,17 +84,17 @@ func (d *ListDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Insta
 	next := iter.next()
 	values := []*Instance{}
 	for {
+		tion := next.OnCall(r, s, self).AsIteration()
 
-		tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
+		if AsBool(tion.error()) {
+			tuple := tion.value().AsTuple()
+			return r.Throw(tuple.Values[0], s)
 
-		if tion.error() == Boolean.TRUE {
-			return List.Create()
-
-		} else if tion.done() == Boolean.TRUE {
+		} else if AsBool(tion.done()) {
 			return List.Create(values...)
 
 		} else {
-			tuple := tion.value().Impl.(*TupleDataImpl)
+			tuple := tion.value().AsTuple()
 			values = append(values, tuple.Values[0])
 		}
 	}
