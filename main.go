@@ -27,12 +27,13 @@ fn fib(n) {
 	}
 }
 
-fn fibr(n) {
-	if n <= 1 return n
-	return fibr(n - 1) + fibr(n - 2)
+fn fibx(n) {
+	pipe fib(n) as x {
+		yield x
+	}
 }
 
-fib(47) | to List
+fibx(47) | to List
 `
 
 func main() {

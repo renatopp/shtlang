@@ -1212,7 +1212,7 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 				Constant:   false,
 			}, newScope)
 		}
-
+		evalCondition = true
 		r.Eval(node.Body, newScope)
 
 		// execute block, if return evalCondition = true
@@ -1228,9 +1228,10 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 
 		} else if newScope.IsInterruptedAs(FlowYield) {
 			scope.ActiveRecord = &PipeLoopRecord{
-				Scope: newScope,
+				Scope:    newScope,
+				Iterator: i_iterator,
 			}
-			newScope.Propagate()
+			return newScope.Propagate()
 			break
 		}
 	}
