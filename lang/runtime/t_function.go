@@ -171,7 +171,7 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, self *Instance, args ...*I
 
 	for i, pv := range d.Params {
 		if pv.Name != "_" {
-			scope.Set(pv.Name, Variable(arguments[i]))
+			scope.Set(pv.Name, arguments[i])
 		}
 	}
 

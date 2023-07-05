@@ -34,7 +34,6 @@ fn fibx(n) {
 }
 
 
-
 i := -1
 fib(10)
 | map x : {
@@ -54,6 +53,30 @@ pipe fibx(10) as i {
 ret := aasdf?
 print(ret)
 print(ret!)
+
+
+a := 1
+b := a
+
+a += 4
+print(a, b)
+
+l := List { 1, 2, 3 }
+l[0], l[1] = l[1], l[0]
+print(l)
+
+
+fn change(a, b) {
+	a = 44
+	b = a
+
+	print(a, b)
+}
+
+print(a, b)
+change(a, b)
+print(a, b)
+
 `
 
 func main() {

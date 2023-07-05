@@ -530,7 +530,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return r.Throw(Error.Create(scope, "'as' expression requires an identifier on the right side"), scope)
 		}
 
-		scope.Set(id.Value, Variable(left))
+		scope.Set(id.Value, left)
 		return left
 
 	case "is":
@@ -670,11 +670,13 @@ func (r *Runtime) Assign(name string, exp *Instance, def, cnst bool, scope *Scop
 		return r.Throw(Error.DuplicatedDefinition(scope, name), scope)
 	}
 
-	globalRef, _ := scope.Get(name)
+	globalRef, globalScope, _ := scope.GetWithScope(name)
 	localRef, _ := scope.GetInScope(name)
+	refScope := scope
 	ref := localRef
 	if localRef == nil && !def {
 		ref = globalRef
+		refScope = globalScope
 	}
 
 	if !def && ref == nil {
@@ -686,12 +688,9 @@ func (r *Runtime) Assign(name string, exp *Instance, def, cnst bool, scope *Scop
 	}
 
 	if ref != nil {
-		ref.Value = exp
+		refScope.Set(name, exp)
 	} else {
-		scope.Set(name, &Reference{
-			Value:    exp,
-			Constant: cnst,
-		})
+		scope.Set(name, exp)
 	}
 
 	return exp
@@ -704,7 +703,7 @@ func (r *Runtime) EvalIdentifier(node *ast.Identifier, scope *Scope) *Instance {
 		return r.Throw(Error.VariableNotDefined(scope, name), scope)
 	}
 
-	return ref.Value
+	return ref
 }
 
 func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance {
@@ -762,10 +761,7 @@ func (r *Runtime) EvalFunctionDef(node *ast.FunctionDef, scope *Scope) *Instance
 	impl.Generator = node.Generator
 
 	if !scope.InAssignment && !scope.InArgument && name != "" {
-		scope.Set(name, &Reference{
-			Value:    fn,
-			Constant: false,
-		})
+		scope.Set(name, fn)
 	}
 
 	return fn

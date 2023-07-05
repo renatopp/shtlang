@@ -61,18 +61,14 @@ func AsFunction(instance *Instance) MetaFunction {
 	return instance.Impl.(*FunctionDataImpl).Call
 }
 
-func Variable(i *Instance) *Reference {
-	return &Reference{
-		Value:    i,
-		Constant: false,
-	}
+func Variable(i *Instance) *Instance {
+	i.Constant = false
+	return i
 }
 
-func Constant(i *Instance) *Reference {
-	return &Reference{
-		Value:    i,
-		Constant: true,
-	}
+func Constant(i *Instance) *Instance {
+	i.Constant = true
+	return i
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

@@ -235,9 +235,9 @@ func (t *ListDataType) OnSetItem(r *Runtime, s *Scope, self *Instance, args ...*
 		return r.Throw(Error.Create(s, "list out of bounds for item '%d'", idx), s)
 	}
 
-	this.Values[idx] = args[2]
+	this.Values[idx] = args[1]
 
-	return args[2]
+	return args[1]
 }
 
 func (d *ListDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {

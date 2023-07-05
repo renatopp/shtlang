@@ -13,7 +13,7 @@ type Scope struct {
 	Function     *Instance
 	Parent       *Scope
 	Caller       *Scope
-	Values       map[string]*Reference
+	Values       map[string]*Instance
 	ActiveRecord ExecutionRecord
 	Interruption *FlowInterruption
 
@@ -32,7 +32,7 @@ func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s.Function = nil
 	s.Parent = parent
 	s.Caller = caller
-	s.Values = map[string]*Reference{}
+	s.Values = map[string]*Instance{}
 	s.PipeCounter = 0
 	s.nodeStack = make([]ast.Node, 0)
 	s.ActiveRecord = nil
@@ -77,7 +77,7 @@ func (s *Scope) Propagate() *Instance {
 	return v
 }
 
-func (s *Scope) Get(name string) (*Reference, bool) {
+func (s *Scope) Get(name string) (*Instance, bool) {
 	if val, ok := s.Values[name]; ok {
 		return val, true
 	}
@@ -89,7 +89,19 @@ func (s *Scope) Get(name string) (*Reference, bool) {
 	return nil, false
 }
 
-func (s *Scope) GetInScope(name string) (*Reference, bool) {
+func (s *Scope) GetWithScope(name string) (*Instance, *Scope, bool) {
+	if val, ok := s.Values[name]; ok {
+		return val, s, true
+	}
+
+	if s.Parent != nil {
+		return s.Parent.GetWithScope(name)
+	}
+
+	return nil, nil, false
+}
+
+func (s *Scope) GetInScope(name string) (*Instance, bool) {
 	if val, ok := s.Values[name]; ok {
 		return val, true
 	}
@@ -97,7 +109,7 @@ func (s *Scope) GetInScope(name string) (*Reference, bool) {
 	return nil, false
 }
 
-func (s *Scope) Set(name string, value *Reference) *Reference {
+func (s *Scope) Set(name string, value *Instance) *Instance {
 	s.Values[name] = value
 	return value
 }
@@ -136,7 +148,7 @@ func (s *Scope) Delete(name string) {
 	delete(s.Values, name)
 }
 
-func (s *Scope) ForEach(fn func(string, *Reference)) {
+func (s *Scope) ForEach(fn func(string, *Instance)) {
 	for k, v := range s.Values {
 		fn(k, v)
 	}
@@ -153,8 +165,8 @@ func (s *Scope) print(i int, stack []*Scope) {
 	prefix2 := fmt.Sprintf("%*s", (i+2)*2, "")
 	fmt.Printf(prefix+"scope %s {\n", name)
 
-	scope.ForEach(func(s string, r *Reference) {
-		fmt.Println(prefix2 + s + ": " + r.Value.Repr())
+	scope.ForEach(func(s string, r *Instance) {
+		fmt.Println(prefix2 + s + ": " + r.Repr())
 	})
 
 	s.print(i+1, stack)
@@ -163,8 +175,8 @@ func (s *Scope) print(i int, stack []*Scope) {
 }
 
 func (s *Scope) PrintSelf() {
-	s.ForEach(func(s string, r *Reference) {
-		fmt.Println(s, ":", r.Value.Repr())
+	s.ForEach(func(s string, r *Instance) {
+		fmt.Println(s, ":", r.Repr())
 	})
 }
 
