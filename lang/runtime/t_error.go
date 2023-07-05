@@ -61,11 +61,10 @@ func (t *ErrorInfo) StackTrace(s *Scope) string {
 		scope := stack[i]
 		trace.WriteString("     at ")
 
-		fn, _ := scope.GetInScope(SCOPE_FN_KEY)
-		if fn == nil {
+		if scope.Function == nil {
 			trace.WriteString("<global>")
 		} else {
-			switch fn := fn.Value.Impl.(type) {
+			switch fn := scope.Function.Impl.(type) {
 			case *FunctionDataImpl:
 				trace.WriteString("<function " + fn.Name + ">")
 				// case *BuiltinFunctionDataImpl:

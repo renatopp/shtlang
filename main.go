@@ -14,6 +14,19 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
+fn a(x) {
+	fsadfsd
+}
+
+fn b(z) {
+	a(z)
+}
+
+fn c(z) {
+	b(z)
+}
+
+c(1)
 
 `
 

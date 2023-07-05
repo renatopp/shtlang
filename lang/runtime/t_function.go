@@ -107,12 +107,7 @@ type FunctionParam struct {
 }
 
 func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	// fmt.Printf("\"FunctionDataImpl.Call\": %v\n", d.Name)
-	// for i, i2 := range args {
-	// 	fmt.Printf("    %d i2: %v\n", i, i2.Repr())
-	// }
 	if d.NativeFn != nil {
-		// fmt.Printf("    d.NativeFn: %v\n", d.Name)
 		return d.NativeFn(r, s, args...)
 	}
 
@@ -122,11 +117,8 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 	}
 
 	scope := CreateScope(parentScope, s)
-	scope.Set(SCOPE_NAME_KEY, Constant(String.Create(d.Name)))
-	scope.Set(SCOPE_FN_KEY, Constant(&Instance{
-		Type: Function.Type,
-		Impl: d,
-	}))
+	scope.Name = d.Name
+	scope.Function = args[0]
 
 	args = args[1:]
 

@@ -12,10 +12,6 @@ const RETURN_KEY = "0_return"
 const RAISE_KEY = "0_raise"
 const BREAK_KEY = "0_break"
 const CONTINUE_KEY = "0_continue"
-const SCOPE_NAME_KEY = "0_scope_name"
-const SCOPE_DEPTH_KEY = "0_scope_depth"
-const SCOPE_ID_KEY = "0_scope_id"
-const SCOPE_FN_KEY = "0_fn"
 
 type DataImpl interface{}
 

@@ -24,9 +24,7 @@ func CreateRuntime() *Runtime {
 	Type.Setup()
 
 	r.Global = CreateScope(nil, nil)
-	r.Global.Set(SCOPE_NAME_KEY, Constant(String.Create("Global")))
-	r.Global.Set(SCOPE_DEPTH_KEY, Constant(Number.ZERO))
-	r.Global.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
+	r.Global.Name = "Global"
 
 	r.Global.Set(Boolean.Type.GetName(), Constant(Boolean.TypeInstance))
 	r.Global.Set(Error.Type.GetName(), Constant(Error.TypeInstance))

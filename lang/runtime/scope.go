@@ -7,10 +7,14 @@ import (
 )
 
 type Scope struct {
-	Parent *Scope
-	Caller *Scope
-	Values map[string]*Reference
-	State  ExecutionState
+	Id       string
+	Name     string
+	Depth    int
+	Function *Instance
+	Parent   *Scope
+	Caller   *Scope
+	Values   map[string]*Reference
+	State    ExecutionState
 
 	InAssignment bool
 	InArgument   bool
@@ -21,6 +25,10 @@ type Scope struct {
 
 func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s := &Scope{}
+	s.Id = Id()
+	s.Name = ""
+	s.Depth = 0
+	s.Function = nil
 	s.Parent = parent
 	s.Caller = caller
 	s.Values = map[string]*Reference{}
@@ -29,12 +37,9 @@ func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s.State = nil
 
 	if parent != nil {
-		depth, _ := parent.GetInScope(SCOPE_DEPTH_KEY)
-		s.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(AsNumber(depth.Value)+1)))
-	} else {
-		s.Set(SCOPE_DEPTH_KEY, Constant(Number.Create(0)))
+		s.Depth = parent.Depth + 1
+		s.Function = parent.Function
 	}
-	s.Set(SCOPE_ID_KEY, Constant(String.Create(Id())))
 
 	return s
 }
@@ -110,10 +115,10 @@ func (s *Scope) print(i int, stack []*Scope) {
 	}
 
 	scope := stack[i]
-	name, _ := scope.Get(SCOPE_NAME_KEY)
+	name := scope.Name
 	prefix := fmt.Sprintf("%*s", (i+1)*2, "")
 	prefix2 := fmt.Sprintf("%*s", (i+2)*2, "")
-	fmt.Printf(prefix+"scope %s {\n", AsString(name.Value))
+	fmt.Printf(prefix+"scope %s {\n", name)
 
 	scope.ForEach(func(s string, r *Reference) {
 		fmt.Println(prefix2 + s + ": " + r.Value.Repr())
