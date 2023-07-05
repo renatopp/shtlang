@@ -128,31 +128,31 @@ func (d *ErrorDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) 
 	return Error.Create(s, "application error")
 }
 
-func (d *ErrorDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*ErrorDataImpl)
+func (d *ErrorDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*ErrorDataImpl)
 
-	if len(args) > 1 {
-		this.Properties["message"] = args[1]
+	if len(args) > 0 {
+		this.Properties["message"] = args[0]
 	}
 
-	return args[0]
+	return self
 }
 
-func (d *ErrorDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*ErrorDataImpl)
-	name := AsString(args[1])
+func (d *ErrorDataType) OnSet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*ErrorDataImpl)
+	name := AsString(args[0])
 
 	_, has := this.Properties[name]
 	if !has {
 		return r.Throw(Error.NoProperty(s, d.Name, name), s)
 	}
 
-	this.Properties[name] = args[2]
-	return args[2]
+	this.Properties[name] = args[1]
+	return args[1]
 }
 
-func (d *ErrorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*ErrorDataImpl)
+func (d *ErrorDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*ErrorDataImpl)
 	name := AsString(args[1])
 
 	value, has := this.Properties[name]
@@ -163,13 +163,13 @@ func (d *ErrorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance
 	return value
 }
 
-func (t *ErrorDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return t.OnRepr(r, s, args[0])
+func (t *ErrorDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return t.OnRepr(r, s, self)
 }
 
-func (d *ErrorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	msg := AsString(args[0].Impl.(*ErrorDataImpl).Properties["message"])
-	trace := AsString(args[0].Impl.(*ErrorDataImpl).Properties["trace"])
+func (d *ErrorDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	msg := AsString(self.Impl.(*ErrorDataImpl).Properties["message"])
+	trace := AsString(self.Impl.(*ErrorDataImpl).Properties["trace"])
 	return String.Create("ERR! " + msg + "\n" + trace)
 }
 

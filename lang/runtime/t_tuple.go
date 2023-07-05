@@ -78,13 +78,13 @@ func (d *TupleDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) 
 	}
 }
 
-func (d *TupleDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	iter := args[0].Impl.(*IteratorDataImpl)
+func (d *TupleDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	iter := self.Impl.(*IteratorDataImpl)
 	next := iter.next()
 	values := []*Instance{}
 	for {
 
-		tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+		tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
 
 		if tion.error() == Boolean.TRUE {
 			return Tuple.Create()
@@ -99,15 +99,15 @@ func (d *TupleDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance 
 	}
 }
 
-func (d *TupleDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return args[0]
+func (d *TupleDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return self
 }
 
-func (d *TupleDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+func (d *TupleDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	cur := 0
-	this := args[0].Impl.(*TupleDataImpl)
+	this := self.Impl.(*TupleDataImpl)
 	return Iterator.Create(
-		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			if cur >= len(this.Values) {
 				return Iteration.DONE
 			}
@@ -118,32 +118,32 @@ func (d *TupleDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	)
 }
 
-func (d *TupleDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*TupleDataImpl)
+func (d *TupleDataType) OnLen(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*TupleDataImpl)
 	return Number.Create(float64(len(this.Values)))
 }
 
-func (t *TupleDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*TupleDataImpl)
+func (t *TupleDataType) OnGetItem(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*TupleDataImpl)
 
 	nargs := len(args)
-	if nargs > 1 && !IsNumber(args[1]) {
+	if nargs > 0 && !IsNumber(args[0]) {
 		return r.Throw(Error.Create(s, "index of a tuple must be a number, '%s' provided", args[1].Type.GetName()), s)
 	}
 
-	if nargs > 2 && !IsNumber(args[2]) {
+	if nargs > 1 && !IsNumber(args[1]) {
 		return r.Throw(Error.Create(s, "index of a tuple must be a number, '%s' provided", args[2].Type.GetName()), s)
 	}
 
-	if nargs > 3 {
+	if nargs > 2 {
 		return r.Throw(Error.Create(s, "tuple indexing accepts only 1 or 2 parameters, %d given", nargs-1), s)
 	}
 
-	if nargs == 2 {
-		return this.Values[AsInteger(args[1])]
+	if nargs == 1 {
+		return this.Values[AsInteger(args[0])]
 	}
 
-	if nargs == 1 {
+	if nargs == 0 {
 		return Tuple.Create(this.Values...)
 	}
 
@@ -170,13 +170,13 @@ func (t *TupleDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Inst
 	return Tuple.Create(values...)
 }
 
-func (d *TupleDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if args[0].Type != args[1].Type {
+func (d *TupleDataType) OnEq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if self.Type != args[0].Type {
 		return Boolean.FALSE
 	}
 
-	this := args[0].Impl.(*TupleDataImpl)
-	other := args[1].Impl.(*TupleDataImpl)
+	this := self.Impl.(*TupleDataImpl)
+	other := args[0].Impl.(*TupleDataImpl)
 
 	if len(this.Values) != len(other.Values) {
 		return Boolean.FALSE
@@ -190,7 +190,7 @@ func (d *TupleDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance 
 			return Boolean.FALSE
 		}
 
-		if !AsBool(t.Type.OnEq(r, s, t, o)) {
+		if !AsBool(t.OnEq(r, s, o)) {
 			return Boolean.FALSE
 		}
 	}
@@ -198,20 +198,20 @@ func (d *TupleDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance 
 	return Boolean.TRUE
 }
 
-func (d *TupleDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	v := AsBool(d.OnEq(r, s, args...))
+func (d *TupleDataType) OnNeq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	v := AsBool(d.OnEq(r, s, self, args...))
 	if v {
 		return Boolean.FALSE
 	}
 	return Boolean.TRUE
 }
 
-func (d *TupleDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return d.OnRepr(r, s, args[0])
+func (d *TupleDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, self)
 }
 
-func (d *TupleDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	tuple := args[0].Impl.(*TupleDataImpl)
+func (d *TupleDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	tuple := self.Impl.(*TupleDataImpl)
 
 	var values []string
 	for _, value := range tuple.Values {

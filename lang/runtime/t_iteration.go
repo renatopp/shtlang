@@ -102,37 +102,37 @@ func (d *IterationDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializ
 	}
 }
 
-func (d *IterationDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IterationDataImpl)
+func (d *IterationDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IterationDataImpl)
 
 	this.Properties["done"] = Boolean.FALSE
-	if len(args) == 1 {
+	if len(args) == 0 {
 		this.Properties["value"] = Tuple.Create(Boolean.FALSE)
 	}
 
-	if len(args) > 1 {
-		this.Properties["value"] = Tuple.Create(args[1:]...)
+	if len(args) > 0 {
+		this.Properties["value"] = Tuple.Create(args...)
 	}
 
-	return args[0]
+	return self
 }
 
-func (d *IterationDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IterationDataImpl)
-	name := AsString(args[1])
+func (d *IterationDataType) OnSet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IterationDataImpl)
+	name := AsString(args[0])
 
 	_, has := this.Properties[name]
 	if !has {
 		return r.Throw(Error.NoProperty(s, d.Name, name), s)
 	}
 
-	this.Properties[name] = args[2]
-	return args[2]
+	this.Properties[name] = args[1]
+	return args[1]
 }
 
-func (d *IterationDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IterationDataImpl)
-	name := AsString(args[1])
+func (d *IterationDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IterationDataImpl)
+	name := AsString(args[0])
 
 	value, has := this.Properties[name]
 	if !has {
@@ -142,12 +142,12 @@ func (d *IterationDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Inst
 	return value
 }
 
-func (d *IterationDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return d.OnRepr(r, s, args[0])
+func (d *IterationDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, self)
 }
 
-func (d *IterationDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IterationDataImpl)
+func (d *IterationDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IterationDataImpl)
 	if AsBool(this.error()) {
 		return String.Create("<Iteration:error>")
 	}
@@ -159,8 +159,8 @@ func (d *IterationDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Ins
 	return String.Create("<Iteration>")
 }
 
-func (d *IterationDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return args[0]
+func (d *IterationDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return self
 }
 
 // ----------------------------------------------------------------------------

@@ -54,13 +54,13 @@ func (d *IteratorDataType) Instantiate(r *Runtime, s *Scope, init ast.Initialize
 	return Iterator.Create(DoneFn)
 }
 
-func (d *IteratorDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return args[0]
+func (d *IteratorDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return self
 }
 
-func (d *IteratorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IteratorDataImpl)
-	name := AsString(args[1])
+func (d *IteratorDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IteratorDataImpl)
+	name := AsString(args[0])
 
 	value, has := d.InstanceFns[name]
 	if has {
@@ -75,28 +75,28 @@ func (d *IteratorDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Insta
 	return value
 }
 
-func (d *IteratorDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if len(args) == 1 {
-		return args[0]
+func (d *IteratorDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if len(args) == 0 {
+		return self
 	}
 
-	_, ok := args[1].Impl.(*FunctionDataImpl)
+	_, ok := args[0].Impl.(*FunctionDataImpl)
 	if !ok {
-		return r.Throw(Error.Create(s, "Expected function, %s given", args[0].Type.GetName()), s)
+		return r.Throw(Error.Create(s, "Expected function, %s given", self.Type.GetName()), s)
 	}
 
-	this := args[0].Impl.(*IteratorDataImpl)
-	this.Next = args[1]
+	this := self.Impl.(*IteratorDataImpl)
+	this.Next = args[0]
 
-	return args[0]
+	return self
 }
 
-func (d *IteratorDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return d.OnRepr(r, s, args[0])
+func (d *IteratorDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, self)
 }
 
-func (d *IteratorDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IteratorDataImpl)
+func (d *IteratorDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IteratorDataImpl)
 	if AsBool(this.done()) {
 		return String.Create("<Iterator:done>")
 	} else {
@@ -120,11 +120,11 @@ func (impl *IteratorDataImpl) next() *Instance {
 	return Iterator.Type.GetInstanceFn("next")
 }
 
-var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	// args[0] => function
-	// args[1] => this (the iterator object)
-	this := args[1].Impl.(*IteratorDataImpl)
-	ret := this.Next.Type.OnCall(r, s, this.Next, args[1])
+var Iterator_Next = Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	// self => function
+	// args[0] => this (the iterator object)
+	this := args[0].Impl.(*IteratorDataImpl)
+	ret := this.Next.OnCall(r, s, args[0])
 
 	if ret.Type != Iteration.Type {
 		return r.Throw(Error.Create(s, "Expected Iteration, %s given", ret.Type.GetName()), s)

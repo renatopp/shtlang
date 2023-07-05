@@ -79,13 +79,13 @@ func (d *ListDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 	}
 }
 
-func (d *ListDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	iter := args[0].Impl.(*IteratorDataImpl)
+func (d *ListDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	iter := self.Impl.(*IteratorDataImpl)
 	next := iter.next()
 	values := []*Instance{}
 	for {
 
-		tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+		tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
 
 		if tion.error() == Boolean.TRUE {
 			return List.Create()
@@ -100,20 +100,20 @@ func (d *ListDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	}
 }
 
-func (d *ListDataType) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*ListDataImpl)
-	if len(args) > 1 {
-		this.Properties["default"] = args[1]
+func (d *ListDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*ListDataImpl)
+	if len(args) > 0 {
+		this.Properties["default"] = args[0]
 	}
 
-	return args[0]
+	return self
 }
 
-func (d *ListDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+func (d *ListDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	cur := 0
-	this := args[0].Impl.(*ListDataImpl)
+	this := self.Impl.(*ListDataImpl)
 	return Iterator.Create(
-		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			if cur >= len(this.Values) {
 				return Iteration.DONE
 			}
@@ -124,9 +124,9 @@ func (d *ListDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance
 	)
 }
 
-func (d *ListDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IterationDataImpl)
-	name := AsString(args[1])
+func (d *ListDataType) OnSet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IterationDataImpl)
+	name := AsString(args[0])
 
 	_, has := this.Properties[name]
 	if !has {
@@ -137,9 +137,9 @@ func (d *ListDataType) OnSet(r *Runtime, s *Scope, args ...*Instance) *Instance 
 	return args[2]
 }
 
-func (d *ListDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*IterationDataImpl)
-	name := AsString(args[1])
+func (d *ListDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*IterationDataImpl)
+	name := AsString(args[0])
 
 	value, has := this.Properties[name]
 	if !has {
@@ -149,43 +149,43 @@ func (d *ListDataType) OnGet(r *Runtime, s *Scope, args ...*Instance) *Instance 
 	return value
 }
 
-func (d *ListDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*ListDataImpl)
+func (d *ListDataType) OnLen(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*ListDataImpl)
 	return Number.Create(float64(len(this.Values)))
 }
 
-func (t *ListDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*ListDataImpl)
+func (t *ListDataType) OnGetItem(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*ListDataImpl)
 
 	nargs := len(args)
-	if nargs > 1 && !IsNumber(args[1]) {
-		return r.Throw(Error.Create(s, "index of a list must be a number, '%s' provided", args[1].Type.GetName()), s)
+	if nargs > 0 && !IsNumber(args[0]) {
+		return r.Throw(Error.Create(s, "index of a list must be a number, '%s' provided", args[0].Type.GetName()), s)
 	}
 
-	if nargs > 2 && !IsNumber(args[2]) {
+	if nargs > 1 && !IsNumber(args[1]) {
 		return r.Throw(Error.Create(s, "index of a list must be a number, '%s' provided", args[2].Type.GetName()), s)
 	}
 
-	if nargs == 1 {
+	if nargs == 0 {
 		return List.Create(this.Values...)
 	}
 
-	if nargs == 2 {
-		idx := AsInteger(args[1])
+	if nargs == 1 {
+		idx := AsInteger(args[0])
 		if idx >= len(this.Values) || idx < 0 {
 			fn := this.default_()
-			return fn.Type.OnCall(r, s, fn, String.Createf("list out of bounds for item '%d'", idx))
+			return fn.OnCall(r, s, String.Createf("list out of bounds for item '%d'", idx))
 		}
 		return this.Values[idx]
 	}
 
-	if nargs > 3 {
+	if nargs > 2 {
 		return r.Throw(Error.Create(s, "list indexing accepts only 1 or 2 parameters, %d given", nargs-1), s)
 	}
 
 	size := len(this.Values)
-	idx0 := AsInteger(args[1])
-	idx1 := AsInteger(args[2])
+	idx0 := AsInteger(args[0])
+	idx1 := AsInteger(args[1])
 	if idx0 > size {
 		idx0 = size
 	} else if idx1 < 0 {
@@ -218,19 +218,19 @@ func (t *ListDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Insta
 	return List.Create(values...)
 }
 
-func (t *ListDataType) OnSetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*ListDataImpl)
+func (t *ListDataType) OnSetItem(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*ListDataImpl)
 
 	nargs := len(args)
-	if nargs != 3 {
+	if nargs != 2 {
 		return r.Throw(Error.Create(s, "setItem receives only one index, '%d' provided", nargs), s)
 	}
 
-	if !IsNumber(args[1]) {
-		return r.Throw(Error.Create(s, "index of a list must be a number, '%s' provided", args[1].Type.GetName()), s)
+	if !IsNumber(args[0]) {
+		return r.Throw(Error.Create(s, "index of a list must be a number, '%s' provided", args[0].Type.GetName()), s)
 	}
 
-	idx := AsInteger(args[1])
+	idx := AsInteger(args[0])
 	if idx >= len(this.Values) || idx < 0 {
 		return r.Throw(Error.Create(s, "list out of bounds for item '%d'", idx), s)
 	}
@@ -240,12 +240,12 @@ func (t *ListDataType) OnSetItem(r *Runtime, s *Scope, args ...*Instance) *Insta
 	return args[2]
 }
 
-func (d *ListDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return d.OnRepr(r, s, args[0])
+func (d *ListDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, self)
 }
 
-func (d *ListDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	list := args[0].Impl.(*ListDataImpl)
+func (d *ListDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	list := self.Impl.(*ListDataImpl)
 
 	var values []string
 	for _, value := range list.Values {

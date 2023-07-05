@@ -9,14 +9,14 @@ var b_print = Function.CreateNative("print",
 	[]*FunctionParam{
 		{"msgs", nil, true},
 	},
-	func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-		if len(args) == 1 {
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		if len(args) == 0 {
 			fmt.Println()
 			return String.EMPTY
 		}
 
 		msgs := []string{}
-		for _, arg := range args[1:] {
+		for _, arg := range args {
 			msgs = append(msgs, AsString(arg))
 		}
 

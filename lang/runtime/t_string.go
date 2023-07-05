@@ -66,13 +66,13 @@ type StringDataType struct {
 	BaseDataType
 }
 
-func (d *StringDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	iter := args[0].Impl.(*IteratorDataImpl)
+func (d *StringDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	iter := self.Impl.(*IteratorDataImpl)
 	next := iter.next()
 	values := []*Instance{}
 	for {
 
-		tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+		tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
 
 		if tion.error() == Boolean.TRUE {
 			return List.Create()
@@ -91,24 +91,24 @@ func (d *StringDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance
 	}
 }
 
-func (d *StringDataType) OnLen(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := AsString(args[0])
+func (d *StringDataType) OnLen(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := AsString(self)
 	return Number.Create(float64(len(this)))
 }
 
-func (d *StringDataType) OnAdd(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if args[0].Type != args[1].Type {
-		return r.Throw(Error.IncompatibleTypeOperation(s, "+", args[0], args[1]), s)
+func (d *StringDataType) OnAdd(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if self.Type != args[0].Type {
+		return r.Throw(Error.IncompatibleTypeOperation(s, "+", self, args[0]), s)
 	}
 
-	return String.Create(AsString(args[0]) + AsString(args[1]))
+	return String.Create(AsString(self) + AsString(args[0]))
 }
 
-func (d *StringDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+func (d *StringDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	cur := 0
-	this := args[0].Impl.(StringDataImpl)
+	this := self.Impl.(StringDataImpl)
 	return Iterator.Create(
-		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			if cur >= len(this.Value) {
 				return Iteration.DONE
 			}
@@ -120,16 +120,16 @@ func (d *StringDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instan
 	)
 }
 
-func (d *StringDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return args[0]
+func (d *StringDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return self
 }
 
-func (d *StringDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return args[0]
+func (d *StringDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return self
 }
 
-func (d *StringDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := AsString(args[0])
+func (d *StringDataType) OnBoolean(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := AsString(self)
 
 	if this == "" {
 		return Boolean.FALSE
@@ -138,8 +138,8 @@ func (d *StringDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Ins
 	return Boolean.TRUE
 }
 
-func (d *StringDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := AsBool(d.OnBoolean(r, s, args...))
+func (d *StringDataType) OnNot(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := AsBool(d.OnBoolean(r, s, self, args...))
 
 	if this {
 		return Boolean.FALSE
@@ -148,13 +148,13 @@ func (d *StringDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	return Boolean.TRUE
 }
 
-func (n *StringDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if args[0].Type != args[1].Type {
+func (n *StringDataType) OnEq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if self.Type != args[0].Type {
 		return Boolean.FALSE
 	}
 
-	this := AsString(args[0])
-	other := AsString(args[1])
+	this := AsString(self)
+	other := AsString(args[0])
 
 	if this == other {
 		return Boolean.TRUE
@@ -163,13 +163,13 @@ func (n *StringDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance
 	}
 }
 
-func (n *StringDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if args[0].Type != args[1].Type {
+func (n *StringDataType) OnNeq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if self.Type != args[0].Type {
 		return Boolean.FALSE
 	}
 
-	this := AsString(args[0])
-	other := AsString(args[1])
+	this := AsString(self)
+	other := AsString(args[0])
 
 	if this != other {
 		return Boolean.TRUE
@@ -178,25 +178,25 @@ func (n *StringDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	}
 }
 
-func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := AsString(args[0])
+func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := AsString(self)
 
 	nargs := len(args)
-	if nargs > 1 && !IsNumber(args[1]) {
-		return r.Throw(Error.Create(s, "index of a string must be a number, '%s' provided", args[1].Type.GetName()), s)
+	if nargs > 0 && !IsNumber(args[0]) {
+		return r.Throw(Error.Create(s, "index of a string must be a number, '%s' provided", args[0].Type.GetName()), s)
 	}
 
-	if nargs > 2 && !IsNumber(args[2]) {
+	if nargs > 1 && !IsNumber(args[1]) {
 		return r.Throw(Error.Create(s, "index of a string must be a number, '%s' provided", args[2].Type.GetName()), s)
 	}
 
-	if nargs > 3 {
+	if nargs > 2 {
 		return r.Throw(Error.Create(s, "string indexing accepts only 0, 1 or 2 parameters, %d given", nargs-1), s)
 	}
 
 	idx0 := 0
-	if nargs >= 2 {
-		idx0 = int(AsNumber(args[1]))
+	if nargs >= 1 {
+		idx0 = int(AsNumber(args[0]))
 		if idx0 < 0 {
 			idx0 = 0
 		}
@@ -206,8 +206,8 @@ func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Ins
 	}
 
 	idx1 := idx0 + 1
-	if nargs >= 3 {
-		idx1 = int(AsNumber(args[2]))
+	if nargs >= 2 {
+		idx1 = int(AsNumber(args[1]))
 		if idx1 < 1 {
 			idx1 = 1
 		}
@@ -216,7 +216,7 @@ func (n *StringDataType) OnGetItem(r *Runtime, s *Scope, args ...*Instance) *Ins
 		}
 	}
 
-	if nargs == 1 {
+	if nargs == 0 {
 		idx0 = 0
 		idx1 = len(this)
 	}

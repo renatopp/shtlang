@@ -5,24 +5,24 @@ var b_map = Function.CreateNative("map",
 		{"iter", nil, false},
 		{"func", nil, false},
 	},
-	func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-		// args[0] => function
-		// args[1] => iter
-		// args[2] => func
-		if len(args) != 3 {
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+		// args[0] => iter
+		// args[1] => func
+		if len(args) != 2 {
 			return r.Throw(Error.Create(s, "map does not accept additional parameters"), s)
 		}
-		if args[2] == Boolean.FALSE {
+		if args[1] == Boolean.FALSE {
 			return r.Throw(Error.Create(s, "map requires a function"), s)
 		}
 
-		iter := args[1]
-		next := args[1].Impl.(*IteratorDataImpl).next()
-		fn := args[2]
+		iter := args[0]
+		next := args[0].Impl.(*IteratorDataImpl).next()
+		fn := args[1]
 
 		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-				ret := next.Type.OnCall(r, s, next, iter)
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+				ret := next.OnCall(r, s, iter)
 				iteration := ret.Impl.(*IterationDataImpl)
 
 				if iteration.error() == Boolean.TRUE {
@@ -33,7 +33,7 @@ var b_map = Function.CreateNative("map",
 
 				} else {
 					values := iteration.value().Impl.(*TupleDataImpl)
-					ret := fn.Type.OnCall(r, s, append([]*Instance{fn}, values.Values...)...)
+					ret := fn.OnCall(r, s, values.Values...)
 					return Iteration.Create(ret)
 				}
 			}),
@@ -46,24 +46,24 @@ var b_each = Function.CreateNative("each",
 		{"iter", nil, false},
 		{"func", nil, false},
 	},
-	func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-		// args[0] => function
-		// args[1] => iter
-		// args[2] => func
-		if len(args) != 3 {
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+		// args[0] => iter
+		// args[1] => func
+		if len(args) != 2 {
 			return r.Throw(Error.Create(s, "each does not accept additional parameters"), s)
 		}
-		if args[2] == Boolean.FALSE {
+		if args[1] == Boolean.FALSE {
 			return r.Throw(Error.Create(s, "each requires a function"), s)
 		}
 
-		iter := args[1]
-		next := args[1].Impl.(*IteratorDataImpl).next()
-		fn := args[2]
+		iter := args[0]
+		next := args[0].Impl.(*IteratorDataImpl).next()
+		fn := args[1]
 
 		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-				ret := next.Type.OnCall(r, s, next, iter)
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+				ret := next.OnCall(r, s, iter)
 				iteration := ret.Impl.(*IterationDataImpl)
 
 				if iteration.error() == Boolean.TRUE {
@@ -74,7 +74,7 @@ var b_each = Function.CreateNative("each",
 
 				} else {
 					values := iteration.value().Impl.(*TupleDataImpl)
-					fn.Type.OnCall(r, s, append([]*Instance{fn}, values.Values...)...)
+					fn.OnCall(r, s, values.Values...)
 					return ret
 				}
 			}),
@@ -87,25 +87,25 @@ var b_filter = Function.CreateNative("filter",
 		{"iter", nil, false},
 		{"func", nil, false},
 	},
-	func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-		// args[0] => function
-		// args[1] => iter
-		// args[2] => func
-		if len(args) != 3 {
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+		// args[0] => iter
+		// args[1] => func
+		if len(args) != 2 {
 			return r.Throw(Error.Create(s, "filter does not accept additional parameters"), s)
 		}
-		if args[2] == Boolean.FALSE {
+		if args[1] == Boolean.FALSE {
 			return r.Throw(Error.Create(s, "filter requires a function"), s)
 		}
 
-		iter := args[1]
-		next := args[1].Impl.(*IteratorDataImpl).next()
-		fn := args[2]
+		iter := args[0]
+		next := args[0].Impl.(*IteratorDataImpl).next()
+		fn := args[1]
 
 		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 				for {
-					ret := next.Type.OnCall(r, s, next, iter)
+					ret := next.OnCall(r, s, iter)
 					iteration := ret.Impl.(*IterationDataImpl)
 
 					if iteration.error() == Boolean.TRUE {
@@ -116,7 +116,7 @@ var b_filter = Function.CreateNative("filter",
 
 					} else {
 						values := iteration.value().Impl.(*TupleDataImpl)
-						r := fn.Type.OnCall(r, s, append([]*Instance{fn}, values.Values...)...)
+						r := fn.OnCall(r, s, values.Values...)
 						if AsBool(r) {
 							return ret
 						}
@@ -133,37 +133,37 @@ var b_reduce = Function.CreateNative("reduce",
 		{"func", nil, false},
 		{"default", nil, false},
 	},
-	func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-		// args[0] => function
-		// args[1] => iter
-		// args[2] => func
-		// args[3] => default
-		if len(args) > 4 {
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+		// args[0] => iter
+		// args[1] => func
+		// args[2] => default
+		if len(args) > 3 {
 			return r.Throw(Error.Create(s, "reduce does not accept additional parameters"), s)
 		}
-		if args[2] == Boolean.FALSE {
+		if args[1] == Boolean.FALSE {
 			return r.Throw(Error.Create(s, "map requires a function"), s)
 		}
 
-		iter := args[1]
-		next := args[1].Impl.(*IteratorDataImpl).next()
-		fn := args[2]
+		iter := args[0]
+		next := args[0].Impl.(*IteratorDataImpl).next()
+		fn := args[1]
 		acc := Number.ZERO
 
-		if len(args) >= 4 {
-			acc = args[3]
+		if len(args) >= 3 {
+			acc = args[2]
 		}
 
 		finished := false
 
 		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 				if finished {
 					return Iteration.DONE
 				}
 
 				for {
-					ret := next.Type.OnCall(r, s, next, iter)
+					ret := next.OnCall(r, s, iter)
 					iteration := ret.Impl.(*IterationDataImpl)
 
 					if iteration.error() == Boolean.TRUE {
@@ -175,7 +175,7 @@ var b_reduce = Function.CreateNative("reduce",
 
 					} else {
 						values := iteration.value().Impl.(*TupleDataImpl)
-						acc = fn.Type.OnCall(r, s, append([]*Instance{fn, acc}, values.Values...)...)
+						acc = fn.OnCall(r, s, append([]*Instance{acc}, values.Values...)...)
 					}
 				}
 			}),
@@ -187,31 +187,31 @@ var b_sum = Function.CreateNative("sum",
 	[]*FunctionParam{
 		{"iter", nil, false},
 	},
-	func(r *Runtime, s *Scope, args ...*Instance) *Instance {
-		// args[0] => function
-		// args[1] => iter
-		// args[2] => func
-		if len(args) > 3 {
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+		// args[0] => iter
+		// args[1] => func
+		if len(args) > 2 {
 			return r.Throw(Error.Create(s, "sum does not accept additional parameters"), s)
 		}
-		if args[2] != Boolean.FALSE {
+		if args[1] != Boolean.FALSE {
 			return r.Throw(Error.Create(s, "sum does not accepts a function"), s)
 		}
 
-		iter := args[1]
-		next := args[1].Impl.(*IteratorDataImpl).next()
+		iter := args[0]
+		next := args[0].Impl.(*IteratorDataImpl).next()
 		total := Number.Create(0.0)
 
 		finished := false
 
 		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 				if finished {
 					return Iteration.DONE
 				}
 
 				for {
-					ret := next.Type.OnCall(r, s, next, iter)
+					ret := next.OnCall(r, s, iter)
 					iteration := ret.Impl.(*IterationDataImpl)
 
 					if iteration.error() == Boolean.TRUE {
@@ -223,7 +223,7 @@ var b_sum = Function.CreateNative("sum",
 
 					} else {
 						values := iteration.value().Impl.(*TupleDataImpl)
-						total = total.Type.OnAdd(r, s, total, values.Values[0])
+						total = total.OnAdd(r, s, values.Values[0])
 					}
 				}
 			}),

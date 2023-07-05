@@ -8,10 +8,10 @@ import (
 
 type DataImpl interface{}
 
-type MetaFunction func(r *Runtime, s *Scope, args ...*Instance) *Instance
+type MetaFunction func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 
 type Callable interface {
-	Call(r *Runtime, s *Scope, args ...*Instance) *Instance
+	Call(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 }
 
 func IsBool(instance *Instance) bool {
@@ -32,7 +32,7 @@ func AsBool(instance *Instance) bool {
 	} else if IsBool(instance) {
 		return instance.Impl.(BooleanDataImpl).Value
 	} else {
-		return instance.Type.OnBoolean(nil, nil, instance).Impl.(BooleanDataImpl).Value
+		return instance.OnBoolean(nil, nil).Impl.(BooleanDataImpl).Value
 	}
 }
 
@@ -53,7 +53,7 @@ func AsString(instance *Instance) string {
 	} else if IsString(instance) {
 		return instance.Impl.(StringDataImpl).Value
 	} else {
-		return instance.Type.OnString(nil, nil, instance).Impl.(StringDataImpl).Value
+		return instance.OnString(nil, nil).Impl.(StringDataImpl).Value
 	}
 }
 
@@ -86,12 +86,12 @@ func Id() string {
 	return string(b)
 }
 
-var DoneFn = Function.CreateNative("done", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+var DoneFn = Function.CreateNative("done", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	return Iteration.DONE
 })
 
 var ThrowFn = Function.CreateNative("throw", []*FunctionParam{
 	{Name: "message"},
-}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	return r.Throw(Error.Create(s, AsString(args[0])), s)
 })

@@ -51,13 +51,13 @@ type TypeDataType struct {
 // 	return instance
 // }
 
-func (d *TypeDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0].Impl.(*TypeDataImpl)
-	return this.DataType.OnTo(r, s, args[1:]...)
+func (d *TypeDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.Impl.(*TypeDataImpl)
+	return this.DataType.OnTo(r, s, args[0], args[1:]...)
 }
 
-func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return String.Createf("<Type:%s>", args[0].Type.GetName())
+func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return String.Createf("<Type:%s>", self.Type.GetName())
 }
 
 // ----------------------------------------------------------------------------

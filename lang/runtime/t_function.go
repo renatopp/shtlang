@@ -62,29 +62,29 @@ type FunctionDataType struct {
 	BaseDataType
 }
 
-func (d *FunctionDataType) OnIs(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	this := args[0]
-	other := args[1]
-	return this.Type.OnCall(r, s, this, other)
+func (d *FunctionDataType) OnIs(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self
+	other := args[0]
+	return this.OnCall(r, s, other)
 }
 
-func (d *FunctionDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return d.OnRepr(r, s, args[0])
+func (d *FunctionDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, self)
 }
 
-func (d *FunctionDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	name := args[0].Impl.(*FunctionDataImpl).Name
+func (d *FunctionDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	name := self.Impl.(*FunctionDataImpl).Name
 	return String.Createf("<Function:%s>", name)
 }
 
-func (d *FunctionDataType) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	impl := args[0].Impl.(*FunctionDataImpl)
-	return impl.Call(r, s, args...)
+func (d *FunctionDataType) OnCall(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	impl := self.Impl.(*FunctionDataImpl)
+	return impl.Call(r, s, self, args...)
 }
 
-func (d *FunctionDataType) OnPipe(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	impl := args[0].Impl.(*FunctionDataImpl)
-	return impl.Call(r, s, args...)
+func (d *FunctionDataType) OnPipe(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	impl := self.Impl.(*FunctionDataImpl)
+	return impl.Call(r, s, self, args...)
 }
 
 // ----------------------------------------------------------------------------
@@ -106,11 +106,7 @@ type FunctionParam struct {
 	Spread  bool
 }
 
-func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if d.NativeFn != nil {
-		return d.NativeFn(r, s, args...)
-	}
-
+func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	parentScope := d.ParentScope
 	if parentScope == nil {
 		parentScope = s
@@ -118,9 +114,17 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 
 	scope := CreateScope(parentScope, s)
 	scope.Name = d.Name
-	scope.Function = args[0]
+	scope.Function = self
 
-	args = args[1:]
+	if d.NativeFn != nil {
+		res := d.NativeFn(r, scope, self, args...)
+
+		if scope.IsInterruptedAs(FlowRaise) {
+			s.Propagate()
+		}
+
+		return res
+	}
 
 	if len(args) > 0 && d.Piped && args[0].Type == Tuple.Type {
 		newargs := []*Instance{}
@@ -172,7 +176,7 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 	}
 
 	if d.Generator {
-		iter := Iterator.Create(Function.CreateNative("generator", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+		iter := Iterator.Create(Function.CreateNative("generator", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			res := r.Eval(d.Body, scope)
 
 			if scope.IsInterruptedAs(FlowRaise) {

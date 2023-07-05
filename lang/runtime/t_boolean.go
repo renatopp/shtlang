@@ -62,10 +62,10 @@ type BooleanDataType struct {
 	BaseDataType
 }
 
-func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	iter := args[0].Impl.(*IteratorDataImpl)
+func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	iter := self.Impl.(*IteratorDataImpl)
 	next := iter.next()
-	tion := next.Type.OnCall(r, s, next, args[0]).Impl.(*IterationDataImpl)
+	tion := next.OnCall(r, s, self).Impl.(*IterationDataImpl)
 
 	if tion.error() == Boolean.TRUE {
 		return Boolean.FALSE
@@ -77,16 +77,16 @@ func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	}
 }
 
-func (d *BooleanDataType) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return args[0]
+func (d *BooleanDataType) OnBoolean(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return self
 }
 
-func (d *BooleanDataType) OnString(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	return d.OnRepr(r, s, args...)
+func (d *BooleanDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return d.OnRepr(r, s, self, args...)
 }
 
-func (d *BooleanDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	v := AsBool(args[0])
+func (d *BooleanDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	v := AsBool(self)
 	if v {
 		return String.Create("true")
 	}
@@ -94,11 +94,11 @@ func (d *BooleanDataType) OnRepr(r *Runtime, s *Scope, args ...*Instance) *Insta
 	return String.Create("false")
 }
 
-func (d *BooleanDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Instance {
+func (d *BooleanDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	cur := 0
-	this := args[0].Impl.(BooleanDataImpl)
+	this := self.Impl.(BooleanDataImpl)
 	return Iterator.Create(
-		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
+		Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 			if cur >= 1 {
 				return Iteration.DONE
 			}
@@ -109,18 +109,18 @@ func (d *BooleanDataType) OnIter(r *Runtime, s *Scope, args ...*Instance) *Insta
 	)
 }
 
-func (d *BooleanDataType) OnNot(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	v := AsBool(args[0])
+func (d *BooleanDataType) OnNot(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	v := AsBool(self)
 	return Boolean.Create(!v)
 }
 
-func (n *BooleanDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if args[0].Type != args[1].Type {
+func (n *BooleanDataType) OnEq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if self.Type != args[0].Type {
 		return Boolean.FALSE
 	}
 
-	this := AsBool(args[0])
-	other := AsBool(args[1])
+	this := AsBool(self)
+	other := AsBool(args[0])
 
 	if this == other {
 		return Boolean.TRUE
@@ -129,13 +129,13 @@ func (n *BooleanDataType) OnEq(r *Runtime, s *Scope, args ...*Instance) *Instanc
 	}
 }
 
-func (n *BooleanDataType) OnNeq(r *Runtime, s *Scope, args ...*Instance) *Instance {
-	if args[0].Type != args[1].Type {
+func (n *BooleanDataType) OnNeq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if self.Type != args[0].Type {
 		return Boolean.FALSE
 	}
 
-	this := AsBool(args[0])
-	other := AsBool(args[1])
+	this := AsBool(self)
+	other := AsBool(args[0])
 
 	if this != other {
 		return Boolean.TRUE

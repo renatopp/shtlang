@@ -33,7 +33,27 @@ fn fibx(n) {
 	}
 }
 
-'renato' | sum
+
+
+i := -1
+fib(10)
+| map x : {
+	i += 1
+	return (i, x)
+}
+| each x, y : print(x, y)
+| reduce(List { 0, 0 }) acc, val : List { acc[0] + val[0], acc[1] + val[1] }
+| map x : x[1]
+| each x : print(x)
+| to Boolean
+
+pipe fibx(10) as i {
+	print(i)
+}
+
+ret := aasdf?
+print(ret)
+print(ret!)
 `
 
 func main() {

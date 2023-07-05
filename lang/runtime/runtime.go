@@ -271,11 +271,11 @@ func (r *Runtime) EvalUnaryOperator(node *ast.UnaryOperator, scope *Scope) *Inst
 
 	switch node.Operator {
 	case "+":
-		return right.Type.OnPos(r, scope, right)
+		return right.OnPos(r, scope)
 	case "-":
-		return right.Type.OnNeg(r, scope, right)
+		return right.OnNeg(r, scope)
 	case "!":
-		return right.Type.OnNot(r, scope, right)
+		return right.OnNot(r, scope)
 	}
 
 	return nil
@@ -294,7 +294,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnAdd(r, scope, left, right)
+		return left.OnAdd(r, scope, right)
 
 	case "-":
 		left := r.Eval(node.Left, scope)
@@ -307,7 +307,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnSub(r, scope, left, right)
+		return left.OnSub(r, scope, right)
 
 	case "*":
 		left := r.Eval(node.Left, scope)
@@ -320,7 +320,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnMul(r, scope, left, right)
+		return left.OnMul(r, scope, right)
 
 	case "/":
 		left := r.Eval(node.Left, scope)
@@ -333,7 +333,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnDiv(r, scope, left, right)
+		return left.OnDiv(r, scope, right)
 
 	case "//":
 		left := r.Eval(node.Left, scope)
@@ -346,7 +346,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnIntDiv(r, scope, left, right)
+		return left.OnIntDiv(r, scope, right)
 
 	case "%":
 		left := r.Eval(node.Left, scope)
@@ -359,7 +359,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnMod(r, scope, left, right)
+		return left.OnMod(r, scope, right)
 
 	case "**":
 		left := r.Eval(node.Left, scope)
@@ -372,7 +372,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnPow(r, scope, left, right)
+		return left.OnPow(r, scope, right)
 
 	case "==":
 		left := r.Eval(node.Left, scope)
@@ -385,7 +385,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnEq(r, scope, left, right)
+		return left.OnEq(r, scope, right)
 
 	case "!=":
 		left := r.Eval(node.Left, scope)
@@ -398,7 +398,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnNeq(r, scope, left, right)
+		return left.OnNeq(r, scope, right)
 
 	case ">":
 		left := r.Eval(node.Left, scope)
@@ -411,7 +411,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnGt(r, scope, left, right)
+		return left.OnGt(r, scope, right)
 
 	case "<":
 		left := r.Eval(node.Left, scope)
@@ -437,7 +437,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnGte(r, scope, left, right)
+		return left.OnGte(r, scope, right)
 
 	case "<=":
 		left := r.Eval(node.Left, scope)
@@ -450,7 +450,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return left.Type.OnLte(r, scope, left, right)
+		return left.OnLte(r, scope, right)
 
 	case "and", "or", "nand", "nor", "xor", "nxor":
 		left := r.Eval(node.Left, scope)
@@ -544,7 +544,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return right.Type.OnIs(r, scope, right, left)
+		return right.OnIs(r, scope, left)
 
 	case "in":
 		left := r.Eval(node.Left, scope)
@@ -557,35 +557,27 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 			return right
 		}
 
-		return right.Type.OnIn(r, scope, right, left)
+		return right.OnIn(r, scope, left)
 
 	case "to":
 		left := r.Eval(node.Left, scope)
 		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
-		iter := left.Type.OnIter(r, scope, left)
+		iter := left.OnIter(r, scope)
 
 		right := r.Eval(node.Right, scope)
 		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
-		return right.Type.OnTo(r, scope, right, iter)
+		return right.OnTo(r, scope, iter)
 	}
 
 	return nil
 }
 
 func (r *Runtime) EvalPostfixOperator(node *ast.PostfixOperator, scope *Scope) *Instance {
-	left := r.Eval(node.Left, scope)
-
-	switch node.Operator {
-	case "++":
-		return left.Type.OnPostInc(r, scope, left)
-	case "--":
-		return left.Type.OnPostDec(r, scope, left)
-	}
 
 	return nil
 }
@@ -598,7 +590,7 @@ func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *
 		}
 
 		leftLength := len(id.Values)
-		rightLength := AsNumber(right.Type.OnLen(r, scope, right))
+		rightLength := AsNumber(right.OnLen(r, scope))
 
 		j := 0
 		for i, lv := range id.Values {
@@ -609,7 +601,7 @@ func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *
 				spreadItems := []*Instance{}
 
 				for k := 0; k < spreadAmount; k++ {
-					rv := right.Type.OnGetItem(r, scope, right, Number.Create(float64(j)))
+					rv := right.OnGetItem(r, scope, Number.Create(float64(j)))
 					spreadItems = append(spreadItems, rv)
 					j++
 				}
@@ -622,7 +614,7 @@ func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *
 					return r.Throw(Error.Create(scope, "assignment right side has less elements than left side"), scope)
 				}
 
-				rv := right.Type.OnGetItem(r, scope, right, Number.Create(float64(j)))
+				rv := right.OnGetItem(r, scope, Number.Create(float64(j)))
 				r.ResolveAssignment(lv, rv, assignment, scope)
 				j++
 			}
@@ -648,7 +640,7 @@ func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *
 		}
 
 		idx := r.Eval(id.Values[0], scope)
-		return target.Type.OnSetItem(r, scope, target, idx, right)
+		return target.OnSetItem(r, scope, idx, right)
 
 	case *ast.Access:
 		target := r.Eval(id.Left, scope)
@@ -657,7 +649,7 @@ func (r *Runtime) ResolveAssignment(left ast.Node, right *Instance, assignment *
 		}
 
 		name := id.Right.(*ast.Identifier).Value
-		return target.Type.OnSet(r, scope, target, String.Create(name), right)
+		return target.OnSet(r, scope, String.Create(name), right)
 
 	default:
 		return r.Throw(Error.Create(scope, "cannot assign to non-identifier"), scope)
@@ -787,7 +779,7 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 		return r.Throw(Error.Create(scope, "cannot initialize non-type"), scope)
 	}
 
-	args := []*Instance{target}
+	args := []*Instance{}
 	if target.MemberOf != nil {
 		args = append(args, target.MemberOf)
 	}
@@ -815,10 +807,10 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 	if isType {
 		impl := target.Impl.(*TypeDataImpl)
 		value := impl.DataType.Instantiate(r, scope, node.Initializer)
-		return value.Type.OnNew(r, scope, append([]*Instance{value}, args[1:]...)...)
+		return value.OnNew(r, scope, args...)
 
 	} else {
-		return target.Type.OnCall(r, scope, args...)
+		return target.OnCall(r, scope, args...)
 	}
 }
 
@@ -849,7 +841,7 @@ func (r *Runtime) EvalRaise(node *ast.Raise, scope *Scope) *Instance {
 		return r.Throw(exp, scope)
 	} else {
 		return r.Throw(Error.Create(scope,
-			AsString(exp.Type.OnString(r, scope, exp)),
+			AsString(exp.OnString(r, scope)),
 		), scope)
 	}
 }
@@ -866,13 +858,12 @@ func (r *Runtime) EvalYield(node *ast.Yield, scope *Scope) *Instance {
 func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
 	target := r.Eval(node.Target, scope)
 
-	args := make([]*Instance, len(node.Values)+1)
-	args[0] = target
+	args := make([]*Instance, len(node.Values))
 	for i, v := range node.Values {
-		args[i+1] = r.Eval(v, scope)
+		args[i] = r.Eval(v, scope)
 	}
 
-	return target.Type.OnGetItem(r, scope, args...)
+	return target.OnGetItem(r, scope, args...)
 }
 
 func (r *Runtime) EvalWrapping(node *ast.Wrapping, scope *Scope) *Instance {
@@ -1039,7 +1030,7 @@ func (r *Runtime) EvalSpreadOut(node *ast.SpreadOut, scope *Scope) *Instance {
 }
 
 func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Instance, *Instance)) {
-	iter := target.Type.OnIter(r, scope, target)
+	iter := target.OnIter(r, scope)
 	if iter.Type != Iterator.Type {
 		up(nil, r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope))
 	}
@@ -1077,7 +1068,7 @@ func (r *Runtime) EvalAccess(node *ast.Access, scope *Scope) *Instance {
 	left := r.Eval(node.Left, scope)
 	right := node.Right.(*ast.Identifier).Value
 
-	res := left.Type.OnGet(r, scope, left, String.Create(right))
+	res := left.OnGet(r, scope, String.Create(right))
 	res.MemberOf = left
 	return res
 }
@@ -1091,7 +1082,7 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 
 	left := r.Eval(node.Left, scope)
 	if left.Type != Iterator.Type {
-		left = left.Type.OnIter(r, scope, left)
+		left = left.OnIter(r, scope)
 		if left.Type != Iterator.Type {
 			return r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope)
 		}
@@ -1100,7 +1091,7 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 	if node.To != nil {
 		to := r.Eval(node.To, scope)
 		scope.PipeCounter -= 1
-		return to.Type.OnTo(r, scope, to, left)
+		return to.OnTo(r, scope, left)
 	}
 
 	var pipeFn *Instance
@@ -1109,12 +1100,10 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 	switch t := node.PipeFn.(type) {
 	case *ast.Identifier:
 		pipeFn = r.Eval(t, scope)
-		pipeArgs = append(pipeArgs, pipeFn)
 		pipeArgs = append(pipeArgs, left)
 
 	case *ast.Call:
 		pipeFn = r.Eval(t.Target, scope)
-		pipeArgs = append(pipeArgs, pipeFn)
 		pipeArgs = append(pipeArgs, left)
 		for _, v := range t.Arguments {
 			addArgs = append(addArgs, r.Eval(v, scope))
@@ -1141,7 +1130,7 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 		pipeArgs = append(pipeArgs, v)
 	}
 
-	pipe := pipeFn.Type.OnPipe(r, scope, pipeArgs...)
+	pipe := pipeFn.OnCall(r, scope, pipeArgs...)
 
 	scope.PipeCounter -= 1
 	if scope.PipeCounter == 0 {
@@ -1181,7 +1170,7 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 			return r.Throw(Error.Create(scope, "invalid iterator"), scope)
 		}
 
-		i_iterator = i_eval.Type.OnIter(r, scope, i_eval)
+		i_iterator = i_eval.OnIter(r, scope)
 		evalCondition = true
 	}
 
@@ -1191,7 +1180,7 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 			newScope.Clear()
 
 			i_next := iterator.next()
-			i_iteration := i_next.Type.OnCall(r, scope, i_next, i_iterator)
+			i_iteration := i_next.OnCall(r, scope, i_iterator)
 			iteration := i_iteration.Impl.(*IterationDataImpl)
 
 			if iteration.done() == Boolean.TRUE || iteration.error() == Boolean.TRUE {
