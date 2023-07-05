@@ -55,7 +55,7 @@ func CreateRuntime() *Runtime {
 func (r *Runtime) Run(node ast.Node) string {
 	instance := r.Eval(node, r.Global)
 
-	delete(r.Global.Values, RAISE_KEY)
+	r.Global.Interruption = nil
 	return instance.Repr()
 }
 
@@ -163,21 +163,18 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 }
 
 func (r *Runtime) Throw(err *Instance, scope *Scope) *Instance {
-	e, ok := scope.GetInScope(RAISE_KEY)
-	if ok {
-		return e.Value
+	if scope.Interruption != nil && scope.Interruption.Type == FlowRaise {
+		return scope.Interruption.Value
 	}
 
-	scope.Set(RAISE_KEY, Constant(err))
-
-	return err
+	return scope.Interrupt(FlowRaise, err)
 }
 
 func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
 	var newScope *Scope
 	var currentStatement int
-	if scope.State != nil {
-		state := scope.State.(*BlockState)
+	if scope.ActiveRecord != nil {
+		state := scope.ActiveRecord.(*BlockRecord)
 		currentStatement = state.Current
 		newScope = state.Scope
 	} else if node.Unscoped {
@@ -187,44 +184,37 @@ func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
 		newScope = CreateScope(scope, scope.Caller)
 		currentStatement = 0
 	}
+	scope.ActiveRecord = nil
 
 	var result *Instance
 	// fmt.Println("BLOCK STATE", currentStatement)
 	for i := currentStatement; i < len(node.Statements); i++ {
 		stmt := node.Statements[i]
 		result = r.Eval(stmt, newScope)
-		if err, ok := newScope.Get(RAISE_KEY); ok {
-			scope.Set(RAISE_KEY, err)
-			result = err.Value
+
+		if newScope.IsInterruptedAs(FlowRaise, FlowContinue, FlowBreak, FlowReturn) {
+			if newScope.IsInterruptedAs(FlowRaise) {
+				result = newScope.Interruption.Value
+			}
+
+			newScope.Propagate()
 			break
 
-		} else if v, ok := newScope.Get(CONTINUE_KEY); ok {
-			scope.Set(CONTINUE_KEY, v)
-			break
-
-		} else if v, ok := newScope.Get(BREAK_KEY); ok {
-			scope.Set(BREAK_KEY, v)
-			break
-
-		} else if v, ok := newScope.Get(RETURN_KEY); ok {
-			scope.Set(RETURN_KEY, v)
-			break
-
-		} else if v, ok := newScope.Get(YIELD_KEY); ok {
-
+		} else if newScope.IsInterruptedAs(FlowYield) {
 			cur := i
-			if newScope.HasInScope(JUST_YIELDED_KEY) {
+			if newScope.Interruption.Origin == newScope {
 				cur += 1
 			}
-			scope.State = &BlockState{
+
+			scope.ActiveRecord = &BlockRecord{
 				Scope:   newScope,
 				Current: cur,
 			}
-			newScope.Delete(YIELD_KEY)
-			newScope.Delete(JUST_YIELDED_KEY)
-			scope.Set(YIELD_KEY, v)
+
+			newScope.Propagate()
 			break
 		}
+		newScope.ActiveRecord = nil
 	}
 
 	if result == nil {
@@ -295,12 +285,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 	switch node.Operator {
 	case "+":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -308,12 +298,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "-":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -321,12 +311,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "*":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -334,12 +324,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "/":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -347,12 +337,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "//":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -360,12 +350,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "%":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -373,12 +363,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "**":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -386,12 +376,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "==":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -399,12 +389,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "!=":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -412,12 +402,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case ">":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -425,12 +415,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "<":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -438,12 +428,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case ">=":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -451,12 +441,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "<=":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -464,12 +454,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "and", "or", "nand", "nor", "xor", "nxor":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -494,12 +484,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "..":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -509,7 +499,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "??":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
@@ -531,7 +521,7 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "as":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
@@ -545,12 +535,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "is":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -558,12 +548,12 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "in":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -571,13 +561,13 @@ func (r *Runtime) EvalBinaryOperator(node *ast.BinaryOperator, scope *Scope) *In
 
 	case "to":
 		left := r.Eval(node.Left, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return left
 		}
 		iter := left.Type.OnIter(r, scope, left)
 
 		right := r.Eval(node.Right, scope)
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return right
 		}
 
@@ -833,13 +823,11 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 }
 
 func (r *Runtime) EvalContinue(node *ast.Continue, scope *Scope) *Instance {
-	scope.Set(CONTINUE_KEY, Constant(Boolean.TRUE))
-	return Boolean.TRUE
+	return scope.Interrupt(FlowContinue, Boolean.TRUE)
 }
 
 func (r *Runtime) EvalBreak(node *ast.Break, scope *Scope) *Instance {
-	scope.Set(BREAK_KEY, Constant(Boolean.TRUE))
-	return Boolean.TRUE
+	return scope.Interrupt(FlowBreak, Boolean.TRUE)
 }
 
 func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {
@@ -848,8 +836,7 @@ func (r *Runtime) EvalReturn(node *ast.Return, scope *Scope) *Instance {
 		exp = Boolean.FALSE
 	}
 
-	scope.Set(RETURN_KEY, Constant(exp))
-	return exp
+	return scope.Interrupt(FlowReturn, exp)
 }
 
 func (r *Runtime) EvalRaise(node *ast.Raise, scope *Scope) *Instance {
@@ -873,9 +860,7 @@ func (r *Runtime) EvalYield(node *ast.Yield, scope *Scope) *Instance {
 		exp = Boolean.FALSE
 	}
 
-	scope.Set(YIELD_KEY, Constant(exp))
-	scope.Set(JUST_YIELDED_KEY, Constant(Boolean.TRUE))
-	return exp
+	return scope.Interrupt(FlowYield, exp)
 }
 
 func (r *Runtime) EvalIndexing(node *ast.Indexing, scope *Scope) *Instance {
@@ -897,11 +882,10 @@ func (r *Runtime) EvalWrapping(node *ast.Wrapping, scope *Scope) *Instance {
 		return exp
 	}
 
-	err, ok := scope.GetInScope(RAISE_KEY)
-
-	if ok {
-		scope.Delete(RAISE_KEY)
-		return Maybe.CreateError(err.Value)
+	if scope.IsInterruptedAs(FlowRaise) {
+		val := scope.Interruption.Value
+		scope.Interruption = nil
+		return Maybe.CreateError(val)
 	} else {
 		return Maybe.Create(exp)
 	}
@@ -933,9 +917,9 @@ func (r *Runtime) SolveMaybe(target *Instance, scope *Scope) *Instance {
 func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 	var newScope *Scope
 	var condition *bool
-	if scope.State != nil {
+	if scope.ActiveRecord != nil {
 		// fmt.Println("IF STATE")
-		state := scope.State.(*IfState)
+		state := scope.ActiveRecord.(*IfRecord)
 		condition = &state.Condition
 		newScope = state.Scope
 	} else {
@@ -943,6 +927,7 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 		newScope = CreateScope(scope, scope.Caller)
 		condition = nil
 	}
+	scope.ActiveRecord = nil
 
 	if condition == nil {
 		c := r.Eval(node.Condition, newScope)
@@ -967,32 +952,15 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 		ret = r.Eval(node.FalseBody, newScope)
 	}
 
-	if newScope.HasInScope(CONTINUE_KEY) {
-		err, _ := newScope.GetInScope(CONTINUE_KEY)
-		scope.Set(CONTINUE_KEY, err)
+	if newScope.IsInterruptedAs(FlowBreak, FlowContinue, FlowReturn, FlowRaise) {
+		newScope.Propagate()
 
-	} else if newScope.HasInScope(BREAK_KEY) {
-		err, _ := newScope.GetInScope(BREAK_KEY)
-		scope.Set(BREAK_KEY, err)
-
-	} else if newScope.HasInScope(RAISE_KEY) {
-		err, _ := newScope.GetInScope(RAISE_KEY)
-		scope.Set(RAISE_KEY, err)
-
-	} else if newScope.HasInScope(RETURN_KEY) {
-		err, _ := newScope.GetInScope(RETURN_KEY)
-		scope.Set(RETURN_KEY, err)
-
-	} else if newScope.HasInScope(YIELD_KEY) {
-		v, _ := newScope.GetInScope(YIELD_KEY)
-
-		scope.State = &IfState{
+	} else if newScope.IsInterruptedAs(FlowYield) {
+		scope.ActiveRecord = &IfRecord{
 			Scope:     newScope,
 			Condition: *condition,
 		}
-		newScope.Delete(YIELD_KEY)
-		newScope.Delete(JUST_YIELDED_KEY)
-		scope.Set(YIELD_KEY, v)
+		newScope.Propagate()
 	}
 
 	return ret
@@ -1001,14 +969,15 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 func (r *Runtime) EvalFor(node *ast.For, scope *Scope) *Instance {
 	var newScope *Scope
 	var evalCondition bool
-	if scope.State != nil {
-		state := scope.State.(*ForState)
+	if scope.ActiveRecord != nil {
+		state := scope.ActiveRecord.(*ForRecord)
 		newScope = state.Scope
 		evalCondition = false
 	} else {
 		newScope = CreateScope(scope, scope.Caller)
 		evalCondition = true
 	}
+	scope.ActiveRecord = nil
 
 	for {
 		if evalCondition {
@@ -1027,35 +996,21 @@ func (r *Runtime) EvalFor(node *ast.For, scope *Scope) *Instance {
 		evalCondition = true
 		r.Eval(node.Body, newScope)
 
-		// execute block, if return evalCondition = true
-		if newScope.HasInScope(BREAK_KEY) {
-			newScope.Delete(BREAK_KEY)
+		if newScope.IsInterruptedAs(FlowBreak) {
+			newScope.Interruption = nil
 			break
-
-		} else if newScope.HasInScope(CONTINUE_KEY) {
-			newScope.Delete(CONTINUE_KEY)
+		} else if newScope.IsInterruptedAs(FlowContinue) {
+			newScope.Interruption = nil
 			continue
-
-		} else if newScope.HasInScope(RAISE_KEY) {
-			err, _ := newScope.GetInScope(RAISE_KEY)
-			scope.Set(RAISE_KEY, err)
+		} else if newScope.IsInterruptedAs(FlowReturn, FlowRaise) {
+			newScope.Propagate()
 			break
 
-		} else if newScope.HasInScope(RETURN_KEY) {
-			err, _ := newScope.GetInScope(RETURN_KEY)
-			scope.Set(RETURN_KEY, err)
-			break
-
-		} else if newScope.HasInScope(YIELD_KEY) {
-			v, _ := newScope.GetInScope(YIELD_KEY)
-
-			scope.State = &ForState{
+		} else if newScope.IsInterruptedAs(FlowYield) {
+			scope.ActiveRecord = &ForRecord{
 				Scope: newScope,
 			}
-			newScope.Delete(YIELD_KEY)
-			newScope.Delete(JUST_YIELDED_KEY)
-			scope.Set(YIELD_KEY, v)
-			break
+			return newScope.Propagate()
 		}
 	}
 
@@ -1089,7 +1044,7 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 		up(nil, r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope))
 	}
 
-	if scope.HasInScope(RAISE_KEY) {
+	if scope.IsInterruptedAs(FlowRaise) {
 		up(nil, Boolean.TRUE)
 		return
 	}
@@ -1098,14 +1053,14 @@ func (r *Runtime) ResolveIterator(target *Instance, scope *Scope, up func(*Insta
 	fn := AsFunction(impl)
 
 	v := fn(r, scope, impl, iter)
-	if scope.HasInScope(RAISE_KEY) {
+	if scope.IsInterruptedAs(FlowRaise) {
 		up(nil, Boolean.TRUE)
 		return
 	}
 
 	it := v.Impl.(*IterationDataImpl)
 	for v != Iteration.DONE {
-		if scope.HasInScope(RAISE_KEY) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			up(nil, it.error())
 			return
 		}
@@ -1211,8 +1166,8 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 	var newScope *Scope
 	var evalCondition bool
 	var i_iterator *Instance
-	if scope.State != nil {
-		state := scope.State.(*PipeLoopState)
+	if scope.ActiveRecord != nil {
+		state := scope.ActiveRecord.(*PipeLoopRecord)
 		newScope = state.Scope
 		i_iterator = state.Iterator
 		evalCondition = false
@@ -1261,33 +1216,21 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 		r.Eval(node.Body, newScope)
 
 		// execute block, if return evalCondition = true
-		if newScope.HasInScope(BREAK_KEY) {
-			newScope.Delete(BREAK_KEY)
+		if newScope.IsInterruptedAs(FlowBreak) {
+			newScope.Interruption = nil
 			break
-
-		} else if newScope.HasInScope(CONTINUE_KEY) {
-			newScope.Delete(CONTINUE_KEY)
+		} else if newScope.IsInterruptedAs(FlowContinue) {
+			newScope.Interruption = nil
 			continue
-
-		} else if newScope.HasInScope(RAISE_KEY) {
-			err, _ := newScope.GetInScope(RAISE_KEY)
-			scope.Set(RAISE_KEY, err)
+		} else if newScope.IsInterruptedAs(FlowReturn, FlowRaise) {
+			newScope.Propagate()
 			break
 
-		} else if newScope.HasInScope(RETURN_KEY) {
-			err, _ := newScope.GetInScope(RETURN_KEY)
-			scope.Set(RETURN_KEY, err)
-			break
-
-		} else if newScope.HasInScope(YIELD_KEY) {
-			v, _ := newScope.GetInScope(YIELD_KEY)
-
-			scope.State = &ForState{
+		} else if newScope.IsInterruptedAs(FlowYield) {
+			scope.ActiveRecord = &PipeLoopRecord{
 				Scope: newScope,
 			}
-			newScope.Delete(YIELD_KEY)
-			newScope.Delete(JUST_YIELDED_KEY)
-			scope.Set(YIELD_KEY, v)
+			newScope.Propagate()
 			break
 		}
 	}

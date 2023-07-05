@@ -7,14 +7,15 @@ import (
 )
 
 type Scope struct {
-	Id       string
-	Name     string
-	Depth    int
-	Function *Instance
-	Parent   *Scope
-	Caller   *Scope
-	Values   map[string]*Reference
-	State    ExecutionState
+	Id           string
+	Name         string
+	Depth        int
+	Function     *Instance
+	Parent       *Scope
+	Caller       *Scope
+	Values       map[string]*Reference
+	ActiveRecord ExecutionRecord
+	Interruption *FlowInterruption
 
 	InAssignment bool
 	InArgument   bool
@@ -34,7 +35,7 @@ func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s.Values = map[string]*Reference{}
 	s.PipeCounter = 0
 	s.nodeStack = make([]ast.Node, 0)
-	s.State = nil
+	s.ActiveRecord = nil
 
 	if parent != nil {
 		s.Depth = parent.Depth + 1
@@ -42,6 +43,38 @@ func CreateScope(parent *Scope, caller *Scope) *Scope {
 	}
 
 	return s
+}
+
+func (s *Scope) IsInterruptedAs(t ...FlowType) bool {
+	if s.Interruption == nil {
+		return false
+	}
+
+	for _, t2 := range t {
+		if s.Interruption.Type == t2 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *Scope) Interrupt(t FlowType, v *Instance) *Instance {
+	s.Interruption = &FlowInterruption{s, t, v}
+	return v
+}
+
+func (s *Scope) Propagate() *Instance {
+	if s.Interruption == nil {
+		return nil
+	}
+
+	v := s.Interruption.Value
+	if s.Parent != nil {
+		s.Parent.Interruption = s.Interruption
+	}
+	s.Interruption = nil
+	return v
 }
 
 func (s *Scope) Get(name string) (*Reference, bool) {

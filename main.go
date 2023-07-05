@@ -14,20 +14,25 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-fn a(x) {
-	fsadfsd
+fn fib(n) {
+	a, b, i := 0, 1, 2
+
+	if n > a yield a
+	if n > b yield b
+
+	for i <= n {
+		a, b = b, a + b	
+		yield b
+		i += 1
+	}
 }
 
-fn b(z) {
-	a(z)
+fn fibr(n) {
+	if n <= 1 return n
+	return fibr(n - 1) + fibr(n - 2)
 }
 
-fn c(z) {
-	b(z)
-}
-
-c(1)
-
+fib(47) | to List
 `
 
 func main() {

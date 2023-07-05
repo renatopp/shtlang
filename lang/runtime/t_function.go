@@ -175,13 +175,11 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 		iter := Iterator.Create(Function.CreateNative("generator", []*FunctionParam{}, func(r *Runtime, s *Scope, args ...*Instance) *Instance {
 			res := r.Eval(d.Body, scope)
 
-			if err, ok := scope.GetInScope(RAISE_KEY); ok {
-				s.Set(RAISE_KEY, err)
-				return Iteration.Error(err.Value)
+			if scope.IsInterruptedAs(FlowRaise) {
+				return Iteration.Error(scope.Interruption.Value)
 
-			} else if _, ok := scope.GetInScope(YIELD_KEY); ok {
-				scope.Delete(YIELD_KEY)
-				scope.Delete(JUST_YIELDED_KEY)
+			} else if scope.IsInterruptedAs(FlowYield) {
+				scope.Interruption = nil
 				return Iteration.Create(res)
 
 			} else {
@@ -194,9 +192,8 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, args ...*Instance) *Instan
 	} else {
 		res := r.Eval(d.Body, scope)
 
-		if scope.HasInScope(RAISE_KEY) {
-			err, _ := scope.GetInScope(RAISE_KEY)
-			s.Set(RAISE_KEY, err)
+		if scope.IsInterruptedAs(FlowRaise) {
+			s.Propagate()
 		}
 
 		return res

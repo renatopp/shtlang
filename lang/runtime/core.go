@@ -6,13 +6,6 @@ import (
 	"time"
 )
 
-const YIELD_KEY = "0_yield"
-const JUST_YIELDED_KEY = "0_just_yielded"
-const RETURN_KEY = "0_return"
-const RAISE_KEY = "0_raise"
-const BREAK_KEY = "0_break"
-const CONTINUE_KEY = "0_continue"
-
 type DataImpl interface{}
 
 type MetaFunction func(r *Runtime, s *Scope, args ...*Instance) *Instance

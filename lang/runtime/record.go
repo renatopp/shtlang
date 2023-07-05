@@ -1,22 +1,22 @@
 package runtime
 
-type ExecutionState interface{}
+type ExecutionRecord interface{}
 
-type BlockState struct {
+type BlockRecord struct {
 	Current int
 	Scope   *Scope
 }
 
-type IfState struct {
+type IfRecord struct {
 	Condition bool
 	Scope     *Scope
 }
 
-type ForState struct {
+type ForRecord struct {
 	Scope *Scope
 }
 
-type PipeLoopState struct {
+type PipeLoopRecord struct {
 	Scope    *Scope
 	Iterator *Instance
 }

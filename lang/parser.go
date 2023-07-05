@@ -444,6 +444,12 @@ func (p *Parser) parseFor() ast.Node {
 	return node
 }
 
+func (p *Parser) emblocky(exp ast.Node) ast.Node {
+	return &ast.Block{
+		Statements: []ast.Node{exp},
+	}
+}
+
 func (p *Parser) parseIf() ast.Node {
 	p.lexer.EatToken()
 
@@ -469,9 +475,9 @@ func (p *Parser) parseIf() ast.Node {
 	cur := p.lexer.PeekToken()
 	switch cur.Literal {
 	case "return", "raise", "yield":
-		node.TrueBody = p.parseReturn()
+		node.TrueBody = p.emblocky(p.parseReturn())
 	case "continue", "break":
-		node.TrueBody = p.parseForControl()
+		node.TrueBody = p.emblocky(p.parseForControl())
 	case "{":
 		node.TrueBody = p.parseBlock()
 	default:
@@ -487,9 +493,9 @@ func (p *Parser) parseIf() ast.Node {
 		cur := p.lexer.PeekToken()
 		switch cur.Literal {
 		case "return", "raise", "yield":
-			node.FalseBody = p.parseReturn()
+			node.FalseBody = p.emblocky(p.parseReturn())
 		case "continue", "break":
-			node.FalseBody = p.parseForControl()
+			node.FalseBody = p.emblocky(p.parseForControl())
 		case "if":
 			node.FalseBody = p.parseIf()
 		case "{":
