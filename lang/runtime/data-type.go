@@ -1,6 +1,9 @@
 package runtime
 
-import "sht/lang/ast"
+import (
+	"sht/lang/ast"
+	"sht/lang/runtime/meta"
+)
 
 type DataType interface {
 	GetName() string
@@ -98,25 +101,25 @@ func (d *BaseDataType) HasInstanceFn(name string) bool {
 }
 
 func (d *BaseDataType) OnLen(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Len", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.Len), self), s)
 }
 func (d *BaseDataType) OnSet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Set", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.SetProperty), self), s)
 }
 func (d *BaseDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Get", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.GetProperty), self), s)
 }
 func (d *BaseDataType) OnSetItem(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "SetItem", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.SetItem), self), s)
 }
 func (d *BaseDataType) OnGetItem(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "GetItem", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.GetItem), self), s)
 }
 func (d *BaseDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "New", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.New), self), s)
 }
 func (d *BaseDataType) OnCall(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Call", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.Call), self), s)
 }
 func (d *BaseDataType) OnBoolean(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	return Boolean.TRUE
@@ -125,43 +128,40 @@ func (d *BaseDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*I
 	return d.OnRepr(r, s, self, args...)
 }
 func (d *BaseDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Repr", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.Repr), self), s)
 }
 func (d *BaseDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "To", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.To), self), s)
 }
 func (d *BaseDataType) OnIn(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "In", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.In), self), s)
 }
 func (d *BaseDataType) OnIs(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "In", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.Is), self), s)
 }
 func (d *BaseDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Iter", self), s)
-}
-func (d *BaseDataType) OnBang(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidAction(s, "Bang", self), s)
+	return r.Throw(Error.InvalidAction(s, string(meta.Iter), self), s)
 }
 func (d *BaseDataType) OnAdd(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Add", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Add), self), s)
 }
 func (d *BaseDataType) OnSub(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Sub", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Sub), self), s)
 }
 func (d *BaseDataType) OnMul(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Mul", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Mul), self), s)
 }
 func (d *BaseDataType) OnDiv(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Div", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Div), self), s)
 }
 func (d *BaseDataType) OnIntDiv(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "IntDiv", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.IntDiv), self), s)
 }
 func (d *BaseDataType) OnMod(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Mod", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Mod), self), s)
 }
 func (d *BaseDataType) OnPow(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Pow", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Pow), self), s)
 }
 func (d *BaseDataType) OnEq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	if self == args[0] {
@@ -178,22 +178,22 @@ func (d *BaseDataType) OnNeq(r *Runtime, s *Scope, self *Instance, args ...*Inst
 	return Boolean.FALSE
 }
 func (d *BaseDataType) OnGt(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Gt", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Gt), self), s)
 }
 func (d *BaseDataType) OnLt(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Lt", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Lt), self), s)
 }
 func (d *BaseDataType) OnGte(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Gte", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Gte), self), s)
 }
 func (d *BaseDataType) OnLte(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Lte", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Lte), self), s)
 }
 func (d *BaseDataType) OnPos(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Pos", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Pos), self), s)
 }
 func (d *BaseDataType) OnNeg(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return r.Throw(Error.InvalidOperation(s, "Neg", self), s)
+	return r.Throw(Error.InvalidOperation(s, string(meta.Neg), self), s)
 }
 func (d *BaseDataType) OnNot(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	b := AsBool(d.OnBoolean(r, s, self, args...))

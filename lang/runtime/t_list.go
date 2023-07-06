@@ -125,7 +125,7 @@ func (d *ListDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*Ins
 }
 
 func (d *ListDataType) OnSet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	this := self.Impl.(*IterationDataImpl)
+	this := self.AsList()
 	name := AsString(args[0])
 
 	_, has := this.Properties[name]
@@ -133,12 +133,12 @@ func (d *ListDataType) OnSet(r *Runtime, s *Scope, self *Instance, args ...*Inst
 		return r.Throw(Error.NoProperty(s, d.Name, name), s)
 	}
 
-	this.Properties[name] = args[2]
-	return args[2]
+	this.Properties[name] = args[1]
+	return args[1]
 }
 
 func (d *ListDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	this := self.Impl.(*IterationDataImpl)
+	this := self.AsList()
 	name := AsString(args[0])
 
 	value, has := this.Properties[name]

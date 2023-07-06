@@ -14,14 +14,33 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-fn fun {
-	yield 1
-	yield 2
-	yield 3
+data Notes {
+	a = (1, 2, 3, 4)
+
+	fn create() {
+		return Notes { a: (0, 1, 2) }
+	}
+
+	fn reverse(this) {
+		i := len(this.a) - 1
+		for i >= 0 {
+			yield this.a[i]
+			i -= 1
+		}
+	}
+
+	on len(this) {
+		return len(this.a)
+	}
+	
+	on iter(this) {
+		pipe this.a as item {
+			yield item
+		}
+	}
 }
 
-
-fun() | to String
+len(Notes.create())
 `
 
 func main() {

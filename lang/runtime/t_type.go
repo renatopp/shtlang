@@ -51,13 +51,28 @@ type TypeDataType struct {
 // 	return instance
 // }
 
+func (d *TypeDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := self.AsType()
+	name := AsString(args[0])
+	if this.DataType.HasStaticFn(name) {
+		return this.DataType.GetStaticFn(name)
+	}
+
+	if this.DataType.HasInstanceFn(name) {
+		return this.DataType.GetInstanceFn(name)
+	}
+
+	return r.Throw(Error.Create(s, "Type '%s' does not have a property '%s'", this.DataType.GetName(), name), s)
+}
+
 func (d *TypeDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	this := self.Impl.(*TypeDataImpl)
 	return this.DataType.OnTo(r, s, args[0], args[1:]...)
 }
 
 func (d *TypeDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	return String.Createf("<Type:%s>", self.Type.GetName())
+	t := self.AsType()
+	return String.Createf("<Type:%s>", t.DataType.GetName())
 }
 
 // ----------------------------------------------------------------------------

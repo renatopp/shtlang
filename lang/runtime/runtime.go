@@ -48,6 +48,7 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("range", Constant(b_range))
 
 	r.Global.Set("print", Constant(b_print))
+	r.Global.Set("len", Constant(b_len))
 
 	return r
 }
@@ -150,6 +151,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.PipeLoop:
 		result = r.EvalPipeLoop(n, scope)
+
+	case *ast.DataDef:
+		result = r.EvalDataDef(n, scope)
 
 	}
 
@@ -1172,8 +1176,20 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 			return r.Throw(Error.Create(scope, "invalid iterator"), scope)
 		}
 
+		if i_eval.IsError() {
+			return r.Throw(i_eval, scope)
+		}
+
 		i_iterator = i_eval.OnIter(r, scope)
 		evalCondition = true
+	}
+
+	if !i_iterator.IsIterator() {
+		if i_iterator.IsError() {
+			return r.Throw(i_iterator, scope)
+		}
+
+		return r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope)
 	}
 
 	iterator := i_iterator.Impl.(*IteratorDataImpl)
@@ -1230,4 +1246,64 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 	}
 
 	return Boolean.FALSE
+}
+
+func (r *Runtime) EvalDataDef(node *ast.DataDef, scope *Scope) *Instance {
+	name := node.Name
+	if scope.HasInScope(name) {
+		return r.Throw(Error.DuplicatedDefinition(scope, name), scope)
+	}
+
+	names := map[string]bool{}
+	metaNames := map[string]bool{}
+	properties := map[string]ast.Node{}
+	instanceFns := map[string]*Instance{}
+	staticFns := map[string]*Instance{}
+	metaFns := map[string]*Instance{}
+
+	for _, v := range node.Properties {
+		prop := v.(*ast.Property)
+		if names[prop.Name] {
+			return r.Throw(Error.DuplicatedDefinition(scope, prop.Name), scope)
+		}
+
+		names[prop.Name] = true
+		properties[prop.Name] = prop.Value
+	}
+
+	for _, v := range node.Functions {
+		fn := v.(*ast.FunctionDef)
+		if names[fn.Name] {
+			return r.Throw(Error.DuplicatedDefinition(scope, fn.Name), scope)
+		}
+
+		names[fn.Name] = true
+		scope.InAssignment = true
+		if len(fn.Params) > 0 && fn.Params[0].(*ast.Parameter).Name == "this" {
+			instanceFns[fn.Name] = r.Eval(fn, scope)
+		} else {
+			staticFns[fn.Name] = r.Eval(fn, scope)
+		}
+		scope.InAssignment = false
+	}
+
+	for _, v := range node.MetaFunctions {
+		fn := v.(*ast.FunctionDef)
+		if metaNames[fn.Name] {
+			return r.Throw(Error.DuplicatedDefinition(scope, fn.Name), scope)
+		}
+
+		metaNames[fn.Name] = true
+		scope.InAssignment = true
+		metaFns[fn.Name] = r.Eval(fn, scope)
+		scope.InAssignment = false
+	}
+
+	dt := CreateCustomType(name, properties, staticFns, instanceFns, metaFns)
+
+	if !scope.InAssignment && !scope.InArgument && name != "" {
+		scope.Set(name, Constant(dt))
+	}
+
+	return dt
 }

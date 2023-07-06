@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sht/lang/ast"
 	"sht/lang/order"
+	"sht/lang/runtime/meta"
 	"sht/lang/tokens"
 	"strconv"
 	"strings"
@@ -691,6 +692,91 @@ func (p *Parser) parseFunctionDef() ast.Node {
 	return fn
 }
 
+func (p *Parser) parseDataDef() ast.Node {
+	cur := p.lexer.EatToken()
+	if !p.Expect(tokens.Identifier, tokens.Lbrace) {
+		p.RegisterError(fmt.Sprintf("invalid data definition"), p.lexer.PeekToken())
+		return nil
+	}
+
+	dd := &ast.DataDef{
+		Token: cur,
+	}
+
+	cur = p.lexer.PeekToken()
+	if cur.Is(tokens.Identifier) {
+		p.lexer.EatToken()
+		dd.Name = cur.Literal
+	}
+
+	cur = p.lexer.PeekToken()
+	if !p.Expect(tokens.Lbrace) {
+		p.RegisterError(fmt.Sprintf("invalid data definition"), p.lexer.PeekToken())
+		return nil
+	}
+
+	p.lexer.EatToken()
+	p.eatNewLines()
+	cur = p.lexer.PeekToken()
+	for !cur.Is(tokens.Rbrace) {
+		if cur.Is(tokens.Identifier) {
+			property := &ast.Property{
+				Token: cur,
+			}
+			property.Name = cur.Literal
+			p.lexer.EatToken()
+
+			cur = p.lexer.PeekToken()
+			if !p.Expect(tokens.Assignment) || cur.Literal != "=" {
+				p.RegisterError(fmt.Sprintf("invalid data definition"), p.lexer.PeekToken())
+				return nil
+			}
+
+			p.lexer.EatToken()
+			property.Value = p.parseExpressionTuple()
+			dd.Properties = append(dd.Properties, property)
+
+		} else if cur.Literal == "fn" {
+			fn := p.parseFunctionDef()
+			dd.Functions = append(dd.Functions, fn)
+
+		} else if cur.Literal == "on" {
+			fn := p.parseFunctionDef()
+
+			fnd := fn.(*ast.FunctionDef)
+			name := fnd.Name
+			if !meta.IsValid(name) {
+				p.RegisterError(fmt.Sprintf("invalid meta function name '%s'", name), fn.GetToken())
+				return nil
+			}
+
+			if fnd.Name == string(meta.To) {
+				if len(fnd.Params) > 0 && (fnd.Params[0].(*ast.Parameter).Name == "this") {
+					p.RegisterError(fmt.Sprintf("meta function '%s' must not have a 'this' parameter", name), fn.GetToken())
+					return nil
+				}
+			} else {
+				if len(fnd.Params) == 0 || (fnd.Params[0].(*ast.Parameter).Name != "this") {
+					p.RegisterError(fmt.Sprintf("meta function '%s' must have a 'this' parameter", name), fn.GetToken())
+					return nil
+				}
+			}
+
+			dd.MetaFunctions = append(dd.MetaFunctions, fn)
+
+		} else {
+			p.RegisterError(fmt.Sprintf("invalid data definition"), p.lexer.PeekToken())
+			return nil
+		}
+
+		p.eatNewLines()
+		cur = p.lexer.PeekToken()
+	}
+	p.lexer.EatToken()
+
+	return dd
+}
+
 func (p *Parser) parseParameters() []ast.Node {
 	braced := false
 	cur := p.lexer.PeekToken()
@@ -1183,6 +1269,9 @@ func (p *Parser) parsePrefixKeyword() ast.Node {
 
 	case "fn":
 		return p.parseFunctionDef()
+
+	case "data":
+		return p.parseDataDef()
 
 	default:
 		p.RegisterError(fmt.Sprintf("invalid keyword '%s'", cur.Literal), cur)

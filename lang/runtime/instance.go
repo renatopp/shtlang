@@ -7,6 +7,14 @@ type Instance struct {
 	MemberOf *Instance
 }
 
+func (i *Instance) IsCustom() bool {
+	_, ok := i.Type.(*CustomType)
+	return ok
+}
+func (i *Instance) AsCustom() *CustomImpl {
+	return i.Impl.(*CustomImpl)
+}
+
 func (i *Instance) IsBoolean() bool {
 	return i.Type == Boolean.Type
 }

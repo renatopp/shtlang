@@ -21,27 +21,28 @@ var (
 
 	// Other meta
 	Iter MetaName = "iter" // for i in x
-	Bang MetaName = "bang" // !
+	Len  MetaName = "len"
+	// Bang MetaName = "bang" // !
 
 	// Operators
-	Add     MetaName = "add"     // +
-	Sub     MetaName = "sub"     // -
-	Mul     MetaName = "mul"     // *
-	Div     MetaName = "div"     // /
-	IntDiv  MetaName = "intDiv"  // //
-	Mod     MetaName = "mod"     // %
-	Pow     MetaName = "pow"     // **
-	Eq      MetaName = "eq"      // ==
-	Neq     MetaName = "neq"     // !=
-	Gt      MetaName = "gt"      // >
-	Lt      MetaName = "lt"      // <
-	Gte     MetaName = "gte"     // >=
-	Lte     MetaName = "lte"     // <=
-	Pos     MetaName = "pos"     // +
-	Neg     MetaName = "neg"     // -
-	Not     MetaName = "not"     // !
-	PostInc MetaName = "postInc" // ++
-	PostDec MetaName = "postDec" // --
+	Add    MetaName = "add"    // +
+	Sub    MetaName = "sub"    // -
+	Mul    MetaName = "mul"    // *
+	Div    MetaName = "div"    // /
+	IntDiv MetaName = "intDiv" // //
+	Mod    MetaName = "mod"    // %
+	Pow    MetaName = "pow"    // **
+	Eq     MetaName = "eq"     // ==
+	Neq    MetaName = "neq"    // !=
+	Gt     MetaName = "gt"     // >
+	Lt     MetaName = "lt"     // <
+	Gte    MetaName = "gte"    // >=
+	Lte    MetaName = "lte"    // <=
+	Pos    MetaName = "pos"    // +
+	Neg    MetaName = "neg"    // -
+	Not    MetaName = "not"    // !
+	In     MetaName = "in"     // in
+	Is     MetaName = "is"     // is
 )
 
 func FromUnaryOperator(op string) MetaName {
@@ -85,11 +86,16 @@ func FromBinaryOperator(op string) MetaName {
 		return Gte
 	case "<=":
 		return Lte
-	case "++":
-		return PostInc
-	case "--":
-		return PostDec
 	}
 
 	return ""
+}
+
+func IsValid(name string) bool {
+	switch MetaName(name) {
+	case SetProperty, GetProperty, SetItem, GetItem, Len, New, Call, Boolean, String, Repr, To, Iter, Add, Sub, Mul, Div, IntDiv, Mod, Pow, Eq, Neq, Gt, Lt, Gte, Lte, Pos, Neg, Not, Is, In:
+		return true
+	}
+
+	return false
 }
