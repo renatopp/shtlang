@@ -14,42 +14,18 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-
-data A {
-	name = 'string'
-
-	fn getName(this) {
-		return this.name
-	}
-
-	fn static() {
-		return true
-	}
-
-	on add(this, other) {
-		return this.name + other.name
-	}
-
-	on repr(this) {
-		return '<' .. this.name .. '>'
+fn fizzbuzz(n) {
+	pipe range(0, n) as i {
+		match (i%3, i%5) {
+			(0, 0): yield 'fizzbuzz'
+			(0, _): yield 'fizz'
+			(_, 0): yield 'buzz'
+			(_, _): yield i
+		}
 	}
 }
 
-data B like A {
-	surname = 'string'
-}
-
-data C like A, B {
-	surname = 'string'
-}
-
-a := A()
-a.name = 'hello'
-print(a)
-
-b := B()
-b.name = 'world'
-print(b)
+fizzbuzz(100) | each x: print(x) 
 `
 
 func main() {

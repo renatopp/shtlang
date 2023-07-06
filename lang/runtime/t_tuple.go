@@ -172,12 +172,12 @@ func (t *TupleDataType) OnGetItem(r *Runtime, s *Scope, self *Instance, args ...
 }
 
 func (d *TupleDataType) OnEq(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-	if self.Type != args[0].Type {
+	if !args[0].IsTuple() {
 		return Boolean.FALSE
 	}
 
-	this := self.Impl.(*TupleDataImpl)
-	other := args[0].Impl.(*TupleDataImpl)
+	this := self.AsTuple()
+	other := args[0].AsTuple()
 
 	if len(this.Values) != len(other.Values) {
 		return Boolean.FALSE
@@ -186,6 +186,10 @@ func (d *TupleDataType) OnEq(r *Runtime, s *Scope, self *Instance, args ...*Inst
 	for i, value := range this.Values {
 		t := value
 		o := other.Values[i]
+
+		if t.Type == WildCard.Type || o.Type == WildCard.Type {
+			continue
+		}
 
 		if t.Type != o.Type {
 			return Boolean.FALSE

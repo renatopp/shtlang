@@ -12,6 +12,11 @@ type IfRecord struct {
 	Scope     *Scope
 }
 
+type MatchRecord struct {
+	Case  int
+	Scope *Scope
+}
+
 type ForRecord struct {
 	Scope *Scope
 }

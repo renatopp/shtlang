@@ -19,6 +19,7 @@ var keywords = []string{
 	"pipe",
 	"break",
 	"continue",
+	"match",
 
 	"return",
 	"raise",

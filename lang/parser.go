@@ -1295,6 +1295,74 @@ func (p *Parser) parsePipe(left ast.Node) ast.Node {
 	return pipe
 }
 
+func (p *Parser) parseMatch() ast.Node {
+	p.lexer.EatToken()
+
+	p.inCondition = true
+	exp := p.checkPipe(p.parseExpressionTuple())
+	p.inCondition = false
+	if exp == nil {
+		p.RegisterError(fmt.Sprintf("invalid match expression"), p.lexer.PeekToken())
+		return nil
+	}
+
+	p.eatNewLines()
+	if !p.Expect(tokens.Lbrace) {
+		p.RegisterError(fmt.Sprintf("invalid match expression"), p.lexer.PeekToken())
+		return nil
+	}
+
+	p.lexer.EatToken()
+	p.eatNewLines()
+
+	cases := []ast.Node{}
+	for {
+		p.inCondition = true
+		exp := p.checkPipe(p.parseExpressionTuple())
+		p.inCondition = false
+		if exp == nil {
+			break
+		}
+
+		if !p.Expect(tokens.Colon) {
+			return nil
+		}
+		p.lexer.EatToken()
+
+		p.eatNewLines()
+		body := p.parseStatement()
+
+		if body == nil {
+			body = &ast.Block{}
+		}
+		if _, ok := body.(*ast.Block); !ok {
+			body = &ast.Block{
+				Statements: []ast.Node{body},
+			}
+		}
+
+		cases = append(cases, &ast.MatchCase{
+			Token:     exp.GetToken(),
+			Condition: exp,
+			Body:      body,
+		})
+
+		p.eatNewLines()
+	}
+
+	if !p.Expect(tokens.Rbrace) {
+		p.RegisterError(fmt.Sprintf("invalid match expression"), p.lexer.PeekToken())
+		return nil
+	}
+
+	p.lexer.EatToken()
+	return &ast.Match{
+		Token:      exp.GetToken(),
+		Expression: exp,
+		Cases:      cases,
+	}
+}
+
 // ----------------------------------------------------------------
 // Prefix Functions
 // ----------------------------------------------------------------
@@ -1313,6 +1381,9 @@ func (p *Parser) parsePrefixKeyword() ast.Node {
 
 	case "data":
 		return p.parseDataDef()
+
+	case "match":
+		return p.parseMatch()
 
 	default:
 		p.RegisterError(fmt.Sprintf("invalid keyword '%s'", cur.Literal), cur)

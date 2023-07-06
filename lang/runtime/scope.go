@@ -17,6 +17,7 @@ type Scope struct {
 	ActiveRecord ExecutionRecord
 	Interruption *FlowInterruption
 
+	InMatchCase  bool
 	InAssignment bool
 	InArgument   bool
 	PipeCounter  int

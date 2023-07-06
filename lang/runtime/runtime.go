@@ -22,6 +22,7 @@ func CreateRuntime() *Runtime {
 	String.Setup()
 	Tuple.Setup()
 	Type.Setup()
+	WildCard.Setup()
 
 	r.Global = CreateScope(nil, nil)
 	r.Global.Name = "Global"
@@ -136,6 +137,9 @@ func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {
 
 	case *ast.If:
 		result = r.EvalIf(n, scope)
+
+	case *ast.Match:
+		result = r.EvalMatch(n, scope)
 
 	case *ast.For:
 		result = r.EvalFor(n, scope)
@@ -702,6 +706,11 @@ func (r *Runtime) Assign(name string, exp *Instance, def, cnst bool, scope *Scop
 
 func (r *Runtime) EvalIdentifier(node *ast.Identifier, scope *Scope) *Instance {
 	name := node.Value
+
+	if scope.InMatchCase && name == "_" {
+		return WildCard.Create()
+	}
+
 	ref, ok := scope.Get(name)
 	if !ok {
 		return r.Throw(Error.VariableNotDefined(scope, name), scope)
@@ -1331,4 +1340,80 @@ func (r *Runtime) EvalDataDef(node *ast.DataDef, scope *Scope) *Instance {
 	}
 
 	return dt
+}
+
+func (r *Runtime) EvalMatch(node *ast.Match, scope *Scope) *Instance {
+	var newScope *Scope
+	current := -1
+	if scope.ActiveRecord != nil {
+		state := scope.ActiveRecord.(*MatchRecord)
+		current = state.Case
+		newScope = state.Scope
+
+	} else {
+		newScope = CreateScope(scope, scope.Caller)
+	}
+	scope.ActiveRecord = nil
+
+	if current == -1 {
+		exp := r.Eval(node.Expression, newScope)
+		if exp == nil {
+			return r.Throw(Error.Create(scope, "invalid match expression"), scope)
+		}
+		if newScope.IsInterruptedAs(FlowRaise) {
+			return newScope.Propagate()
+		}
+
+		for i, v := range node.Cases {
+			caseNode := v.(*ast.MatchCase)
+			if r.isUnderscore(caseNode.Condition) {
+				current = i
+				break
+			}
+			newScope.InMatchCase = true
+			condition := r.Eval(caseNode.Condition, newScope)
+			newScope.InMatchCase = false
+
+			if condition == nil {
+				return r.Throw(Error.Create(scope, "invalid case expression"), scope)
+			}
+			if newScope.IsInterruptedAs(FlowRaise) {
+				return newScope.Propagate()
+			}
+
+			if AsBool(exp.OnEq(r, scope, condition)) {
+				current = i
+				break
+			}
+		}
+	}
+
+	if current == -1 {
+		return Boolean.FALSE
+	}
+
+	caseNode := node.Cases[current].(*ast.MatchCase)
+	ret := r.Eval(caseNode.Body, newScope)
+
+	if newScope.IsInterruptedAs(FlowBreak, FlowContinue, FlowReturn, FlowRaise) {
+		newScope.Propagate()
+
+	} else if newScope.IsInterruptedAs(FlowYield) {
+		scope.ActiveRecord = &MatchRecord{
+			Scope: newScope,
+			Case:  current,
+		}
+		newScope.Propagate()
+	}
+
+	return ret
+}
+
+func (r *Runtime) isUnderscore(node ast.Node) bool {
+	ident, ok := node.(*ast.Identifier)
+	if !ok {
+		return false
+	}
+
+	return ident.Value == "_"
 }
