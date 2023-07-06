@@ -25,7 +25,13 @@ fn fizzbuzz(n) {
 	}
 }
 
-fizzbuzz(100) | each x: print(x) 
+a := Dict(=> 000)
+a['name'] = 3
+a[3] = 3
+a['3'] = 5
+
+a[45]
+
 `
 
 func main() {

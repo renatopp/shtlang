@@ -12,6 +12,7 @@ func CreateRuntime() *Runtime {
 	r := &Runtime{}
 
 	Boolean.Setup()
+	Dict.Setup()
 	Error.Setup()
 	Iteration.Setup()
 	Iterator.Setup()
@@ -28,6 +29,7 @@ func CreateRuntime() *Runtime {
 	r.Global.Name = "Global"
 
 	r.Global.Set(Boolean.Type.GetName(), Constant(Boolean.TypeInstance))
+	r.Global.Set(Dict.Type.GetName(), Constant(Dict.TypeInstance))
 	r.Global.Set(Error.Type.GetName(), Constant(Error.TypeInstance))
 	r.Global.Set(Iteration.Type.GetName(), Constant(Iteration.TypeInstance))
 	r.Global.Set(Iterator.Type.GetName(), Constant(Iterator.TypeInstance))

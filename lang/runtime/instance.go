@@ -43,6 +43,13 @@ func (i *Instance) AsTuple() *TupleDataImpl {
 	return i.Impl.(*TupleDataImpl)
 }
 
+func (i *Instance) IsDict() bool {
+	return i.Type == Dict.Type
+}
+func (i *Instance) AsDict() *DictDataImpl {
+	return i.Impl.(*DictDataImpl)
+}
+
 func (i *Instance) IsList() bool {
 	return i.Type == List.Type
 }

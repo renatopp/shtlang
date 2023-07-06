@@ -75,7 +75,7 @@ func (d *ListDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 		}
 		return List.Create(values...)
 	default:
-		return r.Throw(Error.Create(s, "invalid initializer for list"), s)
+		return List.Create()
 	}
 }
 
