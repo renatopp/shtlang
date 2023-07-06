@@ -3,6 +3,7 @@ package lang
 import (
 	"fmt"
 	"sht/lang/tokens"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -404,7 +405,7 @@ func (l *Lexer) parseNumber() *tokens.Token {
 	return tokens.CreateToken(tokens.Number, literal, first.Line, first.Column)
 }
 
-func (l *Lexer) parseString() *tokens.Token {
+func (l *Lexer) parseString(char rune) *tokens.Token {
 	l.builder.Reset()
 	esc := false
 
@@ -413,15 +414,52 @@ func (l *Lexer) parseString() *tokens.Token {
 		c := l.PeekChar()
 
 		if !esc && c.Is('\\') {
-			esc = !esc
+			esc = true
 			l.EatChar()
 			continue
 
-		} else if l.isEOF(c.Rune) || !esc && c.Is('\'') {
+		} else if l.isEOF(c.Rune) || !esc && c.Is(char) {
 			break
 
-		} else {
+		} else if c.Is('\n') {
+			l.RegisterError("unexpected newline", c)
+			l.EatChar()
+			continue
+
+		} else if esc && !c.Is(char) {
 			esc = false
+			r, err := strconv.Unquote(`"\` + string(c.Rune) + `"`)
+			if err != nil {
+				l.RegisterError(err.Error(), c)
+				l.EatChar()
+				continue
+			}
+			c.Rune = rune(r[0])
+		}
+
+		l.builder.WriteRune(c.Rune)
+		l.EatChar()
+	}
+
+	l.EatChar()
+	return tokens.CreateToken(tokens.String, l.builder.String(), first.Line, first.Column)
+}
+
+func (l *Lexer) parseEscapedString() *tokens.Token {
+	l.builder.Reset()
+
+	first := l.EatChar()
+	for {
+		c := l.PeekChar()
+		n := l.PeekCharN(1)
+
+		if l.isEOF(c.Rune) || c.Is('`') {
+			break
+		}
+
+		if c.Is('\\') && n.Is('`') {
+			l.EatChar()
+			c = n
 		}
 
 		l.builder.WriteRune(c.Rune)
@@ -580,8 +618,11 @@ func (l *Lexer) parseNextToken() *tokens.Token {
 		case l.isDigit(c.Rune) || c.Is('.') && l.isDigit(l.PeekCharN(1).Rune):
 			token = l.parseNumber()
 
-		case c.Is('\''):
-			token = l.parseString()
+		case c.Is('\'') || c.Is('"'):
+			token = l.parseString(c.Rune)
+
+		case c.Is('`'):
+			token = l.parseEscapedString()
 
 		default:
 			l.RegisterError(fmt.Sprintf("invalid character '%c'", c.Rune), c)

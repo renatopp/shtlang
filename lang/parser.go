@@ -162,6 +162,10 @@ func (p *Parser) HasError() bool {
 }
 
 func (p *Parser) GetError() error {
+	if p.lexer.HasError() {
+		return fmt.Errorf("Lexer errors: \n- %s", strings.Join(p.lexer.errors, "\n- "))
+	}
+
 	if p.HasError() {
 		return fmt.Errorf("Parser errors: \n- %s", strings.Join(p.errors, "\n- "))
 	}
@@ -211,7 +215,7 @@ func (p *Parser) parseBlock() ast.Node {
 	}
 
 	cur := p.lexer.PeekToken()
-	for !isEndOfBlock(cur) && !p.HasError() {
+	for !isEndOfBlock(cur) && !p.HasError() && !p.lexer.HasError() {
 		p.eatNewLines()
 		s := p.parseStatement()
 		if s != nil {

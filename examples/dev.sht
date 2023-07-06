@@ -1,2 +1,8 @@
 
 
+
+a := `a\nb`
+b := 'renato\nper\'eira'
+print(a)
+print('--------------------------------')
+print(b)

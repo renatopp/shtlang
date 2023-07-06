@@ -66,7 +66,7 @@ func cmdRun(ctx *cli.Context) error {
 	if err != nil {
 		fmt.Println(err)
 	} else if v != "" {
-		fmt.Println(v)
+		// fmt.Println(v)
 	}
 
 	return nil
