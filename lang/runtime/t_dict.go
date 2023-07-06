@@ -164,7 +164,12 @@ func (t *DictDataType) OnGetItem(r *Runtime, s *Scope, self *Instance, args ...*
 	key := AsString(args[0])
 
 	if _, has := this.Values[key]; !has {
-		return this.default_().OnCall(r, s, self)
+		val := this.default_().OnCall(r, s, self)
+		if s.IsInterruptedAs(FlowRaise) {
+			return val
+		}
+
+		this.Values[key] = val
 	}
 
 	return this.Values[key]

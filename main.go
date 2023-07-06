@@ -25,13 +25,6 @@ fn fizzbuzz(n) {
 	}
 }
 
-a := Dict(=> 000)
-a['name'] = 3
-a[3] = 3
-a['3'] = 5
-
-a[45]
-
 `
 
 func main() {
