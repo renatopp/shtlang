@@ -8,12 +8,15 @@ import (
 type DataType interface {
 	GetName() string
 	Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance
+	GetProperties() map[string]ast.Node
 	SetProperty(name string, node ast.Node)
 	GetProperty(name string) ast.Node
 	HasProperty(name string) bool
+	GetStaticFns() map[string]*Instance
 	SetStaticFn(name string, fn *Instance)
 	GetStaticFn(name string) *Instance
 	HasStaticFn(name string) bool
+	GetInstanceFns() map[string]*Instance
 	SetInstanceFn(name string, fn *Instance)
 	GetInstanceFn(name string) *Instance
 	HasInstanceFn(name string) bool
@@ -64,10 +67,12 @@ func (d *BaseDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 	return r.Throw(Error.Create(s, "type '%s' does not allow instantiation", d.Name), s)
 }
 
+func (d *BaseDataType) GetProperties() map[string]ast.Node {
+	return d.Properties
+}
 func (d *BaseDataType) SetProperty(name string, node ast.Node) {
 	d.Properties[name] = node
 }
-
 func (d *BaseDataType) GetProperty(name string) ast.Node {
 	return d.Properties[name]
 }
@@ -76,10 +81,12 @@ func (d *BaseDataType) HasProperty(name string) bool {
 	return ok
 }
 
+func (d *BaseDataType) GetStaticFns() map[string]*Instance {
+	return d.StaticFns
+}
 func (d *BaseDataType) SetStaticFn(name string, fn *Instance) {
 	d.StaticFns[name] = fn
 }
-
 func (d *BaseDataType) GetStaticFn(name string) *Instance {
 	return d.StaticFns[name]
 }
@@ -88,10 +95,12 @@ func (d *BaseDataType) HasStaticFn(name string) bool {
 	return ok
 }
 
+func (d *BaseDataType) GetInstanceFns() map[string]*Instance {
+	return d.InstanceFns
+}
 func (d *BaseDataType) SetInstanceFn(name string, fn *Instance) {
 	d.InstanceFns[name] = fn
 }
-
 func (d *BaseDataType) GetInstanceFn(name string) *Instance {
 	return d.InstanceFns[name]
 }

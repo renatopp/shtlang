@@ -1261,6 +1261,31 @@ func (r *Runtime) EvalDataDef(node *ast.DataDef, scope *Scope) *Instance {
 	staticFns := map[string]*Instance{}
 	metaFns := map[string]*Instance{}
 
+	for _, like := range node.Likes {
+		i_like, ok := scope.Get(like)
+		if !ok {
+			return r.Throw(Error.Create(scope, "cannot find type '%s'", like), scope)
+		}
+
+		t_like, ok := i_like.AsType().DataType.(*CustomType)
+		if !i_like.IsType() || !ok {
+			return r.Throw(Error.Create(scope, "type '%s' is not custom data", like), scope)
+		}
+
+		for k, v := range t_like.GetProperties() {
+			properties[k] = v
+		}
+		for k, v := range t_like.GetStaticFns() {
+			staticFns[k] = v
+		}
+		for k, v := range t_like.GetInstanceFns() {
+			instanceFns[k] = v
+		}
+		for k, v := range t_like.MetaFunctions {
+			metaFns[k] = v
+		}
+	}
+
 	for _, v := range node.Properties {
 		prop := v.(*ast.Property)
 		if names[prop.Name] {

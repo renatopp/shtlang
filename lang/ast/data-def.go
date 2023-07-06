@@ -1,10 +1,14 @@
 package ast
 
-import "sht/lang/tokens"
+import (
+	"sht/lang/tokens"
+	"strings"
+)
 
 type DataDef struct {
 	Token         *tokens.Token
 	Name          string
+	Likes         []string
 	Properties    []Node
 	Functions     []Node
 	MetaFunctions []Node
@@ -15,7 +19,12 @@ func (p *DataDef) GetToken() *tokens.Token {
 }
 
 func (p *DataDef) String() string {
-	return "<datadef:" + p.Name + ">"
+	name := "<datadef:" + p.Name + ">"
+	if len(p.Likes) > 0 {
+		name += " like " + strings.Join(p.Likes, ", ")
+	}
+
+	return name
 }
 
 func (p *DataDef) Children() []Node {

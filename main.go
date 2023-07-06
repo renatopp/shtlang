@@ -14,40 +14,42 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-data Notes {
-	a = (1, 2, 3, 4)
 
-	fn create() {
-		return Notes { a: (0, 1, 2) }
+data A {
+	name = 'string'
+
+	fn getName(this) {
+		return this.name
 	}
 
-	fn reverse(this) {
-		i := len(this.a) - 1
-		for i >= 0 {
-			yield this.a[i]
-			i -= 1
-		}
+	fn static() {
+		return true
 	}
 
-	on len(this) {
-		return len(this.a)
-	}
-	
-	on iter(this) {
-		pipe this.a as item {
-			yield item
-		}
+	on add(this, other) {
+		return this.name + other.name
 	}
 
-	on to(iter) {
-		return Notes { a: iter | to Tuple }
+	on repr(this) {
+		return '<' .. this.name .. '>'
 	}
 }
 
-notes := List { 1, 2, 3, 4 } | to Notes
+data B like A {
+	surname = 'string'
+}
 
-notes.a
+data C like A, B {
+	surname = 'string'
+}
 
+a := A()
+a.name = 'hello'
+print(a)
+
+b := B()
+b.name = 'world'
+print(b)
 `
 
 func main() {
