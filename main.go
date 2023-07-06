@@ -38,9 +38,16 @@ data Notes {
 			yield item
 		}
 	}
+
+	on to(iter) {
+		return Notes { a: iter | to Tuple }
+	}
 }
 
-len(Notes.create())
+notes := List { 1, 2, 3, 4 } | to Notes
+
+notes.a
+
 `
 
 func main() {

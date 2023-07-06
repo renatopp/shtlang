@@ -98,6 +98,7 @@ type Parser struct {
 	// for and if conditions
 	inCondition bool
 	inPipeLoop  bool
+	inMetaDef   bool
 
 	// function content control
 	hasReturn bool
@@ -648,7 +649,7 @@ func (p *Parser) parseBoolean() ast.Node {
 
 func (p *Parser) parseFunctionDef() ast.Node {
 	cur := p.lexer.EatToken()
-	if !p.Expect(tokens.Identifier, tokens.Lparen, tokens.Lbrace, tokens.Question) {
+	if !p.Expect(tokens.Identifier, tokens.Keyword, tokens.Lparen, tokens.Lbrace, tokens.Question) {
 		p.RegisterError(fmt.Sprintf("invalid function definition"), p.lexer.PeekToken())
 		return nil
 	}
@@ -659,6 +660,13 @@ func (p *Parser) parseFunctionDef() ast.Node {
 
 	cur = p.lexer.PeekToken()
 	if cur.Is(tokens.Identifier) {
+		p.lexer.EatToken()
+		fn.Name = cur.Literal
+	} else if cur.Is(tokens.Keyword) {
+		if !p.inMetaDef || !meta.IsValid(cur.Literal) {
+			p.RegisterError(fmt.Sprintf("invalid function name '%s', this name is a reserved keyword", cur.Literal), cur)
+			return nil
+		}
 		p.lexer.EatToken()
 		fn.Name = cur.Literal
 	}
@@ -738,10 +746,18 @@ func (p *Parser) parseDataDef() ast.Node {
 
 		} else if cur.Literal == "fn" {
 			fn := p.parseFunctionDef()
+			if fn == nil {
+				return nil
+			}
 			dd.Functions = append(dd.Functions, fn)
 
 		} else if cur.Literal == "on" {
+			p.inMetaDef = true
 			fn := p.parseFunctionDef()
+			p.inMetaDef = false
+			if fn == nil {
+				return nil
+			}
 
 			fnd := fn.(*ast.FunctionDef)
 			name := fnd.Name
@@ -1128,7 +1144,7 @@ func (p *Parser) parseInitializer() ast.Initializer {
 				p.RegisterError(fmt.Sprintf("invalid map initializer value '%s'", cur.Literal), cur)
 				return nil
 			}
-			initializer.(*ast.MapInitializer).Values[name.Value] = exp
+			initializer.(*ast.MapInitializer).Values[name.Value] = p.checkPipe(exp)
 		} else {
 			initializer.(*ast.ListInitializer).Values = append(initializer.(*ast.ListInitializer).Values, first)
 		}
