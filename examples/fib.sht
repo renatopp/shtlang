@@ -8,8 +8,8 @@ fn fib(n) {
 
   for i < n {
     a, b = b, a + b
-    yield b
     i += 1
+    yield b
   }
 }
 

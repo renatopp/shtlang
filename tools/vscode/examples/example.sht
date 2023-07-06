@@ -1,0 +1,31 @@
+#
+# COMMENTS!
+#
+
+stringsS := 'normal \nstring\'s'
+stringsD := "normal \nstring\"s"
+stringsE := `normal \nstring\`s`
+a := 1.2e3
+nums := List { 1, 100, -10, 1.2, .2, 1e2, 1e-2 }
+
+for a > 0 {
+  a /= 2
+  a -= 1
+}
+
+fn fib(n) {
+  i, a, b := 0, 0, 1
+
+  if n >= 0 yield a
+  if n >= 1 yield b
+
+  for i < n {
+    a, b = b, a + b
+    yield b
+    i += 1
+  }
+}
+
+pipe fib(10) as n {
+  print(n)
+}

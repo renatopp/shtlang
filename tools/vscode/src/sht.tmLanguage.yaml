@@ -1,0 +1,60 @@
+
+$schema: "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json"
+name: SHT
+scopeName: source.sht
+fileTypes:
+  - sht
+patterns:
+  # COMMENTS
+  - name: comment.line.sht
+    match: '#.*$'
+
+  # CONSTANTS
+  - name: constant.numeric.float.sht
+    match: \b((\d+(\.\d+)?)|(\.\d+))(e[\+\-]?\d+)?\b
+  - name: constant.language.sht
+    match: \b(true|false)\b
+
+  # KEYWORDS
+  - name: keyword.control.flow.sht,
+    match: \b(if|else|for|pipe|break|continue|match|return|raise|yield)\b
+  - name: keyword.operator.assignment.augmented.sht
+    match: \+\=|-\=|\*\=|/\=|//\=|\*\*\=
+  - name: keyword.operator.assignment.sht
+    match: \=|\:\=
+  - name: keyword.operator.assignment.sht
+    match: \b(as)\b
+  - name: keyword.operator.comparison.sht
+    match: <\=|>\=|\=\=|<|>|\!\=
+  - name: keyword.operator.arithmetic.sht
+    match: \+|\-|\*|\*\*|/|//|%
+  - name: keyword.operator.logical.sht
+    match: \b(and|or|is|in)\b
+  - name: keyword.operator.logical.sht
+    match: \!
+  - name: keyword.other.python
+    match: \b(on|fn|data|module|use|async|await|to|like)\b
+
+  # STRINGS
+  - name: string.quoted.single.sht
+    begin: "'"
+    end: "'"
+    patterns:
+      - match: "\\\\'"
+  - name: string.quoted.double.sht
+    begin: "\""
+    end: "\""
+    patterns:
+      - match: "\\\\\""
+  - name: string.quoted.backtick.sht
+    begin: "`"
+    end: "`"
+    contentName: "string.escaped"
+    patterns:
+      - match: "\\\\."
+
+  # FUNCTIONS TODO (FN, ON) - (PARAMS)
+  # DATA TODO (DATA)
+  # WRAP UNWRAP
+
+repository:
