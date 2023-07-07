@@ -23,6 +23,9 @@ var b_map = Function.CreateNative("map",
 		return Iterator.Create(
 			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 				ret := next.OnCall(r, s, iter)
+				if s.IsInterruptedAs(FlowRaise) {
+					return ret
+				}
 				iteration := ret.AsIteration()
 
 				if AsBool(iteration.error()) {
@@ -64,6 +67,9 @@ var b_each = Function.CreateNative("each",
 		return Iterator.Create(
 			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 				ret := next.OnCall(r, s, iter)
+				if s.IsInterruptedAs(FlowRaise) {
+					return ret
+				}
 				iteration := ret.Impl.(*IterationDataImpl)
 
 				if iteration.error() == Boolean.TRUE {
@@ -106,6 +112,10 @@ var b_filter = Function.CreateNative("filter",
 			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 				for {
 					ret := next.OnCall(r, s, iter)
+					if s.IsInterruptedAs(FlowRaise) {
+						return ret
+					}
+
 					iteration := ret.Impl.(*IterationDataImpl)
 
 					if iteration.error() == Boolean.TRUE {
@@ -164,6 +174,10 @@ var b_reduce = Function.CreateNative("reduce",
 
 				for {
 					ret := next.OnCall(r, s, iter)
+					if s.IsInterruptedAs(FlowRaise) {
+						return ret
+					}
+
 					iteration := ret.Impl.(*IterationDataImpl)
 
 					if iteration.error() == Boolean.TRUE {
@@ -212,6 +226,9 @@ var b_sum = Function.CreateNative("sum",
 
 				for {
 					ret := next.OnCall(r, s, iter)
+					if s.IsInterruptedAs(FlowRaise) {
+						return ret
+					}
 					iteration := ret.Impl.(*IterationDataImpl)
 
 					if iteration.error() == Boolean.TRUE {

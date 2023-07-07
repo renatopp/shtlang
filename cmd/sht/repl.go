@@ -289,8 +289,8 @@ func (m *model) onCommand(cmd string) tea.Cmd {
 		return nil
 	}
 
-	res := m.runtime.Run(tree)
-	if res != "" {
+	res, err := m.runtime.Run(tree)
+	if err != nil {
 		m.appendResult(res)
 	}
 

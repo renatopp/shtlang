@@ -38,3 +38,37 @@ var b_len = Function.CreateNative("len",
 		return args[0].OnLen(r, s)
 	},
 )
+
+var b_even = Function.CreateNative("even",
+	[]*FunctionParam{
+		{"num", nil, false},
+	},
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		if len(args) == 0 {
+			return r.Throw(Error.Create(s, "Expecting a number, got none"), s)
+		}
+
+		if !args[0].IsNumber() {
+			return r.Throw(Error.Create(s, "Expecting a number, got "+args[0].Type.GetName()), s)
+		}
+
+		return Boolean.Create(AsInteger(args[0])%2 == 0)
+	},
+)
+
+var b_odd = Function.CreateNative("odd",
+	[]*FunctionParam{
+		{"num", nil, false},
+	},
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		if len(args) == 0 {
+			return r.Throw(Error.Create(s, "Expecting a number, got none"), s)
+		}
+
+		if !args[0].IsNumber() {
+			return r.Throw(Error.Create(s, "Expecting a number, got "+args[0].Type.GetName()), s)
+		}
+
+		return Boolean.Create(AsInteger(args[0])%2 == 1)
+	},
+)

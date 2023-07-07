@@ -1,0 +1,19 @@
+fn fibUntil(cond) {
+  i, a, b := 1, 0, 1
+  if n >= 0 yield a, 0
+
+  for cond(b, i) {
+    yield b, i
+    i, a, b = i + 1, b, a + b
+  }
+}
+
+solution := fibUntil(x => x < 4000000)
+| map x, idx: x
+| filter x: x is even
+| sum
+| to Number
+
+print(solution)
+
+# REFAZER COM TAKE UNTIL, E TIRAR CONDICAO DA FUNCAO

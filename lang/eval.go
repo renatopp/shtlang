@@ -9,7 +9,7 @@ func Eval(input []byte) (string, error) {
 	}
 
 	runtime := runtime.CreateRuntime()
-	res := runtime.Run(tree)
+	res, err := runtime.Run(tree)
 	if err != nil {
 		return "", err
 	}

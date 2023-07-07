@@ -1,0 +1,9 @@
+fn c_0001(n=10) {
+  return range(3, n)
+  | filter x: x%3 == 0 or x%5 == 0
+  | sum
+  | to Number
+}
+
+print('Resulto to n=10   : ' .. c_0001(10))
+print('Resulto to n=1000 : ' .. c_0001(1000))

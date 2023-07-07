@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"errors"
 	"sht/lang/ast"
 )
 
@@ -52,15 +53,25 @@ func CreateRuntime() *Runtime {
 
 	r.Global.Set("print", Constant(b_print))
 	r.Global.Set("len", Constant(b_len))
+	r.Global.Set("even", Constant(b_even))
+	r.Global.Set("odd", Constant(b_odd))
 
 	return r
 }
 
-func (r *Runtime) Run(node ast.Node) string {
+func (r *Runtime) Run(node ast.Node) (string, error) {
 	instance := r.Eval(node, r.Global)
 
+	if r.Global.IsInterruptedAs(FlowRaise) {
+		return "", errors.New(r.Global.Interruption.Value.Repr())
+	}
+
+	if instance.IsError() {
+		return "", errors.New(instance.Repr())
+	}
+
 	r.Global.Interruption = nil
-	return instance.Repr()
+	return instance.Repr(), nil
 }
 
 func (r *Runtime) Eval(node ast.Node, scope *Scope) *Instance {

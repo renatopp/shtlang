@@ -14,16 +14,7 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-fn fizzbuzz(n) {
-	pipe range(0, n) as i {
-		match (i%3, i%5) {
-			(0, 0): yield 'fizzbuzz'
-			(0, _): yield 'fizz'
-			(_, 0): yield 'buzz'
-			(_, _): yield i
-		}
-	}
-}
+3 is even
 
 `
 
@@ -78,7 +69,7 @@ func testRuntime(input []byte) {
 	}
 
 	runtime := runtime.CreateRuntime()
-	res := runtime.Run(tree)
+	res, err := runtime.Run(tree)
 	if err != nil {
 		fmt.Println(err)
 		return
