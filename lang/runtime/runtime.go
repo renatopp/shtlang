@@ -48,8 +48,10 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("filter", Constant(b_filter))
 	r.Global.Set("reduce", Constant(b_reduce))
 	r.Global.Set("sum", Constant(b_sum))
+	r.Global.Set("takeWhile", Constant(b_takeWhile))
 
 	r.Global.Set("range", Constant(b_range))
+	r.Global.Set("fibonacci", Constant(b_fibonacci))
 
 	r.Global.Set("print", Constant(b_print))
 	r.Global.Set("len", Constant(b_len))

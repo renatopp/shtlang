@@ -47,3 +47,29 @@ var b_range = Function.CreateNative("range",
 		)
 	},
 )
+
+var b_fibonacci = Function.CreateNative("fibonacci",
+	[]*FunctionParam{},
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+
+		cur := -1
+		a := 0
+		b := 1
+		return Iterator.Create(
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+				cur++
+				if cur == 0 {
+					return Iteration.Create(Number.ZERO)
+				} else if cur == 1 {
+					return Iteration.Create(Number.ONE)
+				} else {
+					c := a + b
+					a = b
+					b = c
+					return Iteration.Create(Number.Create(float64(c)))
+				}
+			}),
+		)
+	},
+)

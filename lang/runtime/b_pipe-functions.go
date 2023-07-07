@@ -247,3 +247,54 @@ var b_sum = Function.CreateNative("sum",
 		)
 	},
 )
+
+var b_takeWhile = Function.CreateNative("takeWhile",
+	[]*FunctionParam{
+		{"iter", nil, false},
+		{"func", nil, false},
+	},
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+		// args[0] => iter
+		// args[1] => func
+		if len(args) != 2 {
+			return r.Throw(Error.Create(s, "takeWhile does not accept additional parameters"), s)
+		}
+		if args[1] == Boolean.FALSE {
+			return r.Throw(Error.Create(s, "takeWhile requires a function"), s)
+		}
+
+		iter := args[0]
+		next := args[0].AsIterator().next()
+		fn := args[1]
+
+		return Iterator.Create(
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+				for {
+					ret := next.OnCall(r, s, iter)
+					if s.IsInterruptedAs(FlowRaise) {
+						return ret
+					}
+
+					iteration := ret.Impl.(*IterationDataImpl)
+
+					if iteration.error() == Boolean.TRUE {
+						return ret
+
+					} else if iteration.done() == Boolean.TRUE {
+						return Iteration.DONE
+
+					} else {
+						values := iteration.value().Impl.(*TupleDataImpl)
+						r := fn.OnCall(r, s, values.Values...)
+						if AsBool(r) {
+							return ret
+						} else {
+							return Iteration.DONE
+						}
+					}
+				}
+			}),
+		)
+	},
+)
