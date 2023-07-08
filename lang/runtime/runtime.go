@@ -60,6 +60,7 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("primes", Constant(b_primes))
 
 	r.Global.Set("print", Constant(b_print))
+	r.Global.Set("printf", Constant(b_printf))
 	r.Global.Set("len", Constant(b_len))
 	r.Global.Set("even", Constant(b_even))
 	r.Global.Set("odd", Constant(b_odd))

@@ -26,6 +26,35 @@ var b_print = Function.CreateNative("print",
 	},
 )
 
+var b_printf = Function.CreateNative("printf",
+	[]*FunctionParam{
+		{"msg", nil, false},
+		{"values", nil, true},
+	},
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		if len(args) == 0 {
+			fmt.Println()
+			return String.EMPTY
+		}
+
+		if len(args) == 1 {
+			str := AsString(args[1])
+			fmt.Println(str)
+			return String.Create(str)
+		}
+
+		msgs := []any{}
+		for _, arg := range args[1:] {
+			msgs = append(msgs, AsString(arg))
+		}
+
+		str := AsString(args[1])
+		v := fmt.Sprintf(str, msgs...)
+		fmt.Println(v)
+		return String.Create(v)
+	},
+)
+
 var b_len = Function.CreateNative("len",
 	[]*FunctionParam{
 		{"obj", nil, false},
