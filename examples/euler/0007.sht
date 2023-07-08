@@ -1,0 +1,6 @@
+p := primes()
+| take(10001)
+| last
+| to Number
+
+print(p)
