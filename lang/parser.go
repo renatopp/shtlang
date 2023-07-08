@@ -1241,6 +1241,16 @@ func (p *Parser) parsePipe(left ast.Node) ast.Node {
 			Value: cur.Literal,
 		}
 		p.lexer.EatToken()
+
+		cur = p.lexer.PeekToken()
+		if cur.Is(tokens.Question) {
+			p.lexer.EatToken()
+			return &ast.Wrapping{
+				Token:      cur,
+				Expression: pipe,
+			}
+		}
+
 		return pipe
 	}
 

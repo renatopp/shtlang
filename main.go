@@ -14,8 +14,9 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-3 is even
-
+r := range(3) | to Number?
+r!
+r
 `
 
 func main() {

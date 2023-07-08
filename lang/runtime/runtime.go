@@ -49,9 +49,15 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("reduce", Constant(b_reduce))
 	r.Global.Set("sum", Constant(b_sum))
 	r.Global.Set("takeWhile", Constant(b_takeWhile))
+	r.Global.Set("take", Constant(b_take))
+	r.Global.Set("min", Constant(b_min))
+	r.Global.Set("max", Constant(b_max))
+	r.Global.Set("first", Constant(b_first))
+	r.Global.Set("last", Constant(b_last))
 
 	r.Global.Set("range", Constant(b_range))
 	r.Global.Set("fibonacci", Constant(b_fibonacci))
+	r.Global.Set("primes", Constant(b_primes))
 
 	r.Global.Set("print", Constant(b_print))
 	r.Global.Set("len", Constant(b_len))
@@ -65,6 +71,7 @@ func (r *Runtime) Run(node ast.Node) (string, error) {
 	instance := r.Eval(node, r.Global)
 
 	if r.Global.IsInterruptedAs(FlowRaise) {
+		r.Global.Interruption = nil
 		return "", errors.New(r.Global.Interruption.Value.Repr())
 	}
 

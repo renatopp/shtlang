@@ -1,0 +1,18 @@
+fn primeFactors(n) {
+  for n > 1 {
+    prime := primes()
+    | takeWhile x: x < n
+    | filter x: n%x == 0
+    | to Number?
+
+    factor := n
+    if !prime! {
+      factor = prime
+    }
+    yield factor
+    n /= factor
+  }
+}
+
+print(primeFactors(13195) | to List)
+print(primeFactors(600851475143) | to List)

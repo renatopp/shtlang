@@ -5,5 +5,3 @@ solution := fibonacci()
 | to Number
 
 print(solution)
-
-# REFAZER COM TAKE UNTIL, E TIRAR CONDICAO DA FUNCAO

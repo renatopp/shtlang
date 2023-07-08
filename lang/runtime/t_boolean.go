@@ -42,11 +42,10 @@ type BooleanInfo struct {
 }
 
 func (t *BooleanInfo) Create(value bool) *Instance {
-	return &Instance{
-		Type: t.Type,
-		Impl: &BooleanDataImpl{
-			Value: value,
-		},
+	if value {
+		return t.TRUE
+	} else {
+		return t.FALSE
 	}
 }
 

@@ -290,9 +290,12 @@ func (m *model) onCommand(cmd string) tea.Cmd {
 	}
 
 	res, err := m.runtime.Run(tree)
-	if err != nil {
+	if res != "" {
 		m.appendResult(res)
+	} else {
+		m.appendError(err.Error())
 	}
+	// println(res)
 
 	return nil
 }

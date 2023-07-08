@@ -73,3 +73,38 @@ var b_fibonacci = Function.CreateNative("fibonacci",
 		)
 	},
 )
+
+var b_primes = Function.CreateNative("primes",
+	[]*FunctionParam{},
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		// self => function
+
+		D := map[int]int{}
+		q := 0
+		return Iterator.Create(
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+				if q == 0 {
+					q = 1
+					return Iteration.Create(Number.TWO)
+				}
+
+				for {
+					q += 2
+					p, ok := D[q]
+					if !ok {
+						delete(D, q)
+						D[q*q] = q
+						return Iteration.Create(Number.Create(float64(q)))
+					} else {
+						x := q + 2*p
+						for _, ok := D[x]; ok; {
+							x += 2 * p
+							_, ok = D[x]
+						}
+						D[x] = p
+					}
+				}
+			}),
+		)
+	},
+)

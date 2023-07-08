@@ -30,6 +30,12 @@ var Number = &NumberInfo{
 			Value: 1,
 		},
 	},
+	TWO: &Instance{
+		Type: numberDT,
+		Impl: &NumberDataImpl{
+			Value: 2,
+		},
+	},
 }
 
 // ----------------------------------------------------------------------------
@@ -41,6 +47,7 @@ type NumberInfo struct {
 
 	ZERO *Instance
 	ONE  *Instance
+	TWO  *Instance
 }
 
 func (t *NumberInfo) Create(value float64) *Instance {
