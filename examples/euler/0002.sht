@@ -4,4 +4,4 @@ solution := fibonacci()
 | sum
 | to Number
 
-print(solution)
+print('Solution: ', solution)

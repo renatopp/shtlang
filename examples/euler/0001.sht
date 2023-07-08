@@ -5,5 +5,5 @@ fn c_0001(n=10) {
   | to Number
 }
 
-print('Resulto to n=10   : ' .. c_0001(10))
-print('Resulto to n=1000 : ' .. c_0001(1000))
+print('Result to 10   : ', c_0001(10))
+print('Result to 1000 : ', c_0001(1000))

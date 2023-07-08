@@ -63,6 +63,7 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("len", Constant(b_len))
 	r.Global.Set("even", Constant(b_even))
 	r.Global.Set("odd", Constant(b_odd))
+	r.Global.Set("palindrome", Constant(b_palindrome))
 
 	return r
 }

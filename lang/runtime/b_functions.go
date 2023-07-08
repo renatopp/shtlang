@@ -72,3 +72,22 @@ var b_odd = Function.CreateNative("odd",
 		return Boolean.Create(AsInteger(args[0])%2 == 1)
 	},
 )
+
+var b_palindrome = Function.CreateNative("palindrome",
+	[]*FunctionParam{
+		{"str", nil, false},
+	},
+	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		if len(args) == 0 {
+			return r.Throw(Error.Create(s, "Expecting an obj, got none"), s)
+		}
+
+		str := AsString(args[0].OnString(r, s))
+		for i := 0; i < len(str)/2; i++ {
+			if str[i] != str[len(str)-1-i] {
+				return Boolean.FALSE
+			}
+		}
+		return Boolean.TRUE
+	},
+)

@@ -14,5 +14,5 @@ fn primeFactors(n) {
   }
 }
 
-print(primeFactors(13195) | to List)
-print(primeFactors(600851475143) | to List)
+print('Factors to 13195        : ', primeFactors(13195) | to List)
+print('Factors to 600851475143 : ', primeFactors(600851475143) | to List)
