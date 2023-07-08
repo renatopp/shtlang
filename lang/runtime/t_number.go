@@ -71,6 +71,22 @@ type NumberDataType struct {
 	BaseDataType
 }
 
+func (d *NumberDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
+	switch init.(type) {
+	case *ast.ListInitializer, *ast.MapInitializer:
+		return r.Throw(Error.Create(s, "type '%s' does not allow instantiation with initializer", d.Name), s)
+	default:
+		return Number.Create(0)
+	}
+}
+
+func (d *NumberDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if len(args) == 0 {
+		return self
+	}
+	return args[0].OnNumber(r, s)
+}
+
 func (d *NumberDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	iter := self.Impl.(*IteratorDataImpl)
 	next := iter.next()
@@ -90,6 +106,10 @@ func (d *NumberDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Ins
 		}
 		return Number.Create(AsNumber(tuple.Values[0]))
 	}
+}
+
+func (d *NumberDataType) OnNumber(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return self
 }
 
 func (d *NumberDataType) OnBoolean(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {

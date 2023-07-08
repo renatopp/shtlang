@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"sht/lang/ast"
+	"strconv"
 	"strings"
 )
 
@@ -66,6 +67,22 @@ type StringDataType struct {
 	BaseDataType
 }
 
+func (d *StringDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
+	switch init.(type) {
+	case *ast.ListInitializer, *ast.MapInitializer:
+		return r.Throw(Error.Create(s, "type '%s' does not allow instantiation with initializer", d.Name), s)
+	default:
+		return String.Create("")
+	}
+}
+
+func (d *StringDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if len(args) == 0 {
+		return self
+	}
+	return args[0].OnString(r, s)
+}
+
 func (d *StringDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	iter := self.Impl.(*IteratorDataImpl)
 	next := iter.next()
@@ -123,6 +140,14 @@ func (d *StringDataType) OnIter(r *Runtime, s *Scope, self *Instance, args ...*I
 
 func (d *StringDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	return self
+}
+
+func (d *StringDataType) OnNumber(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	val, err := strconv.ParseFloat(AsString(self), 64)
+	if err != nil {
+		return r.Throw(Error.Create(s, "cannot convert string '%s' to number", AsString(self)), s)
+	}
+	return Number.Create(val)
 }
 
 func (d *StringDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {

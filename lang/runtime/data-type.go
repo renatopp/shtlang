@@ -27,6 +27,7 @@ type DataType interface {
 	OnGetItem(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 	OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 	OnCall(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
+	OnNumber(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 	OnBoolean(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 	OnString(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 	OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
@@ -129,6 +130,9 @@ func (d *BaseDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Inst
 }
 func (d *BaseDataType) OnCall(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	return r.Throw(Error.InvalidAction(s, string(meta.Call), self), s)
+}
+func (d *BaseDataType) OnNumber(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	return r.Throw(Error.InvalidAction(s, string(meta.Number), self), s)
 }
 func (d *BaseDataType) OnBoolean(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	return Boolean.TRUE

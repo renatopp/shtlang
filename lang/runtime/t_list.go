@@ -74,6 +74,8 @@ func (d *ListDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 			values = append(values, r.Eval(value, s))
 		}
 		return List.Create(values...)
+	case *ast.MapInitializer:
+		return r.Throw(Error.Create(s, "type '%s' does not allow instantiation with map initializer", d.Name), s)
 	default:
 		return List.Create()
 	}

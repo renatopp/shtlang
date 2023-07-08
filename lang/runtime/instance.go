@@ -123,6 +123,9 @@ func (i *Instance) OnNew(r *Runtime, s *Scope, args ...*Instance) *Instance {
 func (i *Instance) OnCall(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return i.Type.OnCall(r, s, i, args...)
 }
+func (i *Instance) OnNumber(r *Runtime, s *Scope, args ...*Instance) *Instance {
+	return i.Type.OnNumber(r, s, i, args...)
+}
 func (i *Instance) OnBoolean(r *Runtime, s *Scope, args ...*Instance) *Instance {
 	return i.Type.OnBoolean(r, s, i, args...)
 }

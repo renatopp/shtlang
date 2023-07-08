@@ -60,6 +60,8 @@ func (d *DictDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *
 		}
 
 		return Dict.Create(values)
+	case *ast.ListInitializer:
+		return r.Throw(Error.Create(s, "type '%s' does not allow instantiation with list initializer", d.Name), s)
 	default:
 		return Dict.Create(map[string]*Instance{})
 	}

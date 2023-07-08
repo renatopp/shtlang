@@ -61,6 +61,22 @@ type BooleanDataType struct {
 	BaseDataType
 }
 
+func (d *BooleanDataType) Instantiate(r *Runtime, s *Scope, init ast.Initializer) *Instance {
+	switch init.(type) {
+	case *ast.ListInitializer, *ast.MapInitializer:
+		return r.Throw(Error.Create(s, "type '%s' does not allow instantiation with initializer", d.Name), s)
+	default:
+		return Boolean.Create(false)
+	}
+}
+
+func (d *BooleanDataType) OnNew(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if len(args) == 0 {
+		return self
+	}
+	return args[0].OnBoolean(r, s)
+}
+
 func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	iter := self.Impl.(*IteratorDataImpl)
 	next := iter.next()
@@ -76,6 +92,14 @@ func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*In
 	} else {
 		tuple := tion.value().AsTuple()
 		return Boolean.Create(AsBool(tuple.Values[0]))
+	}
+}
+
+func (d *BooleanDataType) OnNumber(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if AsBool(self) {
+		return Number.ONE
+	} else {
+		return Number.ZERO
 	}
 }
 

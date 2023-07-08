@@ -14,6 +14,7 @@ var (
 	Call MetaName = "call"
 
 	// Convertions
+	Number  MetaName = "number"
 	Boolean MetaName = "boolean"
 	String  MetaName = "string"
 	Repr    MetaName = "repr"
@@ -93,7 +94,7 @@ func FromBinaryOperator(op string) MetaName {
 
 func IsValid(name string) bool {
 	switch MetaName(name) {
-	case SetProperty, GetProperty, SetItem, GetItem, Len, New, Call, Boolean, String, Repr, To, Iter, Add, Sub, Mul, Div, IntDiv, Mod, Pow, Eq, Neq, Gt, Lt, Gte, Lte, Pos, Neg, Not, Is, In:
+	case SetProperty, GetProperty, SetItem, GetItem, Len, New, Call, Number, Boolean, String, Repr, To, Iter, Add, Sub, Mul, Div, IntDiv, Mod, Pow, Eq, Neq, Gt, Lt, Gte, Lte, Pos, Neg, Not, Is, In:
 		return true
 	}
 
