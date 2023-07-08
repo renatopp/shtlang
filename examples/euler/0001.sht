@@ -1,9 +1,9 @@
-fn c_0001(n=10) {
+fn sol(n=10) {
   return range(3, n)
   | filter x: x%3 == 0 or x%5 == 0
   | sum
   | to Number
 }
 
-print('Result to 10   : ', c_0001(10))
-print('Result to 1000 : ', c_0001(1000))
+print('Result to 10   : ', sol(10))
+print('Result to 1000 : ', sol(1000))

@@ -1,0 +1,21 @@
+
+fn squaredSum(n) {
+  return range(n)
+  | map x: x**2
+  | sum
+  | to Number
+}
+
+fn sumSquared(n) {
+  return range(n)
+  | sum
+  | map x: x**2
+  | to Number
+}
+
+fn sumSquareDifference(n) {
+  return sumSquared(n+1) - squaredSum(n+1)
+}
+
+print("sum square difference for 10 :", sumSquareDifference(10))
+print("sum square difference for 100:", sumSquareDifference(100))
