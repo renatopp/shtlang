@@ -10,10 +10,6 @@ type DataImpl interface{}
 
 type MetaFunction func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
 
-type Callable interface {
-	Call(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
-}
-
 func IsBool(instance *Instance) bool {
 	return instance.Type == Boolean.Type
 }
