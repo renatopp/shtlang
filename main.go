@@ -13,10 +13,9 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
+a := (6, 3, 6, 2)
+a | multiply
 
-r := range(3) | to Number?
-r!
-r
 `
 
 func main() {

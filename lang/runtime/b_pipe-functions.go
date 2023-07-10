@@ -566,3 +566,122 @@ var b_last = Function.CreateNative("last",
 		)
 	},
 )
+
+var b_window = fn("window", p("iter"), p("size")).
+	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		iter, err := arg(args, 0).IsIterator().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
+		}
+
+		i_size, err := arg(args, 2).IsNumber().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
+		}
+
+		size := AsInteger(i_size)
+		if size < 1 {
+			return throw(r, s, "window size must be greater than 0")
+		}
+
+		next := iter.AsIterator().next()
+		values := make([]*Instance, size)
+		total := 0
+		return i(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+			for total < size {
+				ret := next.OnCall(r, s, iter)
+				if s.IsInterruptedAs(FlowRaise) {
+					return ret
+				}
+
+				iteration := ret.AsIteration()
+				if iteration.error() == Boolean.TRUE {
+					return ret
+
+				} else if iteration.done() == Boolean.TRUE {
+					return Iteration.DONE
+
+				} else {
+					values[total] = iteration.value()
+					total++
+				}
+
+				if total == size {
+					v := []*Instance{}
+					for _, value := range values {
+						v = append(v, value.AsTuple().Values...)
+					}
+					return Iteration.Create(List.Create(v...))
+				}
+			}
+
+			ret := next.OnCall(r, s, iter)
+			if s.IsInterruptedAs(FlowRaise) {
+				return ret
+			}
+
+			iteration := ret.AsIteration()
+			if iteration.error() == Boolean.TRUE {
+				return ret
+
+			} else if iteration.done() == Boolean.TRUE {
+				return Iteration.DONE
+
+			} else {
+				for i := 0; i < size-1; i++ {
+					values[i] = values[i+1]
+				}
+				values[size-1] = iteration.value()
+				v := []*Instance{}
+				for _, value := range values {
+					v = append(v, value.AsTuple().Values...)
+				}
+				return Iteration.Create(List.Create(v...))
+			}
+		})
+	})
+
+var b_multiply = fn("multiply", p("next")).
+	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		if len(args) > 2 {
+			return r.Throw(Error.Create(s, "multiply does not accept additional parameters"), s)
+		}
+		if args[1] != Boolean.FALSE {
+			return r.Throw(Error.Create(s, "multiply does not accepts a function"), s)
+		}
+
+		iter := args[0]
+		next := args[0].Impl.(*IteratorDataImpl).next()
+		total := Number.Create(1.0)
+
+		finished := false
+
+		return Iterator.Create(
+			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+				if finished {
+					return Iteration.DONE
+				}
+
+				for {
+					ret := next.OnCall(r, s, iter)
+					if s.IsInterruptedAs(FlowRaise) {
+						return ret
+					}
+					iteration := ret.Impl.(*IterationDataImpl)
+
+					if iteration.error() == Boolean.TRUE {
+						return ret
+
+					} else if iteration.done() == Boolean.TRUE {
+						finished = true
+						return Iteration.Create(total)
+
+					} else {
+						values := iteration.value().Impl.(*TupleDataImpl)
+						total = total.OnMul(r, s, values.Values[0])
+					}
+				}
+			}),
+		)
+	},
+	)

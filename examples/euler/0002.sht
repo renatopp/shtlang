@@ -1,4 +1,4 @@
-solution := fibonacci()
+solution := math.fibonacci()
 | takeWhile x: x < 4000000
 | filter x: x is even
 | sum

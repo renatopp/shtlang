@@ -1,4 +1,4 @@
-p := primes()
+p := math.primes()
 | take(10001)
 | last
 | to Number

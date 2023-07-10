@@ -56,26 +56,6 @@ var b_len = fn("len", p("obj")).
 		return obj.OnLen(r, s)
 	})
 
-var b_even = fn("even", p("num")).
-	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-		num, err := arg(args, 0).IsNumber().Validate()
-		if err != nil {
-			return throw(r, s, err.Error())
-		}
-
-		return Boolean.Create(AsInteger(num)%2 == 0)
-	})
-
-var b_odd = fn("odd", p("num")).
-	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-		num, err := arg(args, 0).IsNumber().Validate()
-		if err != nil {
-			return throw(r, s, err.Error())
-		}
-
-		return Boolean.Create(AsInteger(num)%2 == 1)
-	})
-
 var b_palindrome = fn("palindrome", p("str")).
 	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 		str, err := arg(args, 0).Validate()

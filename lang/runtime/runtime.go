@@ -54,17 +54,17 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("max", Constant(b_max))
 	r.Global.Set("first", Constant(b_first))
 	r.Global.Set("last", Constant(b_last))
+	r.Global.Set("window", Constant(b_window))
+	r.Global.Set("multiply", Constant(b_multiply))
 
 	r.Global.Set("range", Constant(b_range))
-	r.Global.Set("fibonacci", Constant(b_fibonacci))
-	r.Global.Set("primes", Constant(b_primes))
 
 	r.Global.Set("print", Constant(b_print))
 	r.Global.Set("printf", Constant(b_printf))
 	r.Global.Set("len", Constant(b_len))
-	r.Global.Set("even", Constant(b_even))
-	r.Global.Set("odd", Constant(b_odd))
 	r.Global.Set("palindrome", Constant(b_palindrome))
+
+	r.Global.Set("math", Constant(b_m_math))
 
 	return r
 }
@@ -813,7 +813,7 @@ func (r *Runtime) EvalCall(node *ast.Call, scope *Scope) *Instance {
 	}
 
 	args := []*Instance{}
-	if target.MemberOf != nil {
+	if target.MemberOf != nil && target.MemberOf.Type != Module.Type {
 		args = append(args, target.MemberOf)
 	}
 	for _, v := range node.Arguments {

@@ -1,0 +1,6 @@
+value := math.primes()
+| takeWhile x: x < 2000000
+| sum
+| to Number
+
+print(value)

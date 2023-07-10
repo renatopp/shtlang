@@ -1,6 +1,6 @@
 fn primeFactors(n) {
   for n > 1 {
-    prime := primes()
+    prime := math.primes()
     | takeWhile x: x < n
     | filter x: n%x == 0
     | to Number?

@@ -1,0 +1,10 @@
+fn lcm(n) {
+  result := 1
+  pipe range(1, n + 1) as i {
+    result = result * i / math.gcd(result, i)
+  }
+
+  result
+}
+
+print(lcm(20))
