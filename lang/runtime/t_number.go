@@ -123,6 +123,12 @@ func (d *NumberDataType) OnString(r *Runtime, s *Scope, self *Instance, args ...
 func (d *NumberDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	v := AsNumber(self)
 
+	if math.IsInf(v, 1) {
+		return String.Create("inf")
+	} else if math.IsInf(v, -1) {
+		return String.Create("-inf")
+	}
+
 	if math.Mod(v, 1.0) == 0 {
 		return String.Create(fmt.Sprintf("%.0f", v))
 	}

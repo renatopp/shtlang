@@ -13,6 +13,7 @@ import (
 var keywords = []string{
 	"true",
 	"false",
+	"inf",
 
 	"if",
 	"else",
@@ -348,7 +349,9 @@ func (l *Lexer) parseIdentifier() *tokens.Token {
 
 	literal := l.builder.String()
 	tp := tokens.Identifier
-	if l.isOperatorKeyword(literal) {
+	if literal == "inf" {
+		tp = tokens.Number
+	} else if l.isOperatorKeyword(literal) {
 		tp = tokens.Operator
 	} else if l.isKeyword(literal) {
 		tp = tokens.Keyword

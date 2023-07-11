@@ -87,7 +87,7 @@ func (d *BooleanDataType) OnTo(r *Runtime, s *Scope, self *Instance, args ...*In
 		return r.Throw(tuple.Values[0], s)
 
 	} else if tion.done() == Boolean.TRUE {
-		return r.Throw(Error.Create(s, "The iteration has been finished"), s)
+		return Boolean.FALSE
 
 	} else {
 		tuple := tion.value().AsTuple()

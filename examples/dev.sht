@@ -1,0 +1,15 @@
+
+
+x := 1
+
+fn a() {
+  x := 5
+  
+  raise 5
+}
+
+fn main() {
+  z := a()?
+  print(z)
+}
+main()

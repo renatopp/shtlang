@@ -196,8 +196,11 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, self *Instance, args ...*I
 	} else {
 		res := r.Eval(d.Body, scope)
 
-		if scope.IsInterruptedAs(FlowRaise, FlowReturn) {
+		if scope.IsInterruptedAs(FlowRaise) {
 			return scope.Propagate()
+		}
+		if scope.IsInterruptedAs(FlowReturn) {
+			return scope.Interruption.Value
 		}
 
 		return res
