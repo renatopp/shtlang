@@ -18,6 +18,20 @@ var sample2 = `
 | map x: Number(x)
 | window(3)
 | map ...x: x
+
+fn x() {
+	raise 'x'
+}
+
+r := x()?
+
+if r! {
+	print('error')
+} else {
+	print(r)
+}
+
+
 `
 
 func main() {

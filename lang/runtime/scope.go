@@ -71,8 +71,8 @@ func (s *Scope) Propagate() *Instance {
 	}
 
 	v := s.Interruption.Value
-	if s.Parent != nil {
-		s.Parent.Interruption = s.Interruption
+	if s.Caller != nil {
+		s.Caller.Interruption = s.Interruption
 	}
 	s.Interruption = nil
 	return v
