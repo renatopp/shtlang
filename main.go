@@ -13,9 +13,11 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-a := (6, 3, 6, 2)
-a | multiply
 
+'1234567890'
+| map x: Number(x)
+| window(3)
+| map ...x: x
 `
 
 func main() {

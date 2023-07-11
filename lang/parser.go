@@ -1276,7 +1276,7 @@ func (p *Parser) parsePipe(left ast.Node) ast.Node {
 	pipe.PipeFn = pipeFn
 
 	cur = p.lexer.PeekToken()
-	if cur.Is(tokens.Identifier) || cur.Is(tokens.Colon) {
+	if cur.Is(tokens.Spread) || cur.Is(tokens.Identifier) || cur.Is(tokens.Colon) {
 		argFn := &ast.FunctionDef{
 			Token:     cur,
 			Scoped:    false,

@@ -611,7 +611,7 @@ var b_window = fn("window", p("iter"), p("size")).
 					for _, value := range values {
 						v = append(v, value.AsTuple().Values...)
 					}
-					return Iteration.Create(List.Create(v...))
+					return Iteration.Create(Tuple.Create(v...))
 				}
 			}
 
@@ -636,7 +636,7 @@ var b_window = fn("window", p("iter"), p("size")).
 				for _, value := range values {
 					v = append(v, value.AsTuple().Values...)
 				}
-				return Iteration.Create(List.Create(v...))
+				return Iteration.Create(Tuple.Create(v...))
 			}
 		})
 	})
