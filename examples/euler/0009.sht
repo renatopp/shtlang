@@ -1,0 +1,20 @@
+fn isTriplet(a, b, c) {
+  return a**2 + b**2 == c**2 and a < b and b < c;
+}
+
+
+# a + b + c = 1000
+# c = 1000 - a - b
+fn solution {
+  pipe range(0, 1000) as a {
+    pipe range(a + 1, 1000) as b {
+      c := 1000 - a - b
+      if isTriplet(a, b, c) {
+        print(a, b, c, a * b * c)
+        return
+      }
+    }
+  }
+}
+
+solution()
