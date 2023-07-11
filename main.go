@@ -14,23 +14,13 @@ import (
 var sample1 = `a?`
 var sample2 = `
 
-'1234567890'
-| map x: Number(x)
-| window(3)
-| map ...x: x
-
-fn x() {
-	raise 'x'
+i := 1
+for i < 10 {
+  return 'hello'
+  print(i)
+  i = i + 1
 }
-
-r := x()?
-
-if r! {
-	print('error')
-} else {
-	print(r)
-}
-
+print('x')
 
 `
 

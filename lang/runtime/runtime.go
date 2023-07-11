@@ -26,7 +26,7 @@ func CreateRuntime() *Runtime {
 	Type.Setup()
 	WildCard.Setup()
 
-	r.Global = CreateScope(nil, nil)
+	r.Global = CreateScope(nil, nil, nil)
 	r.Global.Name = "Global"
 
 	r.Global.Set(Boolean.Type.GetName(), Constant(Boolean.TypeInstance))
@@ -62,6 +62,7 @@ func CreateRuntime() *Runtime {
 	r.Global.Set("print", Constant(b_print))
 	r.Global.Set("printf", Constant(b_printf))
 	r.Global.Set("len", Constant(b_len))
+	r.Global.Set("iter", Constant(b_iter))
 	r.Global.Set("palindrome", Constant(b_palindrome))
 
 	r.Global.Set("math", Constant(b_m_math))
@@ -213,13 +214,13 @@ func (r *Runtime) EvalBlock(node *ast.Block, scope *Scope) *Instance {
 		newScope = scope
 		currentStatement = 0
 	} else {
-		newScope = CreateScope(scope, scope.Caller)
+		newScope = CreateScope(scope, scope.Caller, scope)
+		newScope.Name = "Block"
 		currentStatement = 0
 	}
 	scope.ActiveRecord = nil
 
 	var result *Instance
-	// fmt.Println("BLOCK STATE", currentStatement)
 	for i := currentStatement; i < len(node.Statements); i++ {
 		stmt := node.Statements[i]
 		result = r.Eval(stmt, newScope)
@@ -942,13 +943,11 @@ func (r *Runtime) EvalIf(node *ast.If, scope *Scope) *Instance {
 	var newScope *Scope
 	var condition *bool
 	if scope.ActiveRecord != nil {
-		// fmt.Println("IF STATE")
 		state := scope.ActiveRecord.(*IfRecord)
 		condition = &state.Condition
 		newScope = state.Scope
 	} else {
-		// fmt.Println("IF NO STATE")
-		newScope = CreateScope(scope, scope.Caller)
+		newScope = CreateScope(scope, scope.Caller, scope)
 		condition = nil
 	}
 	scope.ActiveRecord = nil
@@ -998,7 +997,8 @@ func (r *Runtime) EvalFor(node *ast.For, scope *Scope) *Instance {
 		newScope = state.Scope
 		evalCondition = false
 	} else {
-		newScope = CreateScope(scope, scope.Caller)
+		newScope = CreateScope(scope, scope.Caller, scope)
+		newScope.Name = "for"
 		evalCondition = true
 	}
 	scope.ActiveRecord = nil
@@ -1203,7 +1203,8 @@ func (r *Runtime) EvalPipeLoop(node *ast.PipeLoop, scope *Scope) *Instance {
 		i_iterator = state.Iterator
 		evalCondition = false
 	} else {
-		newScope = CreateScope(scope, scope.Caller)
+		newScope = CreateScope(scope, scope.Caller, scope)
+		newScope.Name = "pipe"
 		i_eval := r.Eval(node.Iterator, newScope)
 		if i_eval == nil {
 			return r.Throw(Error.Create(scope, "invalid iterator"), scope)
@@ -1375,7 +1376,7 @@ func (r *Runtime) EvalMatch(node *ast.Match, scope *Scope) *Instance {
 		newScope = state.Scope
 
 	} else {
-		newScope = CreateScope(scope, scope.Caller)
+		newScope = CreateScope(scope, scope.Caller, scope)
 	}
 	scope.ActiveRecord = nil
 

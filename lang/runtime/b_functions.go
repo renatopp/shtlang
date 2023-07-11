@@ -56,6 +56,16 @@ var b_len = fn("len", p("obj")).
 		return obj.OnLen(r, s)
 	})
 
+var b_iter = fn("iter", p("obj")).
+	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		obj, err := arg(args, 0).Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
+		}
+
+		return obj.OnIter(r, s)
+	})
+
 var b_palindrome = fn("palindrome", p("str")).
 	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 		str, err := arg(args, 0).Validate()

@@ -13,6 +13,7 @@ type Scope struct {
 	Function     *Instance
 	Parent       *Scope
 	Caller       *Scope
+	propagateTo  *Scope
 	Values       map[string]*Instance
 	ActiveRecord ExecutionRecord
 	Interruption *FlowInterruption
@@ -25,7 +26,7 @@ type Scope struct {
 	nodeStack []ast.Node
 }
 
-func CreateScope(parent *Scope, caller *Scope) *Scope {
+func CreateScope(parent *Scope, caller *Scope, propagateTo *Scope) *Scope {
 	s := &Scope{}
 	s.Id = Id()
 	s.Name = ""
@@ -37,6 +38,7 @@ func CreateScope(parent *Scope, caller *Scope) *Scope {
 	s.PipeCounter = 0
 	s.nodeStack = make([]ast.Node, 0)
 	s.ActiveRecord = nil
+	s.propagateTo = propagateTo
 
 	if parent != nil {
 		s.Depth = parent.Depth + 1
@@ -71,8 +73,9 @@ func (s *Scope) Propagate() *Instance {
 	}
 
 	v := s.Interruption.Value
-	if s.Caller != nil {
-		s.Caller.Interruption = s.Interruption
+	if s.propagateTo != nil {
+		// println("Propagating", s.Interruption.Type, "from", s.Name, "to", s.propagateTo.Name, "--", s.Interruption.Value.Repr())
+		s.propagateTo.Interruption = s.Interruption
 	}
 	s.Interruption = nil
 	return v

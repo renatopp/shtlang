@@ -112,7 +112,7 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, self *Instance, args ...*I
 		parentScope = s
 	}
 
-	scope := CreateScope(parentScope, s)
+	scope := CreateScope(parentScope, s, s)
 	scope.Name = d.Name
 	scope.Function = self
 
@@ -196,8 +196,8 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, self *Instance, args ...*I
 	} else {
 		res := r.Eval(d.Body, scope)
 
-		if scope.IsInterruptedAs(FlowRaise) {
-			s.Propagate()
+		if scope.IsInterruptedAs(FlowRaise, FlowReturn) {
+			return scope.Propagate()
 		}
 
 		return res

@@ -30,7 +30,7 @@ func (t *ModuleInfo) Create(name string) *Instance {
 		Type: t.Type,
 		Impl: &ModuleDataImpl{
 			Name:  name,
-			Scope: CreateScope(nil, nil),
+			Scope: CreateScope(nil, nil, nil),
 		},
 	}
 }
