@@ -41,6 +41,8 @@ func (t *ListInfo) Create(values ...*Instance) *Instance {
 func (t *ListInfo) Setup() {
 	t.TypeInstance = Type.Create(List.Type)
 	t.TypeInstance.Impl.(*TypeDataImpl).TypeInstance = t.TypeInstance
+	t.Type.SetInstanceFn("push", List_Push)
+	t.Type.SetInstanceFn("pop", List_Pop)
 }
 
 // ----------------------------------------------------------------------------
@@ -144,6 +146,11 @@ func (d *ListDataType) OnGet(r *Runtime, s *Scope, self *Instance, args ...*Inst
 	name := AsString(args[0])
 
 	value, has := this.Properties[name]
+	if d.InstanceFns[name] != nil {
+		value = d.InstanceFns[name]
+		has = true
+	}
+
 	if !has {
 		return r.Throw(Error.NoProperty(s, d.Name, name), s)
 	}
@@ -251,7 +258,11 @@ func (d *ListDataType) OnRepr(r *Runtime, s *Scope, self *Instance, args ...*Ins
 
 	var values []string
 	for _, value := range list.Values {
-		values = append(values, value.Repr())
+		if value == self {
+			values = append(values, "self")
+		} else {
+			values = append(values, value.Repr())
+		}
 	}
 
 	return String.Create("[" + strings.Join(values, ", ") + "]")
@@ -271,33 +282,34 @@ func (impl *ListDataImpl) default_() *Instance {
 
 //
 
-// var List_Push = fn("push", p("item")).as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-// 	// self => function
-// 	// args[0] => this (the iterator object)
-// 	this := args[0].AsIterator()
-// 	if this.Properties["done"] == Boolean.TRUE {
-// 		return Iteration.DONE
-// 	}
+var List_Push = fn("push", p("list"), p("item", nil, true)).as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := args[0].AsList()
+	this.Values = append(this.Values, args[1:]...)
+	return Boolean.TRUE
+})
 
-// 	ret := this.Next.OnCall(r, s, args[0])
+var List_Pop = fn("pop", p("list"), p("index", Boolean.FALSE)).as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	this := args[0].AsList()
+	size := len(this.Values)
+	if size == 0 {
+		return Boolean.FALSE
+	}
 
-// 	if ret.Type != Iteration.Type {
-// 		this.Properties["done"] = Boolean.TRUE
-// 		return Iteration.Error(Error.Create(s, "Expected iteration, %s given", ret.Type.GetName()))
-// 	}
+	index := size - 1
+	if len(args) > 1 {
+		if !args[1].IsNumber() {
+			return throw(r, s, "index of a list must be a number, '%s' provided", args[1].Type.GetName())
+		}
 
-// 	if s.IsInterruptedAs(FlowRaise) {
-// 		this.Properties["done"] = Boolean.TRUE
-// 		return Iteration.Error(s.Interruption.Value)
-// 	}
+		index = AsInteger(args[1])
+	}
 
-// 	if AsBool(ret.AsIteration().error()) {
-// 		this.Properties["done"] = Boolean.TRUE
-// 	}
+	if index >= size || index < 0 {
+		return Boolean.FALSE
+	}
 
-// 	if ret == Iteration.DONE {
-// 		this.Properties["done"] = Boolean.TRUE
-// 	}
+	item := this.Values[index]
+	this.Values = append(this.Values[:index], this.Values[index+1:]...)
 
-// 	return ret
-// })
+	return item
+})

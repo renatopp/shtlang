@@ -13,28 +13,16 @@ import (
 
 var sample1 = `a?`
 var sample2 = `
-fn isDivisibleBy(n, divisors) {
-  t := 0
-  pipe range(1, n) as i {
-    if n%i == 0 {
-      t += 1
-    }
+a := List {}
 
-    if t > divisors {
-      return true
-    }
-  }
-  return false
-}
+a.push(1)
+a.push(2)
+a.push(3)
+a.push(4)
+a.pop()
+a.pop(0)
 
-
-print('------------------')
-print(isDivisibleBy(1, 5))
-print(isDivisibleBy(2, 5))
-print(isDivisibleBy(3, 5))
-print(isDivisibleBy(4, 5))
-print(isDivisibleBy(28, 5))
-print('------------------')
+print(a)
 
 `
 

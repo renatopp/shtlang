@@ -1,18 +1,44 @@
-# # https://www.robertdickau.com/lattices.html
+# https://www.robertdickau.com/lattices.html
 
-# data LatticeVertices {
-#   matrix = List {}
+data LatticeVertices {
+  matrix = List {}
 
-#   on new(this, rows, cols) {
-#     pipe range(rows+1) as i {
-#       this.matrix[i].push(List {})
-#       pipe range(cols+1) as i {
-#         this.matrix[i].push(0)
-#       }
-#     }
-#   }
-# }
+  on new(this, rows, cols) {
+    pipe range(rows+1) as i {
+      this.matrix[i].push(List {})
+      pipe range(cols+1) as i {
+        this.matrix[i].push(0)
+      }
+    }
+  }
+
+  on getItem(this, i, j) {
+    
+  }
+}
+
+data Index {
+  row = 0
+  col = 0
+
+  on new(this, row, col) {
+    this.row = row
+    this.col = col
+  }
+}
 
 
-# ver := LatticeVertices(2, 2)
-# List {}
+lattice := LatticeVertices(2, 2)
+vertices := List {
+  Index(0, 0),
+}
+
+for len(vertices) > 0 {
+  vertex := vertices.pop(0)
+  row := vertex.row
+  col := vertex.col
+
+  if row == 0 and col == 0 {
+
+  }
+}
