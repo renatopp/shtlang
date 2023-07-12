@@ -1109,21 +1109,35 @@ func (r *Runtime) EvalAccess(node *ast.Access, scope *Scope) *Instance {
 
 func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 	if scope.PipeCounter != 0 && node.To != nil {
-		return r.Throw(Error.Create(scope, "'to' expression can only be used at the end of a pipe"), scope)
+		return throw(r, scope, "'to' expression can only be used at the end of a pipe")
 	}
 
 	scope.PipeCounter += 1
 
 	left := r.Eval(node.Left, scope)
+
+	if scope.IsInterruptedAs(FlowRaise) {
+		return nil
+	}
+
 	if left.Type != Iterator.Type {
 		left = left.OnIter(r, scope)
 		if left.Type != Iterator.Type {
-			return r.Throw(Error.Create(scope, "cannot iterate non-iterable type"), scope)
+			return throw(r, scope, "cannot iterate non-iterable type")
 		}
+	}
+
+	if scope.IsInterruptedAs(FlowRaise) {
+		return nil
 	}
 
 	if node.To != nil {
 		to := r.Eval(node.To, scope)
+
+		if scope.IsInterruptedAs(FlowRaise) {
+			return nil
+		}
+
 		scope.PipeCounter -= 1
 		return to.OnTo(r, scope, left)
 	}
@@ -1165,6 +1179,9 @@ func (r *Runtime) EvalPipe(node *ast.Pipe, scope *Scope) *Instance {
 	}
 
 	pipe := pipeFn.OnCall(r, scope, pipeArgs...)
+	if scope.IsInterruptedAs(FlowRaise) {
+		return nil
+	}
 
 	scope.PipeCounter -= 1
 	if scope.PipeCounter == 0 {

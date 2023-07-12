@@ -120,7 +120,10 @@ func (d *FunctionDataImpl) Call(r *Runtime, s *Scope, self *Instance, args ...*I
 		res := d.NativeFn(r, scope, self, args...)
 
 		if scope.IsInterruptedAs(FlowRaise) {
-			s.Propagate()
+			return scope.Propagate()
+		}
+		if scope.IsInterruptedAs(FlowReturn) {
+			return scope.Interruption.Value
 		}
 
 		return res

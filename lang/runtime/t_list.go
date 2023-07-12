@@ -268,3 +268,36 @@ type ListDataImpl struct {
 func (impl *ListDataImpl) default_() *Instance {
 	return impl.Properties["default"]
 }
+
+//
+
+// var List_Push = fn("push", p("item")).as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+// 	// self => function
+// 	// args[0] => this (the iterator object)
+// 	this := args[0].AsIterator()
+// 	if this.Properties["done"] == Boolean.TRUE {
+// 		return Iteration.DONE
+// 	}
+
+// 	ret := this.Next.OnCall(r, s, args[0])
+
+// 	if ret.Type != Iteration.Type {
+// 		this.Properties["done"] = Boolean.TRUE
+// 		return Iteration.Error(Error.Create(s, "Expected iteration, %s given", ret.Type.GetName()))
+// 	}
+
+// 	if s.IsInterruptedAs(FlowRaise) {
+// 		this.Properties["done"] = Boolean.TRUE
+// 		return Iteration.Error(s.Interruption.Value)
+// 	}
+
+// 	if AsBool(ret.AsIteration().error()) {
+// 		this.Properties["done"] = Boolean.TRUE
+// 	}
+
+// 	if ret == Iteration.DONE {
+// 		this.Properties["done"] = Boolean.TRUE
+// 	}
+
+// 	return ret
+// })

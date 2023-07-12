@@ -197,56 +197,49 @@ var b_reduce = Function.CreateNative("reduce",
 	},
 )
 
-var b_sum = Function.CreateNative("sum",
-	[]*FunctionParam{
-		{"iter", nil, false},
-	},
-	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-		// self => function
-		// args[0] => iter
-		// args[1] => func
-		if len(args) > 2 {
-			return r.Throw(Error.Create(s, "sum does not accept additional parameters"), s)
-		}
-		if args[1] != Boolean.FALSE {
-			return r.Throw(Error.Create(s, "sum does not accepts a function"), s)
+var b_sum = fn("sum", p("iter"), p("first", GetFirstFn)).
+	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		i_iter, err := arg(args, 0).IsIterator().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
 		}
 
-		iter := args[0]
-		next := args[0].Impl.(*IteratorDataImpl).next()
+		i_fn, err := arg(args, 1).Optional(GetFirstFn).IsFunction().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
+		}
+
+		next := i_iter.AsIterator().next()
 		total := Number.Create(0.0)
 
 		finished := false
 
-		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-				if finished {
-					return Iteration.DONE
+		return i(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+			if finished {
+				return Iteration.DONE
+			}
+
+			for {
+				ret := next.OnCall(r, s, i_iter)
+				if s.IsInterruptedAs(FlowRaise) {
+					return ret
 				}
+				iteration := ret.AsIteration()
 
-				for {
-					ret := next.OnCall(r, s, iter)
-					if s.IsInterruptedAs(FlowRaise) {
-						return ret
-					}
-					iteration := ret.Impl.(*IterationDataImpl)
+				if iteration.error() == Boolean.TRUE {
+					return ret
 
-					if iteration.error() == Boolean.TRUE {
-						return ret
+				} else if iteration.done() == Boolean.TRUE {
+					finished = true
+					return Iteration.Create(total)
 
-					} else if iteration.done() == Boolean.TRUE {
-						finished = true
-						return Iteration.Create(total)
-
-					} else {
-						values := iteration.value().Impl.(*TupleDataImpl)
-						total = total.OnAdd(r, s, values.Values[0])
-					}
+				} else {
+					val := i_fn.OnCall(r, s, iteration.value().AsTuple().Values...)
+					total = total.OnAdd(r, s, val)
 				}
-			}),
-		)
-	},
-)
+			}
+		})
+	})
 
 var b_takeWhile = Function.CreateNative("takeWhile",
 	[]*FunctionParam{
@@ -355,117 +348,109 @@ var b_take = Function.CreateNative("take",
 	},
 )
 
-var b_min = Function.CreateNative("min",
-	[]*FunctionParam{
-		{"iter", nil, false},
-	},
-	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-		// self => function
-		// args[0] => iter
-		// args[1] => func
-		if len(args) > 2 {
-			return r.Throw(Error.Create(s, "min does not accept additional parameters"), s)
-		}
-		if args[1] != Boolean.FALSE {
-			return r.Throw(Error.Create(s, "min does not accepts a function"), s)
+var b_min = fn("min", p("iter"), p("func", GetFirstFn)).
+	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		i_iter, err := arg(args, 0).IsIterator().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
 		}
 
-		iter := args[0]
-		next := args[0].AsIterator().next()
+		i_fn, err := arg(args, 1).Optional(GetFirstFn).IsFunction().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
+		}
+
+		next := i_iter.AsIterator().next()
 		var min *Instance
+		var minValue *Instance
 
 		finished := false
-		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-				if finished {
-					return Iteration.DONE
+		return i(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+			if finished {
+				return Iteration.DONE
+			}
+
+			for {
+				ret := next.OnCall(r, s, i_iter)
+				if s.IsInterruptedAs(FlowRaise) {
+					return ret
 				}
 
-				for {
-					ret := next.OnCall(r, s, iter)
-					if s.IsInterruptedAs(FlowRaise) {
-						return ret
+				iteration := ret.AsIteration()
+				if iteration.error() == Boolean.TRUE {
+					return ret
+
+				} else if iteration.done() == Boolean.TRUE {
+					finished = true
+					if min == nil {
+						return Iteration.DONE
 					}
 
-					iteration := ret.AsIteration()
-					if iteration.error() == Boolean.TRUE {
-						return ret
+					return Iteration.Create(min)
 
-					} else if iteration.done() == Boolean.TRUE {
-						finished = true
-						if min == nil {
-							return Iteration.DONE
-						}
-
-						return Iteration.Create(min)
-
-					} else {
-						values := iteration.value().AsTuple()
-						if min == nil || AsBool(values.Values[0].OnLt(r, s, min)) {
-							min = values.Values[0]
-						}
+				} else {
+					values := iteration.value().AsTuple().Values[0]
+					val := i_fn.OnCall(r, s, values)
+					if min == nil || AsBool(val.OnLt(r, s, minValue)) {
+						min = values
+						minValue = val
 					}
 				}
-			}),
-		)
-	},
-)
+			}
+		})
+	})
 
-var b_max = Function.CreateNative("max",
-	[]*FunctionParam{
-		{"iter", nil, false},
-	},
-	func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-		// self => function
-		// args[0] => iter
-		// args[1] => func
-		if len(args) > 2 {
-			return r.Throw(Error.Create(s, "max does not accept additional parameters"), s)
-		}
-		if args[1] != Boolean.FALSE {
-			return r.Throw(Error.Create(s, "max does not accepts a function"), s)
+var b_max = fn("max", p("iter"), p("func", GetFirstFn)).
+	as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+		i_iter, err := arg(args, 0).IsIterator().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
 		}
 
-		iter := args[0]
-		next := args[0].AsIterator().next()
+		i_fn, err := arg(args, 1).Optional(GetFirstFn).IsFunction().Validate()
+		if err != nil {
+			return throw(r, s, err.Error())
+		}
+
+		next := i_iter.AsIterator().next()
 		var max *Instance
+		var maxValue *Instance
 
 		finished := false
-		return Iterator.Create(
-			Function.CreateNative("next", []*FunctionParam{}, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
-				if finished {
-					return Iteration.DONE
+		return i(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+			if finished {
+				return Iteration.DONE
+			}
+
+			for {
+				ret := next.OnCall(r, s, i_iter)
+				if s.IsInterruptedAs(FlowRaise) {
+					return ret
 				}
 
-				for {
-					ret := next.OnCall(r, s, iter)
-					if s.IsInterruptedAs(FlowRaise) {
-						return ret
+				iteration := ret.AsIteration()
+				if iteration.error() == Boolean.TRUE {
+					return ret
+
+				} else if iteration.done() == Boolean.TRUE {
+					finished = true
+					if max == nil {
+						return Iteration.DONE
 					}
 
-					iteration := ret.AsIteration()
-					if iteration.error() == Boolean.TRUE {
-						return ret
+					return Iteration.Create(max)
 
-					} else if iteration.done() == Boolean.TRUE {
-						finished = true
-						if max == nil {
-							return Iteration.DONE
-						}
-
-						return Iteration.Create(max)
-
-					} else {
-						values := iteration.value().AsTuple()
-						if max == nil || AsBool(values.Values[0].OnGt(r, s, max)) {
-							max = values.Values[0]
-						}
+				} else {
+					values := iteration.value().AsTuple().Values[0]
+					val := i_fn.OnCall(r, s, values)
+					if max == nil || AsBool(val.OnGt(r, s, maxValue)) {
+						max = values
+						maxValue = val
 					}
 				}
-			}),
-		)
-	},
-)
+			}
+		})
+	})
 
 var b_first = Function.CreateNative("first",
 	[]*FunctionParam{

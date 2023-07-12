@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+type R *Runtime
+type S *Scope
+type I *Instance
+type F MetaFunction
+
 type DataImpl interface{}
 
 type MetaFunction func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance
@@ -86,4 +91,12 @@ var ThrowFn = Function.CreateNative("throw", []*FunctionParam{
 	{Name: "message"},
 }, func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
 	return r.Throw(Error.Create(s, AsString(args[0])), s)
+})
+
+var GetFirstFn = fn("getFirst", p("tuple")).as(func(r *Runtime, s *Scope, self *Instance, args ...*Instance) *Instance {
+	if args[0].IsTuple() {
+		return args[0].AsTuple().Values[0]
+	} else {
+		return args[0]
+	}
 })

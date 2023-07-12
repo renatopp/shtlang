@@ -1,0 +1,20 @@
+fn collatz(n) {
+  t := 0
+  for n > 1 {
+    t += 1
+    match n%2 {
+      0: { n = n/2 }
+      _: { n = 3*n + 1 }
+    }
+  }
+
+  return t
+}
+
+res := range(1000000)
+| map x: x, collatz(x)
+| max x, y: y
+
+num, sequence := res[0]
+
+print(num, '=', sequence)

@@ -1,6 +1,9 @@
 package runtime
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type BuiltinFunction struct {
 	name   string
@@ -55,7 +58,7 @@ type BuiltinArg struct {
 	index    int
 	optional bool
 	default_ *Instance
-	type_    string
+	types    []string
 }
 
 func arg(args []*Instance, index int) *BuiltinArg {
@@ -74,42 +77,77 @@ func (b *BuiltinArg) Optional(def ...*Instance) *BuiltinArg {
 }
 
 func (b *BuiltinArg) IsString() *BuiltinArg {
-	b.type_ = "string"
+	b.types = []string{"String"}
 	return b
 }
 
 func (b *BuiltinArg) IsNumber() *BuiltinArg {
-	b.type_ = "number"
+	b.types = []string{"Number"}
 	return b
 }
 
 func (b *BuiltinArg) IsBoolean() *BuiltinArg {
-	b.type_ = "boolean"
+	b.types = []string{"Boolean"}
 	return b
 }
 
 func (b *BuiltinArg) IsFunction() *BuiltinArg {
-	b.type_ = "function"
+	b.types = []string{"Function"}
 	return b
 }
 
 func (b *BuiltinArg) IsIterator() *BuiltinArg {
-	b.type_ = "iterator"
+	b.types = []string{"Iterator"}
 	return b
 }
 
 func (b *BuiltinArg) IsList() *BuiltinArg {
-	b.type_ = "list"
+	b.types = []string{"List"}
 	return b
 }
 
 func (b *BuiltinArg) IsTuple() *BuiltinArg {
-	b.type_ = "tuple"
+	b.types = []string{"Tuple"}
+	return b
+}
+
+func (b *BuiltinArg) OrString() *BuiltinArg {
+	b.types = append(b.types, "String")
+	return b
+}
+
+func (b *BuiltinArg) OrNumber() *BuiltinArg {
+	b.types = append(b.types, "Number")
+	return b
+}
+
+func (b *BuiltinArg) OrBoolean() *BuiltinArg {
+	b.types = append(b.types, "Boolean")
+	return b
+}
+
+func (b *BuiltinArg) OrFunction() *BuiltinArg {
+	b.types = append(b.types, "Function")
+	return b
+}
+
+func (b *BuiltinArg) OrIterator() *BuiltinArg {
+	b.types = append(b.types, "Iterator")
+	return b
+}
+
+func (b *BuiltinArg) OrList() *BuiltinArg {
+	b.types = append(b.types, "List")
+	return b
+}
+
+func (b *BuiltinArg) OrTuple() *BuiltinArg {
+	b.types = append(b.types, "Tuple")
 	return b
 }
 
 func (b *BuiltinArg) Validate() (*Instance, error) {
-	if b.index >= len(b.args) {
+	if b.index >= len(b.args) || b.args[b.index] == Boolean.FALSE {
 		if b.optional {
 			return b.default_, nil
 		}
@@ -117,37 +155,50 @@ func (b *BuiltinArg) Validate() (*Instance, error) {
 	}
 
 	arg := b.args[b.index]
-	if b.type_ != "" {
-		switch b.type_ {
-		case "string":
-			if !arg.IsString() {
-				return nil, fmt.Errorf("Expecting argument at index %d to be a string, got %s", b.index, arg.Type.GetName())
+
+	ok := false
+	for _, t := range b.types {
+		switch t {
+		case "String":
+			if arg.IsString() {
+				ok = true
+				break
 			}
-		case "number":
-			if !arg.IsNumber() {
-				return nil, fmt.Errorf("Expecting argument at index %d to be a number, got %s", b.index, arg.Type.GetName())
+		case "Number":
+			if arg.IsNumber() {
+				ok = true
+				break
 			}
-		case "boolean":
-			if !arg.IsBoolean() {
-				return nil, fmt.Errorf("Expecting argument at index %d to be a boolean, got %s", b.index, arg.Type.GetName())
+		case "Boolean":
+			if arg.IsBoolean() {
+				ok = true
+				break
 			}
-		case "function":
-			if !arg.IsFunction() {
-				return nil, fmt.Errorf("Expecting argument at index %d to be a function, got %s", b.index, arg.Type.GetName())
+		case "Function":
+			if arg.IsFunction() {
+				ok = true
+				break
 			}
-		case "iterator":
-			if !arg.IsIterator() {
-				return nil, fmt.Errorf("Expecting argument at index %d to be an iterator, got %s", b.index, arg.Type.GetName())
+		case "Iterator":
+			if arg.IsIterator() {
+				ok = true
+				break
 			}
-		case "list":
-			if !arg.IsList() {
-				return nil, fmt.Errorf("Expecting argument at index %d to be a list, got %s", b.index, arg.Type.GetName())
+		case "List":
+			if arg.IsList() {
+				ok = true
+				break
 			}
-		case "tuple":
-			if !arg.IsTuple() {
-				return nil, fmt.Errorf("Expecting argument at index %d to be a tuple, got %s", b.index, arg.Type.GetName())
+		case "Tuple":
+			if arg.IsTuple() {
+				ok = true
+				break
 			}
 		}
+	}
+
+	if !ok {
+		return nil, fmt.Errorf("Expecting argument at index '%d' to be a '%s', got '%s'", b.index, strings.Join(b.types, "', or '"), arg.Type.GetName())
 	}
 
 	return arg, nil

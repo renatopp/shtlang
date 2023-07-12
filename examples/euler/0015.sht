@@ -1,0 +1,18 @@
+# # https://www.robertdickau.com/lattices.html
+
+# data LatticeVertices {
+#   matrix = List {}
+
+#   on new(this, rows, cols) {
+#     pipe range(rows+1) as i {
+#       this.matrix[i].push(List {})
+#       pipe range(cols+1) as i {
+#         this.matrix[i].push(0)
+#       }
+#     }
+#   }
+# }
+
+
+# ver := LatticeVertices(2, 2)
+# List {}
