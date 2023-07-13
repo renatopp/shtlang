@@ -157,6 +157,9 @@ func (b *BuiltinArg) Validate() (*Instance, error) {
 	arg := b.args[b.index]
 
 	ok := false
+	if len(b.types) == 0 {
+		return arg, nil
+	}
 	for _, t := range b.types {
 		switch t {
 		case "String":

@@ -1,0 +1,2 @@
+print(math.factorial(100))
+print(String(math.factorial(100)) | map x: Number(x) | sum | to Number)

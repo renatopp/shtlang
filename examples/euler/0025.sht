@@ -1,0 +1,5 @@
+fib := math.fibonacci()
+| map x: String(x)
+| filter x: len(x) > 1000
+
+print(fib)

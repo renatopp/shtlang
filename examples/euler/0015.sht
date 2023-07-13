@@ -1,44 +1,27 @@
 # https://www.robertdickau.com/lattices.html
 
-data LatticeVertices {
-  matrix = List {}
 
-  on new(this, rows, cols) {
-    pipe range(rows+1) as i {
-      this.matrix[i].push(List {})
-      pipe range(cols+1) as i {
-        this.matrix[i].push(0)
-      }
+fn solution(size) {
+  matrix := List(=> List(=> 0)) {}
+  pipe range(size+1) as i {
+    matrix.push(List(=> 0) {})
+    pipe range(size+1) as j {
+      matrix[i].push(0)
     }
   }
 
-  on getItem(this, i, j) {
-    
+  matrix[0][0] = 1
+
+  pipe range(1, size + 1) as x {
+    pipe range(0, size + 1) as y {
+      matrix[x][y] = matrix[x-1][y] + matrix[x][y-1] 
+      matrix[y][x] = matrix[y-1][x] + matrix[y][x-1]
+    }
   }
+
+  return matrix
 }
 
-data Index {
-  row = 0
-  col = 0
-
-  on new(this, row, col) {
-    this.row = row
-    this.col = col
-  }
-}
-
-
-lattice := LatticeVertices(2, 2)
-vertices := List {
-  Index(0, 0),
-}
-
-for len(vertices) > 0 {
-  vertex := vertices.pop(0)
-  row := vertex.row
-  col := vertex.col
-
-  if row == 0 and col == 0 {
-
-  }
-}
+size := 20
+matrix := solution(size)
+print(matrix[size][size])
