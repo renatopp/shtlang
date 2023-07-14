@@ -1,544 +1,300 @@
-# **oh SHT!** A new scripting language.
+# A SHT language
 
 > **Notice!**
 >
-> This language is under development and this document is an inconsistent WIP.
+> Hey, this is a toy programming language full of bugs and lacking a lot of features. Use it as reference and don't expect performance.
 
-# Hello Wolrd
+**SHT** is a scripting dynamic programming language, created to learn more about theory and practice of modern languages. Since the main goal is the knowledge, every step, from tokenizer to evaluation, is written manually.
+
+The language is inspired by the cleanness of GO and Python, and by the directness of functional languages, such as Haskell and F#.
+
+# What looks like?
 
 ```bash
-print('Hello, Wolrd')
+value := math.fibonacci()
+| takeWhile x: x < 4000000
+| filter x: x is math.even
+| sum
+| to Number
+```
+
+You can try the SHT REPL tool:
+
+![The REPL tool](./examples/repl.png)
+
+# The CLI
+
+```bash
+# Opens the REPL tool
+$ sht
+
+# Run a file
+$ sht run file.sht
+
+# Run a code string
+$ sht exec "print('Hello')"
 ```
 
 # The Language
 
-## Variables
+## Variables and Types
 
-```tsx
-let variable = 'Hello'
-const constant = 3.14
+SHT has dynamic typing without null values.
+
+```go
+# Variables are defined using GO syntax
+num1 := 1
+num2 := 1.5
+num3 := 1e100
+
+str1 := 'Hello, World'
+str2 := `Hello,
+World!`
+
+bool1 := true
+bool2 := false
+
+list := List { 1, 2, 3, 4, '🥸' }
+dict := Dict { 'a': 1, 'b': 2 }
+tuple := (1, 2, 3)
 
 {
-  let scoped = true
-  variable = 3
+  # Every curly braces adds a new scope
+  num1 = 3  # overrides the parent num1
+  num1 := 3 # defines a new variable for this scope only
 }
 ```
 
-## Comments
-
-```rust
-# This is a comment
-```
-
-## Type System
-
-All primitive types:
-
-- Number
-    
-    ```rust
-    let pi = 3.1415
-    let py = 3
-    let large = 1e1000
-    let frac = .3
-    ```
-    
-- String
-    
-    ```rust
-    let pi = 3.14
-    let s = 'hello $pi'
-    let ms = `
-    Hello,
-    $pi
-    World
-    `
-    ```
-    
-- Boolean
-    
-    ```rust
-    let chance = true or false
-    ```
-    
-- Function
-    
-    ```rust
-    fn say(str) {
-    	print(str)
-    }
-    
-    let func = => 1
-    let func1 = (x) => 1
-    let func2 = (x) => { 1 }
-    ```
-    
-- List
-    
-    ```rust
-    let list1 = List()
-    let list3 = List{ 1, 2, 3, 4, 5 }
-    let list4 = List(){ 1, 2, 3, 4, 5 }
-    let list5 = List(=> 2) # Default value is 2
-    ```
-    
-- Dict
-    
-    ```rust
-    let dict1 = Dict(=> 1) # Devault value for when the key does
-    let dict2 = Dict{ 1:1, 2:2, 3:3, 4:4, 5:5 }
-    ```
-    
-- Set
-    
-    ```rust
-    let set = Set()
-    ```
-    
-- Tuple
-    
-    ```rust
-    let tuple = (1, 2)
-    let tuple = (1,)
-    return (1, 2)
-    let tuple = Tuple{1,2}
-    ```
-    
-- Error
-    
-    ```rust
-    Error{ msg='Invalid!' }
-    raise 'Invalid!'
-    ```
-    
-- Maybe
-    
-    ```rust
-    fn func()? {
-    	return 1
-    }
-    fn func()? {
-    	raise 'exception'
-    }
-    
-    Maybe(value)
-    Maybe(error)
-    Maybe() // error as default
-    ```
-    
-- Data
-    
-    ```rust
-    data User {
-    	name = ''
-      email = ''
-    }
-    ```
-    
-- Regex
-    
-    ```rust
-    /[a-zA-Z]/g
-    ```
-    
-- Iterator
-    
-    ```rust
-    a = Iterator(nextFn)
-    a.next()
-    a.finished
-    ```
-    
-- Type
-    
-    ```rust
-    
-    ```
-    
-
-### Meta Programming
-
-- doc
-- name
-- module
-- file
-
-- on call(this) …
-- on set(this, property, value)
-- on get(this, property) value
-- on has(this, property) bool
-- on new(this) this
-- on index(this, …) value
-- on iter(this) Iterator
-- on bool(this) bool
-- on string(this) string
-- on repr(this) string
-- on bang(this) …
-- on eq
-- on neq
-- on gt
-- …
+# Operations
 
 ```python
+# Arithmetic
+a + b
+a - b
+a * b
+a / b
+a // b  # integer division
+a ** b  # pow(aum, b)
+a % b   # mod
+
+# Relational
+a == b
+a != b
+a > b
+a < b
+a >= b
+a <= b
+
+# Logical
+!a
+a and b
+a or b
+
+# Other
+a .. b # string concat, forces a and b to string convertion
+a in b # meta-depending
+a is b # meta-depending -- functions implement as `Boolean(b(a))`
 
 ```
 
-## Operators
+# Functions
 
-****Arithmentic****
-
-| OPERATOR | DESCRIPTION |
-| --- | --- |
-| + |  |
-| - |  |
-| * | Multiplications can be performed implicitly as 3km, where km is a variable. |
-| / | Division by 0 results in runtime error |
-| % | Mod |
-| ** | Pow |
-| // | Equivalent to floor(x/y) |
-| ++ | Used as suffix only, increments 1 |
-| — | Used as suffix only, decrements 1  |
-
-**Relational**
-
-All relational operators return 0 or 1.
-
-| OPERATOR |
-| --- |
-| == |
-| ≠ |
-| > |
-| < |
-| ≥ |
-| ≤ |
-
-**********Logical**********
-
-All logical operators return 0 or 1.
-
-| OPERATOR |
-| --- |
-| ! |
-| and |
-| or |
-| xor |
-| nor |
-| nand |
-
-**************Special**************
-
-| OPERATOR |
-| --- |
-| ++ |
-
-## Functions
-
-Functions as defined in a couple of ways:
+Functions are first classes.
 
 ```python
-fn log(value) {
-	echo value
+# Returns are optional
+fn add(a, b) {
+  a + b
 }
 
-log = fn(value) { ... }
-log = fn { ... } # no parameter
-log = () => { ... }
-log = => ... # no parameter
-```
-
-Functions with arguments can be called without parenthesis if they aren’t being called inside another parenthesis-less functions:
-
-```python
-fn add(a, b) { ... }
-add(a, b)
-```
-
-Function return the last statement by default.
-
-```python
-fn fib(n) {
-	if n < 2 return 2
-	fib(n-1) + fib(b+2)
-}
-```
-
-Arguments can have a default value, and they also can be spread:
-
-```python
-fn (a, ...b, c) { ... }
-fn (a, ...b, c=1) { ... }
-fn (a=1, b=2, ...c) { ... }
-```
-
-Adding more parameters to a function won’t have any effect. Default value can only be if the next argument also has a default. Spread doesn’t have a default.
-
-Functions have a special notation to return Maybe objects:
-
-```python
-fn uncertain? {
-	return 2
+# Function definitions can be used as expression
+sub := fn(a, b) {
+  a - b
 }
 
-uncertain() # is a maybe(number)
-```
-
-## Iterators
-
-Every type that implements an iterator pattern can be piped:
-
-```python
-'hello'
-| map char: char.toUpperCase()
-| foreach char: echo char
-```
-
-notice that:
-
-- Strings implement by default an interator over its characters
-- Right after a pipe, you must provide an piped function
-- These functions receives the value as first parameter, fixed
-- These function may receive a function as last argument, in this case, the function have a special declaration format
-- Iterators items are evaluated one by one, until finished or interrupted.
-- Iterators are lazy, they are obly processed as necessary
-- The pipe may return the aggregated value by its last statement.
-
-### Iterator Pattern
-
-Every data type can implement an meta operator called `iter`, which must return an Iterator object:
-
-```tsx
-data OneTwoThree {
-  on iter(this) {
-    let i = 0
-    return Iterator(fn {
-      i++
-      if i>3 return Iteration(false)
-      return Iteration(this, i)
-    })
+# Function closures
+fn mult(x) {
+  return fn(a, b) {
+    (a + b)*x
   }
 }
-```
+mult(2)(1, 2) # = 6
 
-Notice that an Iterator object is created with a next function, that will be triggered everytime the iterator is queried for the next element. Also notice that the iterator must return a tuple with the owner and the value. If it returns anything else, the iterator will be signaled to stop.
+# Arrow fuctions works like javascript arrows
+say := (x) => { print('say:', x) } 
 
-You can use a special expression to represent an iterator creation:
+# Parameter-less functions
+fn { ... }
 
-```tsx
-data OneTwoThree {
-  on iter(this) {
-    yield 1
-    yield 2
-    yield 3
-  }
+# Default and spreads are allowed, spreads are converted to list
+# and default to empty list
+fn headTail(head=false, ...body, tail=false) {
+  return head, tail
 }
-```
+headTail(List { 1, 2, 3, 4, 5, 6 }) # = (1, 6)
+headTail(List { 1 }) # = (1, false)
 
-Both examples are equivalent. 
-
-Any function that contains the `yield` statement is called a *generator*, which returns an iterator implicitly. Notice that, the generator function return `Iteration(false)` as default after the end of the function.
-
-### Piped Functions
-
-Piped functions are functions that can be used in pipes.
-
-```rust
-OneTwoThree()
-| map x: x + 1
-```
-
-A sample `map` function could be implemented as:
-
-```rust
-fn map(next, func) {
-	for next() as iteration {
-		yield func(iteration.values...)
-	}
+# Generator functions returns an iterator, and is only evaluated when
+# the iterator is queried
+fn oneTwoThree() {
+  yield 1
+  yield 2
+  yield 3
 }
+oneTwoThree() # = <Iterator>
 ```
 
-Notice that the piped function function receives a next function (from the previous iterator), and returns an iterator itself. 
+# Error Handling
 
-A piped function may receive additional arguments:
-
-```rust
-fn reduce(next, func, initial) {
-	let acc = initial
-  for next() as iteration {
-		value = func(acc, iteration.values...)
-  }
-
-	yield value
-}
-
-List { 1, 2, 3 } | reduce(0) acc, x: acc + x
-```
-
-### Pipe Response
-
-Pipes respond lists by default. However you can specify its return type by doing using the expression:
-
-```rust
-word = 'word' | to String                  # 'word'
-word = 'word' | to List                    # List{'w', 'o', 'r', 'd'} -- which is redudant
-size = 'word' | map x: 1 | sum | to Number # 4
-data = 'word' | to Custom                  # Custom object
-iter = 'word' | to Iterator                # Iterator, i.e., does not execute
-
-string = text.split(' ')
-| map x: /[^a-zA-Z]+/.replaceAll(x, '')
-| filter x: x
-| join x: ' '
-| to String
-```
-
-In order to accept this convertion, the data type must implement the meta function `iterresp`:
-
-```rust
-data Custom {
-  on iterresp(next) { # no this
-    s = ''
-    for next() as iteration {
-      s ..= iteration.values[0]
-    }
-    return Custom(s)
-  }
-}
-```
-
-## Control Flow
-
-### Pattern Matching
+There is no try catch in the language, instead we use a wrap/unwrap system. When wrapping a value, the expression generates a `Maybe` type, similar to a Monad in other languages. In order to use the value or treat the error, you must unwrap the Maybe and use its value.
 
 ```python
-match var {
-	1: 'hello'
-  2: 'world'
-  _: ''
+fn explode {
+  raise 'Error'
 }
 
-match (i%3, i%5) {
-	(0, 0): echo 'FizzBuzz'
-  (0, _): echo 'Fizz'
-  (_, 0): echo 'Buzz'
-  (_, _): echo i
+val := explode()?  # Wrap
+type(val) # Maybe
+
+if val! as err { # Unwrap
+  ... # Treat error here
 }
 
-match type(x) {
-	Number: echo '$x is a number'
-	String: echo '$x is a string'
-		   _: echo '$x is an unsupported type'
-}
-
-match x {
-	valid(x): echo '$x is valid'
-  _: echo '$x is not valid'
-}
+# Now the variable can assume its real value, in this case, an error
+type(val) # Error
 ```
 
-### Conditional
+The expression `val!` returns an `Error` or `false`. In the example above, the if will only be evaluated if val is an error. After unwrapping, the variable will assume its real value.
 
-As a general recomentation, ifs are not recommended, but they are used as follows:
 
-```python
-if <expr> {
-	...
-} else if {
-  ...
-} else {
+# Control Flow
+
+If's and for's are similar to Go:
+
+```go
+if x > 2 {
   ...
 }
-```
 
-However, ifs are important for early returns:
-
-```python
-if <condition> return <returned value>
-if <condition> raise <returned value>
-```
-
-With’s also help us addressing conditionals:
-
-```python
-if client.conn() as conn {
-	...
-} else {
-	...
+if f() as val {
+  ...
 }
-```
 
-### Loops
-
-Loops are also disencouraged, but may be useful in some situations:
-
-```python
-for i in <iterator> {
-  break
+for x < 2 {
+  ...
   continue
 }
 
-for <condition> {}
-for <expr> as <cond> {} # this is similar to while x = <expr> in other languages
-for {}
+for {
+  ...
+  break
+}
 ```
 
-## Error handling
+Additionally, SHT has match expressions:
 
-We don’t have try catch since all errors are captured by default, instead, most builtin operations that can result in an error, will return a Maybe object that contains the value or the error:
-
-```python
-file = fs.open('invalid')
-type(file) == Maybe # failing or not, the return is a Maybe
+```rust
+match (n%3, n%5) {
+  (0, 0): print('FizzBuzz')
+  (0, _): print('Fizz')
+  (_, 0): print('Buzz')
+  (_, _): print(n)
+}
 ```
 
-Maybes should be unwrapped in order to retrieve its value:
+and an speciall loop to handle iterators:
 
-```python
-# file.read() # Fails because Maybe doesn't have read()
-file.unwrap() # Now it becomes the value OR the error
-file.error # Access the error
-file.value # Access the value, false if error
+```rust
+pipe oneTwoThree() as n {
+  print(n)
+}
+# 1
+# 2
+# 3
 ```
 
-Maybes have a shortcut that help us treating it:
+Speaking of iterators, we have an special syntax to chain iterators, using *pipe functions*:
 
-```python
-if file! as err {
-	echo 'Error'
-  return 0
+```f#
+oneTwoThree()
+| filter x: x%3 == 0 or x%5 == 0
+| sum
+| to Number
+```
+
+# Custom Data Types
+
+SHT does not support OOP, because the language is not so SHTtier:
+
+``` python
+data User {
+  id = ''    # properties must have default values
+  name = ''
+  age = 0
+  email = ''
+
+  # Instance functions must have the this keyword as first arguments
+  fn isAllowed(this) {
+    return this.age >= 18
+  }
+
+  # If this is not present, the function is static
+  fn create() {
+    return User()
+  }
+
+  # Meta programming! Notice that meta functions are defined using `on`
+  on new(this) {
+    # similar to a constructor
+  }
+
+  on eq(this, other) {
+    # a == b
+    return this.id == other.id
+  }
 }
 
-os.open()! # Ignoring the effect of the function
+user1 := User.create()
+user2 := User { id='x', name='foo' } # id and name default values won't be evaluated.
+user3 := User()
+user4 := User() { id='y' }
 ```
 
-## Async
 
-Using go routines, the usage is similar:
+
+
+All meta functions:
 
 ```python
-let a = 1
-const b = 2 
-fn iwillrunasync(y, z) {
-	# echo a # would result in an error, async functions cannot access variables outside its scope
-	echo b # but constants are ok!
-	return y + z
-}
-
-promise = async iwillrunasync(a, b) # the values are always copied
-value = await promise # blocks the thread waiting the return
-
-# Check how go does it
+on set(this, property, value)
+on get(this, property)
+on setItem(this, index, value)
+on getItem(this, index)
+on new(this)
+on call(this, ...)
+on number(this)
+on boolean(this)
+on string(this)
+on repr(this)
+on to(iterator) # Notice that to is static
+on iter(this)
+on len(this)
+on add(this, other)
+on sub(this, other)
+on mul(this, other)
+on div(this, other)
+on intDiv(this, other)
+on mod(this, other)
+on pow(this, other)
+on eq(this, other)
+on neq(this, other)
+on gt(this, other)
+on lt(this, other)
+on gte(this, other)
+on lte(this, other)
+on pos(this)
+on neg(this)
+on not(this)
+on in(this, other)
+on is(this, other)
 ```
-
-## Packages
-
-Since the goal os to write a language to be used in bash, modules should be defined by file level.
-
-```python
-module math
-
-const pi = 3.1415
-```
-
- > sht -r ./math.sht main.sht
-
-will register module, but wont execute it. only non modules are executed.
